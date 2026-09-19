@@ -1,0 +1,31 @@
+# Render.com blueprint. Push this repo to GitHub, then in Render:
+#   New + -> Blueprint -> pick this repo. Render reads this file and provisions everything.
+#
+# NOTE ON MEMORY: the real MiniLM embedder needs ~1 GB RAM. Render's free tier is 512 MB
+# and will OOM. Two choices:
+#   (a) keep EMBEDDING_BACKEND=hash below (free tier, lexical embeddings — still demos
+#       the full cache/verifier pipeline), OR
+#   (b) upgrade the plan to `starter` and set EMBEDDING_BACKEND=minilm for real semantics.
+services:
+  - type: web
+    name: verigate
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: LLM_PROVIDER
+        value: mock              # safe public default: no API key, no cost
+      - key: EMBEDDING_BACKEND
+        value: hash              # fits 512 MB free tier; change to minilm on a paid plan
+      - key: VECTOR_BACKEND
+        value: inproc
+      - key: CACHE_SIMILARITY_BASE
+        value: "0.72"
+      - key: API_KEYS
+        value: demo-key-123      # the dashboard's default key
+      # To enable live Gemini answers instead of mock, add these in the Render dashboard
+      # (Environment tab) as SECRETS — do not hard-code the key here:
+      #   LLM_PROVIDER = gemini
+      #   GEMINI_API_KEY = <your key>
+      #   GEMINI_MODEL = gemini-flash-lite-latest

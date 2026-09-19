@@ -1,0 +1,23 @@
+# --- Secrets: NEVER commit these ---
+.env
+.env.*
+!.env.example
+
+# --- Python ---
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# --- ML model / HF caches (downloaded at runtime, huge) ---
+.cache/
+*.bin
+*.safetensors
+models/
+
+# --- OS / editor cruft ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
