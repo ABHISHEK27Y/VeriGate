@@ -1,0 +1,80 @@
+\section{Introduction}
+Requirement engineering translates the goals of Chapter~1 into precise, verifiable specifications. For VeriGate the requirements divide into those governing the caching intelligence (the adaptive threshold, verifier, and volatility logic), those governing the gateway's role as a reliable proxy in front of paid LLM providers, and those governing production safety (isolation, budgeting, observability). Functional requirements state \emph{what} the system must do; non-functional requirements state \emph{how well} it must do it.
+
+\section{System Analysis}
+\subsection{Limitations of the Existing System}
+Before designing VeriGate, existing semantic-caching and gateway solutions were analysed. The principal limitations identified were:
+\begin{enumerate}
+    \item \textbf{Single fixed threshold.} Systems such as GPTCache \cite{bang2023gptcache} expose one global similarity threshold. It cannot be tuned to be simultaneously permissive for paraphrases and strict for look-alikes, and it is silently wrong when the embedding model changes.
+    \item \textbf{No hit verification.} A candidate hit above the threshold is served without any check that the two queries actually mean the same thing, producing false hits on number-, entity-, and negation-differing queries.
+    \item \textbf{No notion of staleness.} Time-sensitive queries are cached and served like any other, returning stale answers for volatile information.
+    \item \textbf{Cross-tenant leakage.} A global semantic cache lets one client's question match and receive another client's answer --- a confidentiality breach unique to \emph{semantic} (as opposed to exact) caching, and the single most serious risk for a shared gateway.
+    \item \textbf{Cost-blind routing.} Every cache-missed query is sent to one model, overpaying on queries a cheaper model would answer correctly.
+    \item \textbf{Operational fragility.} A dead or slow provider is retried on every request, and there is no spend cap, so a burst of unique queries can exhaust both latency budgets and money.
+\end{enumerate}
+
+\subsection{Feasibility Study}
+\begin{itemize}
+    \item \textbf{Technical Feasibility:} The system is built entirely on mature open-source components --- FastAPI \cite{fastapi}, the sentence-transformers encoder \cite{sentencetransformers}, Redis, and standard scientific-Python libraries --- and requires no GPU for inference. The default in-process vector index runs in a single Python process, and the RediSearch backend uses a standard Redis Stack container. The project is therefore technically highly feasible.
+    \item \textbf{Operational Feasibility:} The gateway is a drop-in HTTP proxy: an existing application changes only the base URL of its LLM client. An operator dashboard makes the cache's behaviour observable and testable without writing code, easing adoption.
+    \item \textbf{Economic Feasibility:} All dependencies are free and open-source, and the container runs on a single small instance. The system's \emph{purpose} is to save money --- each cache hit and each cheap-model route is avoided or reduced LLM spend --- so it is economically self-justifying. Estimated hosting cost on a free-tier or small cloud instance is approximately USD~0--7 per month.
+\end{itemize}
+
+\section{System Requirements}
+\subsection{Hardware Requirements}
+\begin{itemize}
+    \item \textbf{Client (application using the gateway):} any host able to make HTTPS requests; no local computation.
+    \item \textbf{Development environment:}
+    \begin{itemize}
+        \item \textbf{Processor:} Intel Core i5 / AMD Ryzen 5 or better.
+        \item \textbf{RAM:} 8~GB minimum; the sentence-transformer model and the in-process vector matrix are the main consumers.
+        \item \textbf{Storage:} SSD recommended for fast model load and container builds.
+    \end{itemize}
+    \item \textbf{Production server (minimum):}
+    \begin{itemize}
+        \item \textbf{CPU:} 2 virtual cores.
+        \item \textbf{RAM:} $\sim$1~GB for the lexical-embedding lite mode; $\sim$1.5--2~GB when the MiniLM model is loaded.
+        \item \textbf{Storage:} 20~GB block storage for the container image and model cache.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Software Requirements}
+The stack is uniformly Python-based to keep the caching layer and the web server in one runtime.
+\begin{itemize}
+    \item \textbf{Operating System:} Agnostic (Windows~11 during development; Linux containers for deployment).
+    \item \textbf{Language:} Python 3.11+ (the reference environment is Python 3.13).
+    \item \textbf{Web framework:} \texttt{FastAPI} + \texttt{uvicorn} (ASGI) for asynchronous request handling and streaming (Server-Sent Events) \cite{fastapi}.
+    \item \textbf{Embeddings:} \texttt{sentence-transformers} with \texttt{all-MiniLM-L6-v2} \cite{sentencetransformers}; \texttt{torch} (CPU build) as the backend; a hash-based lexical embedder as a dependency-free fallback for tests.
+    \item \textbf{Verifier:} a compact NLI cross-encoder (\texttt{cross-encoder/nli-deberta-v3-xsmall}) \cite{he2021deberta} for the optional Tier-2 check.
+    \item \textbf{Cache / state:} \texttt{redis} (with \texttt{fakeredis} as an in-process default for development and tests); Redis Stack for the RediSearch/HNSW vector backend \cite{redis_stack}.
+    \item \textbf{Observability:} \texttt{prometheus-client} for metrics; Prometheus + Grafana for scraping and dashboards \cite{prometheus}.
+    \item \textbf{Packaging:} Docker and Docker Compose; \texttt{pydantic-settings} for typed configuration.
+\end{itemize}
+
+\section{Functional Requirements}
+\begin{enumerate}
+    \item \textbf{Authenticated chat endpoint.} The gateway must accept a chat request bearing a valid API key and return a completion; requests without a valid key must be rejected with HTTP~401.
+    \item \textbf{Streaming.} The gateway must support token streaming (SSE) as well as a non-streaming JSON response.
+    \item \textbf{Semantic cache lookup.} For each query the system must embed the query, find its nearest cached neighbour within the caller's tenant, and, subject to the policy below, serve the stored answer as a HIT rather than calling the provider.
+    \item \textbf{Adaptive threshold.} The effective similarity threshold must be adjusted per query as a function of neighbourhood density, rather than being a single global constant.
+    \item \textbf{Self-verification.} Before serving a candidate hit, the system must run a Tier-1 structural verifier (numbers, negation, named entities) and, when enabled, a Tier-2 NLI verifier; a candidate that fails verification must be rejected as a false hit and treated as a MISS.
+    \item \textbf{Volatility bypass.} Queries classified as time-sensitive must bypass the cache (never served from and never written to it).
+    \item \textbf{Fast lookup.} The cache-hit path must use a vectorised index (in-process or RediSearch) so that lookup remains far faster than a provider call as the cache grows.
+    \item \textbf{Cost-aware cascade.} When enabled, the gateway must score query complexity and route easy queries to a cheap model, escalating hard queries to a strong model, keeping the unused tier as failover.
+    \item \textbf{Provider abstraction and failover.} The gateway must front OpenAI-compatible providers (OpenAI, Gemini) selected by configuration, and must fail over to a mock provider so a provider outage never hard-fails a request.
+    \item \textbf{Per-tenant isolation.} Each API key must map to a tenant whose cache is isolated; one tenant must never receive another tenant's cached answer.
+    \item \textbf{Per-key spend budget.} The system must cap provider calls per key per day; over-budget requests receive HTTP~429, and cache hits must not count against the budget.
+    \item \textbf{Rate limiting.} The system must throttle bursts per API key via a token bucket, returning HTTP~429 when the bucket is empty.
+    \item \textbf{Observability endpoints.} The system must expose \texttt{/health} (live configuration) and \texttt{/metrics} (Prometheus), and an operator dashboard at \texttt{/ui} for interactive testing and a cache-clear admin action.
+\end{enumerate}
+
+\section{Non-Functional Requirements}
+\begin{enumerate}
+    \item \textbf{Correctness (primary).} On the evaluation benchmark, the full system must achieve a false-hit rate substantially below the fixed-threshold baseline; the target is zero false hits (100\% precision) on the curated hard negatives.
+    \item \textbf{Cache-hit latency.} A cache hit must complete at least an order of magnitude faster than a hosted-LLM call; the target hit path is $\sim$10~ms against an $\sim$800~ms reference call.
+    \item \textbf{Verification overhead.} Tier-1 verification must impose negligible overhead ($<$1~ms) on the hit path so that safety is effectively free; the cost of Tier-2 must be quantified and its use made optional.
+    \item \textbf{Scalability.} Lookup latency must remain sub-linear in cache size (near-flat and sub-millisecond to at least several thousand entries for the in-process index).
+    \item \textbf{Security.} API-key authentication on every request; secrets held only in environment/secret stores and never logged; per-tenant isolation verified by test; per-key spend caps to bound economic exposure.
+    \item \textbf{Reliability.} A failing provider must be skipped quickly by a circuit breaker rather than retried on every request; the cache must fail open (a cache error degrades to a provider call rather than an error).
+    \item \textbf{Reproducibility.} The evaluation harness must share the exact \texttt{CachePolicy} used by the live gateway, so that measured results equal shipped behaviour; all figures and tables must be regenerable from the repository.
+\end{enumerate}

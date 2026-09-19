@@ -21,3 +21,16 @@ models/
 Thumbs.db
 .vscode/
 .idea/
+
+# LaTeX build artifacts
+report/*.aux
+report/*.log
+report/*.out
+report/*.toc
+report/*.lof
+report/*.lot
+report/*.fls
+report/*.fdb_latexmk
+report/*.bbl
+report/*.blg
+report/chapters/*.aux

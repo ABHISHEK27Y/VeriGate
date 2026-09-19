@@ -1,0 +1,191 @@
+\section{Introduction to System Design}
+System design translates the requirements of Chapter~3 into a concrete blueprint: how requests flow through the gateway, how the caching intelligence decides whether to serve or bypass, how the vector index and providers are organised, and how state is namespaced for safety. VeriGate is designed as a modular asynchronous proxy in which the novel cache policy is a single decision point shared between the live server and the evaluation harness, guaranteeing that what is measured is what is shipped.
+
+\section{System Architecture}
+The gateway is organised into four cooperating layers. Requests descend through them; the cache policy short-circuits the descent whenever a verified hit is available.
+
+\begin{itemize}
+    \item \textbf{Layer 1 --- Edge / API (FastAPI).} Terminates HTTP, authenticates the API key, derives the tenant, applies rate limiting and the daily spend budget, and exposes the chat, health, metrics, admin, and dashboard routes. Streaming responses are served as Server-Sent Events.
+    \item \textbf{Layer 2 --- Cache Intelligence.} The heart of the system: it embeds the query, retrieves the nearest neighbour within the tenant, and applies the \texttt{CachePolicy} (adaptive threshold $\rightarrow$ verifier $\rightarrow$ decision). It also classifies volatile queries for bypass. On a verified hit it returns the stored answer; otherwise it forwards to Layer~3.
+    \item \textbf{Layer 3 --- Provider Routing.} Selects the upstream model. With the cascade enabled it scores complexity and chooses the cheap or strong tier; a circuit breaker skips unhealthy providers, and a mock provider is always retained as a terminal failover.
+    \item \textbf{Layer 4 --- State \& Storage.} Redis (or in-process \texttt{fakeredis}) holds cache entries, rate-limit buckets, budget counters, and breaker state, all namespaced per tenant. The vector index (in-process NumPy matrix or RediSearch/HNSW) provides the nearest-neighbour lookup.
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \resizebox{0.95\textwidth}{!}{%
+    \begin{tikzpicture}[
+        node distance=0.55cm,
+        layer/.style={
+            rectangle, draw=black, thick, text=black,
+            text width=0.85\textwidth, align=center, rounded corners,
+            minimum height=1.4cm, inner sep=7pt
+        },
+        arrow/.style={thick, ->, >=stealth, draw=black}
+    ]
+    \node[layer, fill=blue!15] (edge) {\textbf{Layer 1 --- Edge / API (FastAPI + uvicorn)}\\Auth $\rightarrow$ tenant derivation $\rightarrow$ rate limit $\rightarrow$ spend budget. Routes: \texttt{/v1/chat}, \texttt{/v1/chat/stream}, \texttt{/health}, \texttt{/metrics}, \texttt{/ui}, \texttt{/admin/cache/clear}.};
+    \node[layer, fill=teal!15, below=of edge] (cache) {\textbf{Layer 2 --- Cache Intelligence (the contribution)}\\Embed query $\rightarrow$ nearest neighbour (per tenant) $\rightarrow$ \texttt{CachePolicy}: adaptive threshold $\rightarrow$ Tier-1/Tier-2 verifier $\rightarrow$ HIT / MISS. Volatility detector $\rightarrow$ BYPASS.};
+    \node[layer, fill=violet!15, below=of cache] (route) {\textbf{Layer 3 --- Provider Routing}\\Cost-aware cascade (cheap $\leftrightarrow$ strong) $+$ circuit breaker $+$ failover to mock. OpenAI-compatible client (OpenAI / Gemini).};
+    \node[layer, fill=orange!18, below=of route] (state) {\textbf{Layer 4 --- State \& Storage}\\Redis / fakeredis: cache entries, rate buckets, budget counters, breaker state (all per-tenant). Vector index: in-process NumPy matrix \emph{or} RediSearch/HNSW.};
+
+    \draw[arrow] (edge) -- (cache);
+    \draw[arrow] (cache) -- (route);
+    \draw[arrow] (route) -- (state);
+    \draw[arrow, dashed] (cache.east) -- ++(0.35,0) |- node[right, pos=0.25, font=\footnotesize]{lookup / store} (state.east);
+    \draw[arrow, dashed] (route.west) -- ++(-0.35,0) |- node[left, pos=0.25, font=\footnotesize]{breaker state} (state.west);
+    \end{tikzpicture}%
+    }
+    \caption{VeriGate four-layer architecture. Requests descend from the edge; a verified cache hit in Layer~2 short-circuits the provider call in Layer~3. All state in Layer~4 is namespaced per tenant.}
+    \label{fig:sys_arch}
+\end{figure}
+
+\section{Request Lifecycle and the Cache Decision}
+The defining logic of VeriGate is the decision, taken for every query, among four outcomes: \textbf{BYPASS} (volatile, never cached), \textbf{HIT} (a verified equivalent answer is served), \textbf{blocked} (a candidate above threshold is rejected by the verifier and demoted to a miss), and \textbf{MISS} (the provider is called and the answer is stored). Figure~\ref{fig:decision} formalises this flow.
+
+\begin{figure}[H]
+    \centering
+    \resizebox{0.95\textwidth}{!}{
+    \begin{tikzpicture}[
+        node distance=1.1cm and 1.7cm,
+        decision/.style={diamond, draw, thick, aspect=2, text width=2.6cm, align=center, inner sep=1pt, fill=gray!12},
+        block/.style={rectangle, draw, thick, text width=3.2cm, align=center, rounded corners, minimum height=1cm, fill=white},
+        term/.style={rectangle, draw, thick, text width=3.0cm, align=center, rounded corners=14pt, minimum height=1cm},
+        arrow/.style={thick, ->, >=stealth}
+    ]
+    \node[block, fill=gray!10] (in) {\textbf{Query $q$}\\(tenant $t$)};
+    \node[decision, below=of in] (vol) {\textbf{Volatile?}};
+    \node[term, right=of vol, fill=gray!25] (bypass) {\textbf{BYPASS}\\call provider, do not cache};
+    \node[block, below=of vol] (emb) {Embed $q$; nearest neighbour $c$, similarity $s$};
+    \node[decision, below=of emb] (thr) {\textbf{$s \geq T_{\text{adaptive}}$?}};
+    \node[decision, right=of thr] (ver) {\textbf{Verifier\\accepts?}};
+    \node[term, right=of ver, fill=green!25, draw=green!60!black] (hit) {\textbf{HIT}\\serve cached answer};
+    \node[term, below=of ver, fill=red!25, draw=red!70!black] (blocked) {\textbf{blocked}\\false hit rejected};
+    \node[term, below=of thr, fill=orange!25, draw=orange!70!black] (miss) {\textbf{MISS}\\call provider, store answer};
+
+    \draw[arrow] (in) -- (vol);
+    \draw[arrow] (vol) -- node[above]{yes} (bypass);
+    \draw[arrow] (vol) -- node[right]{no} (emb);
+    \draw[arrow] (emb) -- (thr);
+    \draw[arrow] (thr) -- node[above]{yes} (ver);
+    \draw[arrow] (thr) -- node[right]{no} (miss);
+    \draw[arrow] (ver) -- node[above]{yes} (hit);
+    \draw[arrow] (ver) -- node[right]{no} (blocked);
+    \draw[arrow] (blocked) -- (miss);
+    \end{tikzpicture}
+    }
+    \caption{The four-outcome cache decision. A candidate whose similarity clears the adaptive threshold is still subjected to the verifier; only a verified candidate is served as a HIT, while a rejected one is demoted to a MISS (``blocked''). Volatile queries bypass the cache entirely.}
+    \label{fig:decision}
+\end{figure}
+
+\section{Cache Intelligence Design}
+The cache intelligence is composed of three sub-designs that together constitute the novel contribution.
+
+\subsection{Adaptive Similarity Threshold}
+\label{sec:adaptive}
+Rather than a global constant $T_{\text{base}}$, the effective threshold is raised in \emph{dense} neighbourhoods, where many stored queries crowd around the incoming one and the risk of a look-alike collision is highest. Let $s$ be the top-1 cosine similarity and let a local density signal $\rho \in [0,1]$ measure how close the runner-up neighbours are to the top candidate. The adaptive threshold is
+\begin{equation}
+\label{eq:adaptive}
+    T_{\text{adaptive}} = \min\!\big(T_{\max},\; T_{\text{base}} + \alpha \cdot \rho\big),
+\end{equation}
+where $T_{\text{base}}$ is the calibrated base threshold for the embedding model (0.72 for \texttt{all-MiniLM-L6-v2}, see Chapter~6), $\alpha$ is a sensitivity coefficient, and $T_{\max}$ caps the strictness. In sparse regions the threshold stays near $T_{\text{base}}$ so genuine paraphrases still hit; in dense regions it rises so ambiguous look-alikes are held to a higher bar. This directly attacks the related-topic false hits that a fixed threshold cannot separate without also rejecting paraphrases.
+
+\subsection{Two-Tier Self-Verifier}
+\label{sec:verifier}
+The verifier is the mechanism that distinguishes VeriGate from all fixed-threshold caches. It runs \emph{after} a candidate clears the threshold and decides whether the two queries truly mean the same thing.
+
+\paragraph{Tier-1 (structural, near-free).} Most dangerous false hits differ in a small set of high-signal features. Tier-1 extracts and compares:
+\begin{itemize}
+    \item \textbf{Numbers} --- a query mentioning ``5 gb'' must not be served the ``50 gb'' answer;
+    \item \textbf{Negation} --- ``how to enable X'' must not be served ``how to disable X'';
+    \item \textbf{Named entities} --- ``capital of Austria'' must not be served ``capital of Australia''.
+\end{itemize}
+If the candidate and the query disagree on any of these, the hit is rejected with a reason code (e.g. \texttt{number\_mismatch}). Tier-1 deliberately does \emph{not} use blanket word-overlap, which an early design showed wrongly rejects legitimate paraphrases that share few words; it checks only the load-bearing tokens.
+
+\paragraph{Tier-2 (NLI, optional).} For correctness-critical domains, an NLI cross-encoder \cite{he2021deberta, bowman2015snli} tests \emph{bidirectional} entailment: the candidate is accepted only if $q \Rightarrow c$ and $c \Rightarrow q$. It is gated behind a configuration flag because it is comparatively expensive and, as Chapter~6 shows, largely redundant once the adaptive threshold is active.
+
+\subsection{Volatility Detection}
+\label{sec:volatility}
+A volatility classifier flags queries whose correct answer changes with time (weather, prices, ``today'', ``current'', ``now''). Such queries are marked BYPASS: they are never served from and never written to the cache, eliminating the staleness class of errors entirely.
+
+\section{Cost-Aware Cascade Design}
+\label{sec:cascade}
+For queries that miss the cache, a complexity score $\kappa(q) \in [0,1]$ (based on length, structure, and difficulty cues) decides the model tier: if $\kappa(q) < \tau$ the query is routed to the cheap model, otherwise it is escalated to the strong model. The unused tier is retained as failover. This realises the FrugalGPT cascade idea \cite{chen2023frugalgpt} in a transparent, dependency-free form.
+
+\begin{figure}[H]
+    \centering
+    \resizebox{0.9\textwidth}{!}{
+    \begin{tikzpicture}[
+        node distance=1.2cm and 2.1cm,
+        block/.style={rectangle, draw, thick, text width=3.0cm, align=center, rounded corners, minimum height=1cm, fill=white},
+        decision/.style={diamond, draw, thick, aspect=2.2, text width=2.4cm, align=center, inner sep=1pt, fill=gray!12},
+        arrow/.style={thick, ->, >=stealth}
+    ]
+    \node[block, fill=orange!15] (miss) {Cache MISS query $q$};
+    \node[decision, right=of miss] (score) {$\kappa(q) < \tau$?};
+    \node[block, above right=0.4cm and 2cm of score, fill=green!18] (cheap) {\textbf{Cheap model}\\(e.g. flash-lite / mini)};
+    \node[block, below right=0.4cm and 2cm of score, fill=violet!18] (strong) {\textbf{Strong model}\\(e.g. 3.5-flash / 4o)};
+    \node[block, right=5.4cm of score, fill=gray!12] (ans) {Answer $\rightarrow$ store in cache};
+    \draw[arrow] (miss) -- (score);
+    \draw[arrow] (score) -- node[above left]{yes (easy)} (cheap);
+    \draw[arrow] (score) -- node[below left]{no (hard)} (strong);
+    \draw[arrow] (cheap) -- (ans);
+    \draw[arrow] (strong) -- (ans);
+    \end{tikzpicture}
+    }
+    \caption{Cost-aware cascade. A transparent complexity score routes easy queries to the cheap model and escalates only hard ones to the strong model; the unused tier remains as a failover.}
+    \label{fig:cascade_design}
+\end{figure}
+
+\section{Data Model and Tenant Namespacing}
+All state is partitioned per tenant to close the cross-tenant leakage risk. The tenant identifier is derived deterministically from the API key so that keys never appear in storage:
+\begin{equation}
+    \texttt{tenant\_id} = \texttt{"t\_"} + \mathrm{SHA256}(\texttt{api\_key})[{:}16].
+\end{equation}
+Table~\ref{tab:datamodel} lists the namespaced keys. The in-process index is a dictionary of per-tenant NumPy matrices; the RediSearch backend stores a \texttt{tenant} TAG field and pre-filters every $k$-nearest-neighbour query by it.
+
+\begin{table}[H]
+    \centering
+    \resizebox{\textwidth}{!}{
+    \begin{tabular}{|l|l|l|}
+    \hline
+    \textbf{Purpose} & \textbf{Key pattern} & \textbf{Notes} \\ \hline
+    Cache entry ids & \texttt{cache:ids:<tenant>} & set of entry ids for the tenant \\ \hline
+    Cache entry & \texttt{cache:entry:<tenant>:<id>} & stored query, answer, vector; optional TTL \\ \hline
+    Rate-limit bucket & \texttt{ratelimit:<api\_key>} & token-bucket state (atomic) \\ \hline
+    Spend budget & \texttt{budget:<api\_key>:<day>} & provider-call counter; hits are free \\ \hline
+    Circuit breaker & \texttt{breaker:open:<provider>} & open/closed state + failure count \\ \hline
+    RediSearch doc & \texttt{vec:<tenant>:<id>} & HNSW-indexed vector with \texttt{tenant} TAG \\ \hline
+    \end{tabular}
+    }
+    \caption{Namespaced state in Redis. Every cache and index key is scoped by \texttt{tenant\_id}, so one tenant can never read another's entries.}
+    \label{tab:datamodel}
+\end{table}
+
+\section{API Route Design}
+\begin{table}[H]
+    \centering
+    \resizebox{\textwidth}{!}{
+    \begin{tabular}{|l|l|l|p{6.2cm}|}
+    \hline
+    \textbf{Route} & \textbf{Method} & \textbf{Auth} & \textbf{Purpose} \\ \hline
+    \texttt{/v1/chat} & POST & Yes & Chat completion (non-streaming JSON) with cache lookup. \\ \hline
+    \texttt{/v1/chat/stream} & POST & Yes & Streaming completion (Server-Sent Events). \\ \hline
+    \texttt{/health} & GET & No & Liveness + live configuration (backends, provider). \\ \hline
+    \texttt{/metrics} & GET & No$^{\dagger}$ & Prometheus metrics (requests, cache outcomes, latency). \\ \hline
+    \texttt{/admin/cache/clear} & POST & Yes & Clears \emph{only} the caller's tenant cache. \\ \hline
+    \texttt{/} , \texttt{/ui} & GET & No & Operator dashboard (interactive testing). \\ \hline
+    \end{tabular}
+    }
+    \caption{Primary API routes. $^{\dagger}$\,\texttt{/metrics} is public in the demo build and is flagged for lock-down before any multi-tenant public deployment (Chapter~5, security).}
+    \label{tab:api_routes}
+\end{table}
+
+\section{Failure-Mode and Error-Handling Design}
+The gateway is designed to degrade gracefully rather than fail:
+\begin{enumerate}
+    \item \textbf{Cache fails open.} If Redis or the vector index errors, the request degrades to a normal provider call rather than returning an error --- the cache is an optimisation, never a dependency.
+    \item \textbf{Provider failover.} If the selected provider fails (outage, bad key), the router tries the next candidate and finally a mock provider, so a request never hard-fails on a provider problem.
+    \item \textbf{Circuit breaker.} After $N$ failures within a window a provider's breaker opens and the router skips it for a cooldown, preventing repeated slow failures against a dead upstream \cite{nygard2018release}.
+    \item \textbf{Budget and rate limits.} Over-budget or over-rate requests are rejected cleanly with HTTP~429; cache hits are exempt from the budget so the cache extends, rather than consumes, the allowance.
+    \item \textbf{TTL and cleanup.} Optional per-entry TTL bounds memory and self-heals staleness; dangling ids are removed on index rebuild.
+\end{enumerate}

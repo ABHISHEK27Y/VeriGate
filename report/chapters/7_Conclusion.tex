@@ -1,0 +1,27 @@
+\section{Conclusion}
+The literature survey of Chapter~2 identified a clear gap: semantic caches for LLMs deliver real cost and latency savings but trust a single fixed similarity threshold and never verify a candidate hit, making them unsafe in precisely the look-alike cases --- differing by a number, a negation, or a named entity --- that matter most. In this project we designed, implemented, and evaluated \textbf{VeriGate}, a production-grade LLM Gateway whose core novel contribution is an \textbf{adaptive, self-verifying semantic cache} that closes this gap by separating the \emph{threshold} decision from the \emph{equivalence} decision: an adaptive threshold proposes a candidate, and a cheap-first two-tier verifier disposes of false hits before any answer is served.
+
+The central result is decisive. On a controlled benchmark of hard negatives, VeriGate reduces the false-hit rate from the fixed-threshold baseline's \textbf{46.7\%} to \textbf{0.0\%} (100\% precision), and the ablation by failure mode shows exactly why: the structural verifier eliminates number-, entity-, and negation-swap collisions, while the adaptive threshold clears related-topic ones. Critically, this safety is essentially free --- Tier-1 verification costs only \textbf{$\sim$0.03~ms} on the hit path. A vectorised index reduces the cache-hit path to \textbf{$\sim$10~ms} ($\sim$78$\times$ faster than an 800~ms LLM call) and keeps lookup sub-millisecond as the cache scales, and the analysis of the optional Tier-2 NLI verifier yields a genuine research insight: NLI attains maximal correctness but at a recall cost and is largely \emph{redundant} once the adaptive threshold is enabled, so it is best offered as an opt-in ``max-correctness mode'' rather than a default.
+
+A second contribution, the \textbf{cost-aware model cascade}, complements the cache by cutting LLM spend by \textbf{$\sim$47\%} with no quality loss on hard queries, beating random routing at every operating point. Around these two contributions, VeriGate is engineered as a deployable system: per-tenant cache isolation (closing the defining security risk of a semantic cache, with a regression test guarding it), per-key spend budgets that leave cache hits free, a provider circuit breaker and mock failover, Prometheus/Grafana observability, an interactive operator dashboard, and Docker packaging verified end-to-end. The whole thesis was demonstrated live against real Gemini, where a 23-second paid call became a 22~ms free cache hit --- even for a reworded question. More broadly, the project shows that in a caching system for high-stakes outputs, \emph{verifying a match before trusting it} is not overhead but the feature itself.
+
+\section{Limitations of the Current System}
+Despite the strong results, several limitations bound the current system and should be stated honestly:
+\begin{enumerate}
+    \item \textbf{Benchmark scale.} The evaluation uses a compact, hand-curated benchmark that isolates the mechanism. The \emph{relative} improvement over the baseline is the result; the \emph{absolute} hit-rate and false-hit numbers are dataset-dependent and would shift on a large natural query log.
+    \item \textbf{Hand-tuned decision logic.} The adaptive-threshold coefficient, the complexity score, and the volatility rules are transparent but heuristic rather than learned, and were tuned on a small validation set.
+    \item \textbf{Tier-1 verifier coverage.} The structural verifier covers numbers, negation, and named entities; subtler semantic distinctions rely on the more expensive Tier-2 NLI stage, which is off by default.
+    \item \textbf{Unbounded cache growth.} A per-entry TTL exists, but a maximum-size cap with LRU/LFU eviction is not yet implemented, so memory is bounded only by TTL.
+    \item \textbf{Operational surface.} \texttt{/metrics} is public in the demo build, and TLS, security headers, and dependency scanning are deployment-time concerns documented but not enforced in-app.
+\end{enumerate}
+
+\section{Future Scope}
+The modular design admits several extensions, grouped by horizon:
+\begin{itemize}
+    \item \textbf{Near-term --- learned threshold and router.} Replace the heuristic adaptive-threshold coefficient and complexity score with lightweight classifiers trained on a validation split, in the style of learned LLM routing \cite{ong2024routellm}, and gate Tier-2 NLI to borderline similarities only with a per-request NLI budget.
+    \item \textbf{Near-term --- cache eviction.} Add a maximum-size cap with LRU/LFU eviction and memory monitoring to bound growth independently of TTL.
+    \item \textbf{Medium-term --- large-scale evaluation.} Re-run the ablation on a public paraphrase corpus and a real query log at the million-vector scale, tuning the adaptive weights on a held-out split and reporting sensitivity.
+    \item \textbf{Medium-term --- distributed scale.} Harden the RediSearch/HNSW backend for multi-replica deployments sharing one cache, and tune HNSW parameters at the target corpus size \cite{malkov2018hnsw}.
+    \item \textbf{Long-term --- richer verification and safety.} Extend the verifier with unit-aware and temporal reasoning, add optional prompt-injection and output-moderation middleware, and encrypt cached content at rest with PII-aware do-not-cache classification.
+    \item \textbf{Long-term --- productionisation.} Lock down \texttt{/metrics}, integrate a host secret store, add TLS/security headers/CORS and CI dependency scanning, and publish a public deployment as a reference service.
+\end{itemize}

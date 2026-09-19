@@ -1,0 +1,186 @@
+\documentclass[a4paper, 11pt, oneside]{report}
+\usepackage[left=1in, right=1in, top=1in, bottom=1in]{geometry}
+\newcommand{\plogo}{\fbox{$\mathcal{PL}$}}
+\usepackage{graphicx}
+\graphicspath{{figures/}}
+\usepackage{graphics}
+\usepackage{float}
+\usepackage[table,xcdraw]{xcolor}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{fouriernc}
+\usepackage{subcaption}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows, positioning, fit, calc, backgrounds}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{longtable}
+\usepackage[nottoc]{tocbibind}
+\usepackage{url}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{pgfgantt} % For Gantt charts
+\usepackage{pdflscape} % For landscape pages if a chart is wide
+\usepackage{booktabs} % For better tables
+\usepackage{multirow}
+\usepackage[boxed]{algorithm}
+\usepackage{algpseudocode}
+\usepackage[none]{hyphenat}
+\usepackage{listings}
+
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  breaklines=true,
+  frame=single,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false
+}
+
+\begin{document}
+    \sloppy
+    \setlength{\parindent}{0em}
+    \setlength{\parskip}{0.5em}
+
+	\begin{titlepage}
+
+		\centering
+
+		\vspace*{\baselineskip}
+
+		\vspace{0.75\baselineskip}
+
+		{\LARGE \textbf{VeriGate: An Adaptive, Self-Verifying Semantic Cache for Scalable and Cost-Efficient LLM Gateways}}
+
+		\vspace{0.75\baselineskip}
+
+		\vspace{2\baselineskip}
+
+		A report submitted for the course named Project - II (CS4201)
+
+		\vspace*{7\baselineskip}
+
+		Submitted By
+
+		\vspace{0.5\baselineskip}
+
+		{\scshape\Large ABHISHEK YADAV \\ SEMESTER - VII \\ 230103041}
+
+		\vspace{0.5\baselineskip}
+
+		Supervised By
+
+		\vspace{0.5\baselineskip}
+
+		{\scshape\Large Dr. Salam Michael Singh}
+		\vspace{0.5\baselineskip}
+
+		\vfill
+
+		\begin{center}
+			\includegraphics[width=5cm]{iiit_manipur.png}
+		\end{center}
+
+	{\scshape\small Department of Computer Science and Engineering\\ Indian Institute of Information Technology Senapati, Manipur \\ November, 2026}
+
+\end{titlepage}
+
+%----------------------------------------------------------------------------------------
+
+\begin{center}
+   { \LARGE \textbf{Declaration}}
+\end{center}
+In this submission, I have expressed my idea in my own words, and I have adequately cited and referenced any ideas or words that were taken from another source. I also declare that I adhere to all principles of academic honesty and integrity and that I have not misrepresented or falsified any ideas, data, facts, or sources in this submission. If any violation of the above is made, I understand that the institute may take disciplinary action. Such a violation may also engender disciplinary action from the sources which were not properly cited or permission not taken when needed.
+
+\vspace{1cm}\hspace{8.35cm} ABHISHEK YADAV \\
+\vspace{1cm}\hspace{9cm} 230103041 \\
+
+\newpage
+
+\begin{center}
+	\thispagestyle{empty}
+
+		\begin{table}
+			\centering
+			\includegraphics[scale=0.2]{iiit_manipur.png}
+			\begin{tabular}{l}
+				Department of Computer Science and Engineering \\
+				Indian Institute of Information Technology Senapati, Manipur \\
+			\end{tabular}
+		\end{table}
+		\par\noindent\rule{\textwidth}{0.4pt}
+			\textbf{Dr. Salam Michael Singh}
+			\hspace*{\fill} Email: \href{mailto:michael_s@iiitmanipur.ac.in}{michael\_s@iiitmanipur.ac.in}\\
+			Assistant Professor
+			\hspace*{0pt}\hfill Contact No: +91 8575443081\\[2cm]
+			{\Huge \textbf{\emph{To Whom It May Concern}}}\\[2cm]
+			\linespread{1.13}
+			\large{This is to certify that the project report
+                entitled \textbf{"VeriGate: An Adaptive, Self-Verifying Semantic Cache for Scalable and Cost-Efficient LLM Gateways",} submitted to the department of Computer Science and Engineering, Indian Institute of Information Technology Senapati, Manipur in partial fulfillment for the award of degree of Bachelor of Technology in Computer Science and Engineering is a bonafide record of work carried out by \textbf{ABHISHEK YADAV} bearing roll number 230103041.}\\[2.0cm]
+			\hspace*{2.6in}\large{Signature of Supervisor}\\[0.3cm]
+			\hspace*{2.5in}\textbf{(Dr. Salam Michael Singh)}\\[0.5cm]
+
+	\end{center}
+        \vspace{0.5cm}
+	Signature of the Examiner 1 ............................\\\\
+	Signature of the Examiner 2 ............................\\\\
+	Signature of the Examiner 3 ............................\\\\
+	Signature of the Examiner 4 ............................\\\\
+	\newpage
+
+
+\newpage
+\addcontentsline{toc}{chapter}{Abstract}
+\begin{center}
+    { \LARGE \textbf{Abstract}}
+\end{center}
+\vspace{1.5cm}
+{\large
+Large Language Models (LLMs) are increasingly deployed in production, but every API call incurs monetary cost and high latency. A \textit{semantic cache} mitigates this by returning a stored answer when a new query is semantically ``close enough'' to a past one. However, existing semantic caches (e.g. GPTCache) rely on a \textbf{single fixed similarity threshold}, which produces \textbf{false cache hits} --- serving the wrong stored answer to a look-alike query (for example, returning the answer for \textit{``capital of Austria''} to \textit{``capital of Australia''}). This report presents \textbf{VeriGate}, a production-grade LLM Gateway whose core novel contribution is an \textbf{adaptive, self-verifying semantic cache}: it (i) adapts the similarity threshold per query using neighbourhood density, (ii) \textit{verifies} a candidate hit with a two-tier verifier (a near-free structural check on numbers, negation and named entities, and an optional NLI cross-encoder), and (iii) detects volatile queries to skip caching time-sensitive answers. A second contribution, a \textbf{cost-aware model cascade}, routes easy queries to a cheap model and escalates only hard ones. On a controlled benchmark, VeriGate reduces the false-hit rate from the fixed-threshold baseline's \textbf{46.7\%} to \textbf{0.0\%} (100\% precision), with structural verification costing only \textbf{$\sim$0.03~ms}; a vectorised index brings the cache-hit path to \textbf{$\sim$10~ms} ($\sim$78$\times$ faster than an 800~ms LLM call), and the cascade cuts LLM cost by \textbf{$\sim$47\%} with no quality loss on hard queries. The system is engineered for production with per-tenant cache isolation, per-key spend budgets, a provider circuit breaker, Prometheus/Grafana observability, and Docker packaging.
+}
+
+\newpage
+        \begin{center}
+            { \LARGE \textbf{Acknowledgement}}
+        \end{center}
+	\vspace{2cm}
+	I would like to express my deepest appreciation to all those who provided me the possibility to complete this project. A special gratitude I give to my supervisor, \textbf{Dr. Salam Michael Singh}, whose contribution in stimulating suggestions and encouragement helped me to coordinate my project especially in writing this report.
+
+	I would also like to express my sincere gratitude to the Head of the Department (CSE), \textbf{Dr. Navanth Saharia}, for his constant support and for providing the necessary facilities to successfully execute this project.
+
+	Furthermore, I would also like to acknowledge with much appreciation the crucial role of the faculty and staff of the Department of Computer Science and Engineering, Indian Institute of Information Technology Senapati, Manipur, who gave the permission to use all required equipment and necessary materials to complete the tasks.
+
+	Last but not least, many thanks go to my family and friends whose support, guidance, and encouragement have been invaluable throughout this endeavor.
+
+	\vspace{1cm}
+	\begin{flushright}
+	    \textbf{ABHISHEK YADAV} \\
+	    Roll No: 230103041
+	\end{flushright}
+
+	\vspace{1cm}
+
+	\addcontentsline{toc}{chapter}{Acknowledgement}
+	\tableofcontents
+	\listoffigures
+        \listoftables
+	\chapter{Introduction}
+	\input{chapters/1_Introduction}
+        \chapter{Literature Survey}
+        \input{chapters/2_Literature_Survey}
+        \chapter{Requirement Engineering}
+        \input{chapters/3_Requirement}
+        \chapter{System Design}
+        \input{chapters/4_System_Design}
+        \chapter{Implementation}
+        \input{chapters/5_Implementation}
+        \chapter{Results and Evaluation}
+        \input{chapters/6_Results}
+        \chapter{Conclusion}
+        \input{chapters/7_Conclusion}
+
+        \bibliography{report}
+	\bibliographystyle{plain}
+
+\end{document}

@@ -1,0 +1,117 @@
+\section{Introduction}
+VeriGate is implemented in Python as an asynchronous FastAPI application. This chapter describes the concrete modules, the key engineering decisions and their justifications, and the algorithms that realise the design of Chapter~4. The implementation is organised into the following modules: \texttt{app/main.py} (routes, auth, tenant derivation, rate limit, budget), \texttt{app/config.py} (typed settings), \texttt{app/cache/} (the contribution: \texttt{semantic\_cache.py}, \texttt{policy.py}, \texttt{threshold.py}, \texttt{verifier.py}, \texttt{volatility.py}, \texttt{redisearch\_store.py}), \texttt{app/complexity.py} (cascade routing score), \texttt{app/providers/} (provider abstraction, cascade registry, circuit breaker), \texttt{app/budget.py} (spend budget), \texttt{app/metrics.py} (Prometheus counters), and \texttt{app/static/dashboard.html} (operator UI).
+
+\section{Architectural Decisions}
+
+\paragraph{Why FastAPI + uvicorn rather than Flask?}
+The gateway is I/O-bound: most of its time is spent awaiting upstream LLM calls. FastAPI's ASGI foundation \cite{fastapi} allows a single worker to handle many concurrent in-flight requests without threads, and it natively supports streaming responses (Server-Sent Events), which are essential for forwarding token streams from the provider. Pydantic-based request validation rejects malformed bodies with HTTP~422 for free.
+
+\paragraph{Why sentence-transformer embeddings rather than TF-IDF?}
+A semantic cache must match by \emph{meaning}. Sparse TF-IDF vectors \cite{salton1988term} encode lexical overlap, so two paraphrases with few shared words are nearly orthogonal and would never hit. Dense sentence embeddings \cite{reimers2019sentencebert} place paraphrases close together regardless of surface form. \texttt{all-MiniLM-L6-v2} \cite{sentencetransformers, wang2020minilm} was chosen for its balance of quality and low CPU latency; a deterministic hash-based lexical embedder is retained purely as a dependency-free fallback for the test suite.
+
+\paragraph{Why an in-process vector index as the default, with RediSearch optional?}
+For a single node the fastest possible lookup is a single matrix--vector product held entirely in RAM, with no network hop; this is the default \texttt{inproc} backend. For horizontally-scaled deployments that must share one cache across replicas, or for caches too large for one process's memory, a RediSearch/HNSW backend \cite{malkov2018hnsw, redis_stack} is provided behind a configuration switch. This gives the right default for the common case without foreclosing scale.
+
+\paragraph{Why Redis (with fakeredis) for state?}
+Redis provides atomic operations for the rate-limit token bucket and spend counters, TTLs for cache entries, and a shared store for breaker state across replicas. For development and tests, \texttt{fakeredis} offers the same interface in-process with no server to run, so the whole system is exercisable with a single \texttt{pytest} invocation.
+
+\paragraph{Why keep a mock provider permanently in the chain?}
+Placing a free mock provider as the terminal failover means a provider outage or a bad key degrades to a valid (if synthetic) response rather than a 500 error, satisfying the graceful-degradation requirement and making the system demonstrable with no API key at all.
+
+\section{Configuration}
+All behaviour is controlled by a single typed \texttt{Settings} object (\texttt{pydantic-settings}) read from environment variables, so the same image runs in every environment by changing configuration only. Key knobs include \texttt{REDIS\_URL}, \texttt{CACHE\_SIMILARITY\_BASE} (0.72), \texttt{EMBEDDING\_BACKEND} (\texttt{minilm}/\texttt{hash}), \texttt{VECTOR\_BACKEND} (\texttt{inproc}/\texttt{redisearch}), \texttt{VERIFIER\_NLI} (default off), \texttt{LLM\_PROVIDER}, \texttt{CASCADE\_ENABLED}, \texttt{DAILY\_REQUEST\_BUDGET}, the \texttt{BREAKER\_*} parameters, \texttt{CACHE\_TTL\_SEC}, and \texttt{API\_KEYS}. Critically, the live gateway and the evaluation harness both import the same \texttt{CachePolicy}, so measured behaviour equals shipped behaviour.
+
+\section{The Cache Policy}
+The policy is the single decision point of Figure~\ref{fig:decision}. Algorithm~\ref{alg:policy} gives its logic. It is intentionally small and pure so that it can be unit-tested and reused verbatim by the evaluator.
+
+\begin{algorithm}[H]
+\caption{Cache decision (\texttt{CachePolicy.decide})}\label{alg:policy}
+\begin{algorithmic}[1]
+\Require query $q$, candidate $c$, similarity $s$, neighbourhood density $\rho$, tenant $t$
+\Ensure outcome $\in \{$HIT, MISS, BYPASS$\}$ with a reason
+\If{\Call{IsVolatile}{$q$}}
+    \State \Return (BYPASS, \texttt{volatile})
+\EndIf
+\State $T \gets \min(T_{\max},\ T_{\text{base}} + \alpha\rho)$ \Comment{adaptive threshold, Eq.~\ref{eq:adaptive}}
+\If{$c = \varnothing$ \textbf{or} $s < T$}
+    \State \Return (MISS, \texttt{below\_threshold})
+\EndIf
+\If{\textbf{not} \Call{Tier1Verify}{$q, c$}}
+    \State \Return (MISS, \texttt{verify\_rejected:<reason>}) \Comment{false hit blocked}
+\EndIf
+\If{\texttt{VERIFIER\_NLI} \textbf{and not} \Call{Tier2NLI}{$q, c$}}
+    \State \Return (MISS, \texttt{nli\_rejected})
+\EndIf
+\State \Return (HIT, \texttt{verified})
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Adaptive Threshold and Calibration}
+The base threshold was calibrated empirically. The MiniLM cosine-similarity distribution sits lower than the hash embedder's, so an initial value of 0.82 rejected valid paraphrases; it was recalibrated to \textbf{0.72} (Chapter~6). This is itself evidence for the adaptive design: because the correct threshold is embedding-dependent, hard-coding one is fragile. The adaptive term of Equation~\ref{eq:adaptive} then lifts the threshold in dense neighbourhoods at run time.
+
+\subsection{Tier-1 Structural Verifier}
+Algorithm~\ref{alg:verify} compares only the load-bearing tokens. An earlier version used a blanket Jaccard word-overlap check, which wrongly rejected paraphrases sharing few words --- defeating the purpose of semantic matching. The redesign compares numbers, negation state, and named entities only, deferring subtler distinctions to the optional Tier-2 NLI stage.
+
+\begin{algorithm}[H]
+\caption{Tier-1 structural verification}\label{alg:verify}
+\begin{algorithmic}[1]
+\Require query $q$, candidate $c$
+\Ensure accept (true) or reject with reason
+\If{$\textsc{Numbers}(q) \neq \textsc{Numbers}(c)$}
+    \State \Return reject(\texttt{number\_mismatch})
+\EndIf
+\If{$\textsc{Negated}(q) \neq \textsc{Negated}(c)$}
+    \State \Return reject(\texttt{negation\_mismatch})
+\EndIf
+\If{$\textsc{Entities}(q) \neq \textsc{Entities}(c)$}
+    \State \Return reject(\texttt{entity\_mismatch})
+\EndIf
+\State \Return accept
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Tier-2 NLI Verifier}
+When \texttt{VERIFIER\_NLI} is enabled, a compact cross-encoder (\texttt{cross-encoder/nli-deberta-v3-xsmall}) \cite{he2021deberta} scores entailment in both directions; the candidate is accepted only if $q\!\Rightarrow\!c$ and $c\!\Rightarrow\!q$. Results are memoised per query pair so that a threshold sweep pays the NLI cost at most once per pair. The performance/recall trade-off that makes this stage opt-in is quantified in Chapter~6.
+
+\section{Semantic Cache and Vector Index}
+\label{sec:index}
+\texttt{semantic\_cache.py} holds the per-tenant index. \texttt{lookup(query, tenant)} embeds the query and computes the nearest neighbour; \texttt{store(query, answer, tenant)} appends the new vector. The \texttt{inproc} backend keeps, per tenant, one NumPy matrix of stacked unit-normalised vectors, so a lookup is a single matrix--vector product followed by an \texttt{argmax} --- reducing what was an $O(n)$ parse-and-cosine loop to a sub-millisecond operation (Chapter~6, Phase~9). The \texttt{redisearch} backend (\texttt{redisearch\_store.py}) creates an HNSW index with a \texttt{tenant} TAG and issues KNN queries of the form \texttt{(@tenant:\{t\})=>[KNN k @vec \$BLOB]}, so the isolation boundary is enforced inside the index itself.
+
+\section{Provider Abstraction, Cascade, and Circuit Breaker}
+A single OpenAI-compatible streaming client (\texttt{openai\_compat.py}) serves both OpenAI and Gemini (via Google's OpenAI-compatibility endpoint), selected by \texttt{LLM\_PROVIDER} and a key read from the environment (never logged). The registry (\texttt{registry.py}) builds either a single provider or, when \texttt{CASCADE\_ENABLED} is set, a cheap/strong pair. \texttt{route\_stream} implements Algorithm~\ref{alg:route}: it scores complexity, orders the tiers, skips any provider whose breaker is open, and always retains the mock as a terminal failover.
+
+\begin{algorithm}[H]
+\caption{Cascade routing with breaker and failover}\label{alg:route}
+\begin{algorithmic}[1]
+\Require query $q$, providers (cheap, strong, mock), threshold $\tau$
+\State $\kappa \gets \Call{Complexity}{q}$
+\State order $\gets (\kappa < \tau)\ ?\ [\text{cheap, strong, mock}] : [\text{strong, cheap, mock}]$
+\For{\textbf{each} provider $P$ \textbf{in} order}
+    \If{\Call{BreakerOpen}{$P$}} \State \textbf{continue} \EndIf
+    \State try $P$; \textbf{on success} record success, \Return stream
+    \State \textbf{on failure} record failure (may open breaker), continue
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+The circuit breaker (\texttt{breaker.py}) keeps open/closed state and a failure count in Redis (\texttt{breaker:open:<provider>}), shared across replicas, opening after \texttt{BREAKER\_FAIL\_THRESHOLD} failures within \texttt{BREAKER\_WINDOW\_SEC} and closing after \texttt{BREAKER\_COOLDOWN\_SEC} \cite{nygard2018release}.
+
+\section{Production Hardening}
+Three features close pre-deployment blockers identified in the threat model:
+\begin{itemize}
+    \item \textbf{Per-tenant isolation} --- the cache and index are namespaced by \texttt{tenant\_id}; \texttt{/admin/cache/clear} clears only the caller's tenant. This closes the top vulnerability (cross-tenant leakage).
+    \item \textbf{Per-key daily spend budget} (\texttt{budget.py}) --- \texttt{check\_and\_count} increments \texttt{budget:<key>:<day>} and returns over-limit as HTTP~429; \emph{cache hits are never counted}, so the cache extends the budget. This closes the economic-DoS (bill-shock) risk.
+    \item \textbf{Cache TTL} (\texttt{CACHE\_TTL\_SEC}) --- optional per-entry expiry bounds memory and self-heals staleness; dangling ids are cleaned on index rebuild.
+\end{itemize}
+
+\section{Observability and Operator Dashboard}
+\texttt{metrics.py} exposes Prometheus counters and histograms: \texttt{verigate\_requests\_total}, \texttt{verigate\_cache\_total} (by outcome), \texttt{verigate\_false\_hit\_rejected\_total}, \texttt{verigate\_rate\_limited\_total}, \texttt{verigate\_budget\_exceeded\_total}, and \texttt{verigate\_latency\_seconds}. A provisioned Prometheus + Grafana stack (\texttt{docker-compose.observability.yml}) scrapes \texttt{/metrics} and renders a pre-built dashboard. The single-page operator dashboard (\texttt{dashboard.html}), served same-origin at \texttt{/ui}, lets a user ask questions and watch the cache badge (HIT/MISS/BYPASS/blocked), the answer, provider, latency, similarity, threshold, and reason, alongside live session statistics --- the primary interactive demonstration of the contribution.
+
+\section{Testing}
+The system ships with an automated \texttt{pytest} suite of \textbf{18 tests} covering the gateway, verifier, cascade, and hardening. \texttt{conftest.py} pins a deterministic configuration (\texttt{EMBEDDING\_BACKEND=hash}, \texttt{VERIFIER\_NLI=false}, \texttt{LLM\_PROVIDER=mock}, \texttt{VECTOR\_BACKEND=inproc}) so tests are fast and reproducible.
+\begin{itemize}
+    \item \textbf{Unit:} the verifier rejects number/entity/negation mismatches and accepts genuine paraphrases; the complexity scorer routes easy versus hard queries correctly.
+    \item \textbf{Integration:} auth returns 401 without a key; a paraphrase produces a HIT after a MISS; a look-alike above threshold is blocked; a volatile query bypasses; a burst is rate-limited (429).
+    \item \textbf{Security / hardening:} \texttt{test\_tenant\_isolation} confirms tenant~B cannot read tenant~A's cache; the budget blocks over-limit while keeping hits free; the breaker opens after repeated failures and failover still succeeds.
+\end{itemize}
+All 18 tests pass in the reference environment, and the same components are exercised through the container image (Chapter~6).
