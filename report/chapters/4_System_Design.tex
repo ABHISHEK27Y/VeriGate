@@ -436,15 +436,15 @@ The same image runs from a laptop to a cluster by configuration alone. Figure~\r
     \node[vgnode, text width=3.2cm] (redis) at (10.4,2.1) {Redis / Redis Stack\\(shared state + index)};
     \node[vgext, text width=2.9cm] (prov)  at (10.4,0) {LLM Provider\\(OpenAI / Gemini)};
     \node[vgnode, text width=2.9cm] (prom)  at (10.4,-2.1) {Prometheus\\+ Grafana};
-    % connections (orthogonal fan-out from a shared channel)
+    % connections: each service on its own clean orthogonal path (no shared/overlapping stubs)
     \draw[vgflow] (client) -- (lb);
     \draw[vgflow] (lb) -- (gw);
-    \draw[vgbi]  (gw.east) -- ++(0.9,0) |- (redis.west);
-    \draw[vgflow] (gw.east) -- ++(0.9,0) |- (prov.west);
-    \draw[vgdash] (prom.west) -- node[vglbl, pos=0.85, above]{scrape} ++(-0.9,0) |- (gw.east);
+    \draw[vgbi]   (gw.north) |- (redis.west);      % up from the gateway, then into Redis (read/write)
+    \draw[vgflow] (gw.east)  -- (prov.west);        % straight across to the Provider (calls)
+    \draw[vgdash] (prom.west) -- node[vglbl, above]{scrape} ++(-1.3,0) |- (gw.south); % Prometheus scrapes the gateway
     \end{tikzpicture}%
     }
-    \caption{Production deployment topology. Stateless gateway replicas ($\times N$) sit behind a TLS-terminating load balancer and share one Redis for all state, so the cache, budgets, and breaker are consistent across replicas; Prometheus/Grafana observe every replica. Connectors fan out orthogonally from a single channel.}
+    \caption{Production deployment topology. Stateless gateway replicas ($\times N$) sit behind a TLS-terminating load balancer and share one Redis for all state, so the cache, budgets, and breaker are consistent across replicas; Prometheus/Grafana observe every replica. Each connector uses an orthogonal path on its own side of the gateway.}
     \label{fig:deploy}
 \end{figure}
 
