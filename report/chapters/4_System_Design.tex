@@ -149,8 +149,8 @@ A Data-Flow Diagram (DFD) models how information moves through the system indepe
 The gateway decomposes into five processes (P1--P5) reading and writing five data stores (D1--D5).
 \begin{itemize}
     \item \textbf{P1 Guard:} authenticate key, derive tenant, apply rate limit and spend budget (reads/writes D3).
-    \item \textbf{P2 Embed \& Lookup:} embed the query and find the nearest neighbour in the tenant's partition (reads D2, D1).
-    \item \textbf{P3 Verify \& Decide:} apply adaptive threshold and the verifier; classify volatility; emit HIT/MISS/BYPASS.
+    \item \textbf{P2 Embed \& Lookup:} embed the query and find the nearest neighbour in the tenant's partition (reads D2, the vector index).
+    \item \textbf{P3 Verify \& Decide:} read the candidate entry (D1), apply the adaptive threshold and the verifier, classify volatility, and emit HIT/MISS/BYPASS.
     \item \textbf{P4 Route \& Call:} on a miss, run the cascade, skip open breakers (reads/writes D4), call the provider, and store the answer (writes D1, D2).
     \item \textbf{P5 Observe:} record counters and latencies (writes D5) exposed at \texttt{/metrics}.
 \end{itemize}
@@ -168,16 +168,16 @@ The gateway decomposes into five processes (P1--P5) reading and writing five dat
     \node[vgext, minimum width=1.9cm] (prov) at (6.6,0) {LLM\\Provider};
     % --- data stores: two on top, others below (grid-aligned) ---
     \node[vgds] (d2) at (-2.6,2.3) {D2 Vector Index};
-    \node[vgds] (d1) at (0.2,2.3)  {D1 Cache Store};
+    \node[vgds] (d1) at (0.0,2.3)  {D1 Cache Store};
     \node[vgds] (d3) at (-5.2,-2.1) {D3 Budget/Rate};
     \node[vgds] (d4) at (3.4,-2.1)  {D4 Breaker};
     % --- P5 / metrics lane (below) ---
     \node[vgproc, minimum size=1.4cm] (p5) at (0.0,-3.4) {P5\\Observe};
     \node[vgds] (d5) at (2.7,-3.4) {D5 Metrics};
     \node[vgext, minimum width=1.9cm] (op) at (-8.0,-3.4) {Operator};
-    % client <-> P1 (parallel horizontal)
-    \draw[vgflow] (client.15) -- node[vglbl, above]{query} (p1.165);
-    \draw[vgflow] (p1.195) -- node[vglbl, below]{answer} (client.-15);
+    % client <-> P1 (parallel, near-horizontal)
+    \draw[vgflow] (client.8) -- node[vglbl, above]{query} (p1.172);
+    \draw[vgflow] (p1.188) -- node[vglbl, below]{answer} (client.-8);
     % forward chain
     \draw[vgflow] (p1) -- (p2);
     \draw[vgflow] (p2) -- (p3);
