@@ -47,29 +47,26 @@ The gateway is organised into four cooperating layers. Requests descend through 
 
 \begin{figure}[H]
     \centering
-    \resizebox{0.95\textwidth}{!}{%
-    \begin{tikzpicture}[
-        node distance=0.55cm,
-        layer/.style={
-            rectangle, draw=black, thick, text=black,
-            text width=0.85\textwidth, align=center, rounded corners,
-            minimum height=1.4cm, inner sep=7pt
-        },
-        arrow/.style={thick, ->, >=stealth, draw=black}
-    ]
-    \node[layer, fill=blue!15] (edge) {\textbf{Layer 1 --- Edge / API (FastAPI + uvicorn)}\\Auth $\rightarrow$ tenant derivation $\rightarrow$ rate limit $\rightarrow$ spend budget. Routes: \texttt{/v1/chat}, \texttt{/v1/chat/stream}, \texttt{/health}, \texttt{/metrics}, \texttt{/ui}, \texttt{/admin/cache/clear}.};
-    \node[layer, fill=teal!15, below=of edge] (cache) {\textbf{Layer 2 --- Cache Intelligence (the contribution)}\\Embed query $\rightarrow$ nearest neighbour (per tenant) $\rightarrow$ \texttt{CachePolicy}: adaptive threshold $\rightarrow$ Tier-1/Tier-2 verifier $\rightarrow$ HIT / MISS. Volatility detector $\rightarrow$ BYPASS.};
-    \node[layer, fill=violet!15, below=of cache] (route) {\textbf{Layer 3 --- Provider Routing}\\Cost-aware cascade (cheap $\leftrightarrow$ strong) $+$ circuit breaker $+$ failover to mock. OpenAI-compatible client (OpenAI / Gemini).};
-    \node[layer, fill=orange!18, below=of route] (state) {\textbf{Layer 4 --- State \& Storage}\\Redis / fakeredis: cache entries, rate buckets, budget counters, breaker state (all per-tenant). Vector index: in-process NumPy matrix \emph{or} RediSearch/HNSW.};
-
-    \draw[arrow] (edge) -- (cache);
-    \draw[arrow] (cache) -- (route);
-    \draw[arrow] (route) -- (state);
-    \draw[arrow, dashed] (cache.east) -- ++(0.35,0) |- node[right, pos=0.25, font=\footnotesize]{lookup / store} (state.east);
-    \draw[arrow, dashed] (route.west) -- ++(-0.35,0) |- node[left, pos=0.25, font=\footnotesize]{breaker state} (state.west);
+    \resizebox{0.9\textwidth}{!}{%
+    \begin{tikzpicture}[node distance=0.5cm]
+    \node[vgnode, text width=0.82\textwidth] (edge)
+        {\textbf{Layer 1 \textbullet\ Edge / API} (FastAPI + uvicorn)\\[1pt]
+         Auth $\rightarrow$ tenant derivation $\rightarrow$ rate limit $\rightarrow$ spend budget \quad\textbar\quad Routes: \texttt{/v1/chat}, \texttt{/v1/chat/stream}, \texttt{/health}, \texttt{/metrics}, \texttt{/ui}};
+    \node[vgacc, text width=0.82\textwidth, below=of edge] (cache)
+        {\textbf{Layer 2 \textbullet\ Cache Intelligence} \; \textit{(the contribution)}\\[1pt]
+         embed $\rightarrow$ nearest neighbour (per tenant) $\rightarrow$ \texttt{CachePolicy}: adaptive threshold $\rightarrow$ Tier-1/Tier-2 verifier $\rightarrow$ HIT / MISS \quad\textbar\quad volatility $\rightarrow$ BYPASS};
+    \node[vgnode, text width=0.82\textwidth, below=of cache] (route)
+        {\textbf{Layer 3 \textbullet\ Provider Routing}\\[1pt]
+         cost-aware cascade (cheap $\leftrightarrow$ strong) $+$ circuit breaker $+$ failover to mock \quad\textbar\quad OpenAI-compatible client (OpenAI / Gemini)};
+    \node[vgnode, text width=0.82\textwidth, below=of route] (state)
+        {\textbf{Layer 4 \textbullet\ State \& Storage}\\[1pt]
+         Redis / fakeredis: cache entries, rate buckets, budget counters, breaker state (all per-tenant) \quad\textbar\quad vector index: in-process matrix \emph{or} RediSearch/HNSW};
+    \draw[vgflow] (edge) -- (cache);
+    \draw[vgflow] (cache) -- (route);
+    \draw[vgflow] (route) -- (state);
     \end{tikzpicture}%
     }
-    \caption{VeriGate four-layer architecture. Requests descend from the edge; a verified cache hit in Layer~2 short-circuits the provider call in Layer~3. All state in Layer~4 is namespaced per tenant.}
+    \caption{VeriGate four-layer architecture. Requests descend from the edge; a verified cache hit in Layer~2 (highlighted) short-circuits the provider call in Layer~3. All state in Layer~4 is namespaced per tenant.}
     \label{fig:sys_arch}
 \end{figure}
 
@@ -78,49 +75,46 @@ VeriGate has two human/system actors and one external actor. The \textbf{Client 
 
 \begin{figure}[H]
     \centering
-    \resizebox{0.95\textwidth}{!}{%
+    \resizebox{0.92\textwidth}{!}{%
     \begin{tikzpicture}[
-        >=stealth,
-        uc/.style={draw, thick, ellipse, align=center, minimum width=3.1cm, minimum height=1cm, fill=teal!12},
+        uc/.style={draw=black!72, line width=0.5pt, ellipse, align=center,
+                   minimum width=3.2cm, minimum height=1.05cm, fill=black!4, font=\small},
+        ucacc/.style={uc, fill=blue!7, draw=blue!50!black},
         act/.style={align=center, font=\small},
-        line/.style={thick}
+        assoc/.style={line width=0.5pt, draw=black!72}
     ]
     \tikzset{person/.pic={
-        \draw[thick] (0,0) circle (3.2mm);
-        \draw[thick] (0,-0.32) -- (0,-1.0);
-        \draw[thick] (-0.4,-0.55) -- (0.4,-0.55);
-        \draw[thick] (0,-1.0) -- (-0.32,-1.45);
-        \draw[thick] (0,-1.0) -- (0.32,-1.45);
+        \draw[line width=0.6pt, black!75] (0,0) circle (3mm);
+        \draw[line width=0.6pt, black!75] (0,-0.3) -- (0,-0.95);
+        \draw[line width=0.6pt, black!75] (-0.38,-0.52) -- (0.38,-0.52);
+        \draw[line width=0.6pt, black!75] (0,-0.95) -- (-0.3,-1.38);
+        \draw[line width=0.6pt, black!75] (0,-0.95) -- (0.3,-1.38);
     }}
-    % Actors
-    \pic at (-6.8,1.4) {person}; \node[act] at (-6.8,-0.7) {Client\\Application};
-    \pic at (-6.8,-5.2) {person}; \node[act] at (-6.8,-7.3) {Operator};
-    \pic at (7.3,-4.6) {person};  \node[act] at (7.3,-6.7) {LLM Provider\\(external)};
-
-    % System boundary
-    \node[draw, thick, rounded corners, minimum width=8.8cm, minimum height=11.2cm, label=above:{\textbf{VeriGate Gateway}}] (bnd) at (0,-2.4) {};
-
-    % Use cases
-    \node[uc] (submit) at (0,1.7) {Submit chat\\query};
-    \node[uc] (stream) at (0,-0.3) {Stream\\completion};
-    \node[uc] (lookup) at (0,-2.3) {Semantic\\cache lookup};
-    \node[uc] (verify) at (0,-4.3) {Verify \& decide\\(no false hit)};
-    \node[uc] (route)  at (0,-6.3) {Route to model\\(cascade)};
-    \node[uc, fill=orange!14] (mon) at (0,-8.2) {Monitor / clear\\cache (dashboard)};
-
-    % Associations: client
-    \foreach \t in {submit,stream} \draw[line] (-6.0,0.9) -- (\t.west);
-    % Operator
-    \draw[line] (-6.0,-5.6) -- (mon.west);
-    % include relations (dashed, <<include>>)
-    \draw[->, dashed] (submit) -- node[right,font=\scriptsize]{$\ll$include$\gg$} (lookup);
-    \draw[->, dashed] (lookup) -- node[right,font=\scriptsize]{$\ll$include$\gg$} (verify);
-    \draw[->, dashed] (verify) -- node[right,font=\scriptsize]{$\ll$extend$\gg$ (on MISS)} (route);
-    % provider
-    \draw[line] (route.east) -- (6.2,-5.0);
+    % system boundary
+    \node[draw=black!60, line width=0.6pt, rounded corners=2pt,
+          minimum width=8.4cm, minimum height=6.6cm,
+          label={[font=\small\bfseries]above:VeriGate Gateway}] (bnd) at (0.6,0.3) {};
+    % actors
+    \pic at (-5.0,2.2) {person}; \node[act] at (-5.0,0.35) {Client\\Application};
+    \pic at (-5.0,-1.4) {person}; \node[act] at (-5.0,-3.25) {Operator};
+    \pic at (6.1,-0.5) {person};  \node[act] at (6.1,-2.35) {LLM Provider\\(external)};
+    % use cases: left column (actor-facing), right column (included steps)
+    \node[ucacc] (submit) at (-1.3,2.2) {Submit / stream\\query};
+    \node[uc]    (manage) at (-1.3,-1.4) {Manage / clear\\cache};
+    \node[uc] (lookup) at (2.5,2.2) {Semantic\\lookup};
+    \node[uc] (verify) at (2.5,0.4) {Verify hit\\(no false hit)};
+    \node[uc] (route)  at (2.5,-1.4) {Route to model\\(cascade)};
+    % associations
+    \draw[assoc] (-4.35,2.2) -- (submit.west);
+    \draw[assoc] (-4.35,-1.4) -- (manage.west);
+    \draw[assoc] (route.east) -- (5.35,-0.5);
+    % include / extend
+    \draw[vgdash] (submit.east) -- node[vglbl, above]{$\ll$include$\gg$} (lookup.west);
+    \draw[vgdash] (lookup.south) -- node[vglbl, right]{$\ll$include$\gg$} (verify.north);
+    \draw[vgdash] (verify.south) -- node[vglbl, right]{$\ll$extend$\gg$ (MISS)} (route.north);
     \end{tikzpicture}%
     }
-    \caption{UML use-case diagram. The Client Application submits and streams queries; every submission \emph{includes} a cache lookup and a verify-and-decide step, and \emph{extends} to a model route only on a miss. The Operator monitors and clears the cache; the external LLM Provider fulfils missed calls.}
+    \caption{UML use-case diagram. The Client Application submits and streams queries; every submission \emph{includes} a semantic lookup and a verify step, and \emph{extends} to a model route only on a miss. The Operator manages and clears the cache; the external LLM Provider fulfils missed calls.}
     \label{fig:usecase}
 \end{figure}
 
@@ -130,24 +124,21 @@ A Data-Flow Diagram (DFD) models how information moves through the system indepe
 \subsection{Level-0 DFD (Context Diagram)}
 \begin{figure}[H]
     \centering
-    \resizebox{0.85\textwidth}{!}{%
-    \begin{tikzpicture}[
-        >=stealth,
-        ent/.style={draw, thick, rectangle, minimum width=2.6cm, minimum height=1cm, align=center, fill=blue!10},
-        proc/.style={draw, thick, circle, minimum size=2.6cm, align=center, fill=teal!14},
-        flow/.style={->, thick}
-    ]
-    \node[proc] (g) at (0,0) {\textbf{0}\\VeriGate\\Gateway};
-    \node[ent] (client) at (-6,0) {Client\\Application};
-    \node[ent] (prov) at (6,0) {LLM Provider\\(OpenAI/Gemini)};
-    \node[ent] (op) at (0,-4) {Operator};
-
-    \draw[flow] (client.10) -- node[above,font=\footnotesize]{query + API key} (g.170);
-    \draw[flow] (g.190) -- node[below,font=\footnotesize]{answer + cache status} (client.-10);
-    \draw[flow] (g.10) -- node[above,font=\footnotesize]{prompt (on MISS)} (prov.170);
-    \draw[flow] (prov.190) -- node[below,font=\footnotesize]{completion} (g.-10);
-    \draw[flow] (op.100) -- node[left,font=\footnotesize]{clear / monitor} (g.-100);
-    \draw[flow] (g.-80) -- node[right,font=\footnotesize]{metrics / stats} (op.80);
+    \resizebox{0.82\textwidth}{!}{%
+    \begin{tikzpicture}
+    \node[vgproc, minimum size=2.5cm] (g) at (0,0) {\textbf{0}\\VeriGate\\Gateway};
+    \node[vgext, text width=2.2cm] (client) at (-5.6,0) {Client\\Application};
+    \node[vgext, text width=2.4cm] (prov) at (5.6,0) {LLM Provider\\(OpenAI/Gemini)};
+    \node[vgext, text width=2.0cm] (op) at (0,-3.8) {Operator};
+    % client <-> gateway
+    \draw[vgflow] (client.8) -- node[vglbl, above]{query + key} (g.172);
+    \draw[vgflow] (g.188) -- node[vglbl, below]{answer + status} (client.-8);
+    % gateway <-> provider
+    \draw[vgflow] (g.8) -- node[vglbl, above]{prompt (on MISS)} (prov.172);
+    \draw[vgflow] (prov.188) -- node[vglbl, below]{completion} (g.-8);
+    % operator
+    \draw[vgflow] (op.100) -- node[vglbl, left]{clear / monitor} (g.-100);
+    \draw[vgflow] (g.-80) -- node[vglbl, right]{metrics / stats} (op.80);
     \end{tikzpicture}%
     }
     \caption{Level-0 (context) DFD. The gateway exchanges queries and answers with the Client, prompts and completions with the external LLM Provider (only on a cache miss), and control/metrics with the Operator.}
@@ -167,51 +158,47 @@ The gateway decomposes into five processes (P1--P5) reading and writing five dat
 \begin{figure}[H]
     \centering
     \resizebox{\textwidth}{!}{%
-    \begin{tikzpicture}[
-        >=stealth,
-        ent/.style={draw, thick, rectangle, minimum width=2.2cm, minimum height=0.9cm, align=center, fill=blue!10},
-        proc/.style={draw, thick, circle, minimum size=1.9cm, align=center, fill=teal!14, font=\small},
-        ds/.style={draw, thick, rectangle, minimum width=2.4cm, minimum height=0.7cm, align=center, fill=orange!12, font=\footnotesize},
-        flow/.style={->, thick},
-        dflow/.style={->, thick, dashed}
-    ]
-    % external entities
-    \node[ent] (client) at (-7.6,0.6) {Client\\App};
-    \node[ent] (prov) at (9.0,-1.9) {LLM\\Provider};
-    \node[ent] (op) at (-7.6,-4.0) {Operator};
-    % processes across the middle
-    \node[proc] (p1) at (-4.6,0.6) {P1\\Guard};
-    \node[proc] (p2) at (-2.0,0.6) {P2\\Lookup};
-    \node[proc] (p3) at (0.7,0.6) {P3\\Verify};
-    \node[proc] (p4) at (4.7,-1.9) {P4\\Route};
-    \node[proc] (p5) at (-2.0,-3.9) {P5\\Observe};
-    % data stores
-    \node[ds] (d3) at (-4.6,-1.9) {D3 Budget/Rate};
-    \node[ds] (d2) at (-3.3,3.0) {D2 Vector Index};
-    \node[ds] (d1) at (0.1,3.0) {D1 Cache Store};
-    \node[ds] (d4) at (6.9,0.7) {D4 Breaker};
-    \node[ds] (d5) at (0.7,-3.9) {D5 Metrics};
-
-    % client <-> edge (two parallel arrows, no long return curve)
-    \draw[flow] (client.20) -- node[above,font=\footnotesize]{query} (p1.160);
-    \draw[flow] (p1.200) -- node[below,font=\footnotesize]{answer} (client.-20);
-    \draw[flow] (p1) -- (p2);
-    \draw[flow] (p2) -- (p3);
-    \draw[dflow] (p1) -- (d3);
-    \draw[dflow] (d2) -- (p2);
-    \draw[dflow] (d1) -- (p2);
-    \draw[flow] (p3) -- node[above,font=\footnotesize,sloped,pos=0.5]{MISS} (p4);
-    % provider I/O as parallel horizontal arrows
-    \draw[flow] (p4.20) -- node[above,font=\footnotesize]{prompt} (prov.160);
-    \draw[dflow] (prov.200) -- node[below,font=\footnotesize]{completion} (p4.-20);
-    \draw[dflow] (p4) to[out=110,in=-15] node[right,font=\footnotesize,pos=0.12]{store} (d1);
-    \draw[dflow] (p4) -- (d4);
-    \draw[dflow] (p3) -- (p5);
-    \draw[dflow] (p5) -- (d5);
-    \draw[flow] (op) -- node[above,font=\footnotesize]{clear/monitor} (p5);
+    \begin{tikzpicture}[x=1cm, y=1cm]
+    % --- main horizontal flow lane (y = 0) ---
+    \node[vgext, minimum width=1.9cm] (client) at (-8.0,0) {Client\\App};
+    \node[vgproc, minimum size=1.4cm] (p1) at (-5.2,0) {P1\\Guard};
+    \node[vgproc, minimum size=1.4cm] (p2) at (-2.6,0) {P2\\Lookup};
+    \node[vgproc, minimum size=1.4cm] (p3) at (0.0,0)  {P3\\Verify};
+    \node[vgproc, minimum size=1.4cm] (p4) at (3.4,0)  {P4\\Route};
+    \node[vgext, minimum width=1.9cm] (prov) at (6.6,0) {LLM\\Provider};
+    % --- data stores: two on top, others below (grid-aligned) ---
+    \node[vgds] (d2) at (-2.6,2.3) {D2 Vector Index};
+    \node[vgds] (d1) at (0.2,2.3)  {D1 Cache Store};
+    \node[vgds] (d3) at (-5.2,-2.1) {D3 Budget/Rate};
+    \node[vgds] (d4) at (3.4,-2.1)  {D4 Breaker};
+    % --- P5 / metrics lane (below) ---
+    \node[vgproc, minimum size=1.4cm] (p5) at (0.0,-3.4) {P5\\Observe};
+    \node[vgds] (d5) at (2.7,-3.4) {D5 Metrics};
+    \node[vgext, minimum width=1.9cm] (op) at (-8.0,-3.4) {Operator};
+    % client <-> P1 (parallel horizontal)
+    \draw[vgflow] (client.15) -- node[vglbl, above]{query} (p1.165);
+    \draw[vgflow] (p1.195) -- node[vglbl, below]{answer} (client.-15);
+    % forward chain
+    \draw[vgflow] (p1) -- (p2);
+    \draw[vgflow] (p2) -- (p3);
+    \draw[vgflow] (p3) -- node[vglbl, above]{MISS} (p4);
+    % provider I/O (parallel horizontal)
+    \draw[vgflow] (p4.15) -- node[vglbl, above]{prompt} (prov.165);
+    \draw[vgdash] (prov.195) -- node[vglbl, below]{completion} (p4.-15);
+    % store reads/writes (orthogonal, vertical)
+    \draw[vgdash] (d2.south) -- (p2.north);
+    \draw[vgdash] (d1.south) -- (p3.north);
+    \draw[vgdash] (p1.south) -- (d3.north);
+    \draw[vgdash] (p4.south) -- (d4.north);
+    % P4 store to cache (orthogonal elbow along the top)
+    \draw[vgdash] (p4.north) |- node[vglbl, pos=0.72, above]{store} (d1.east);
+    % observe lane
+    \draw[vgdash] (p3.south) -- (p5.north);
+    \draw[vgflow] (p5.east) -- (d5.west);
+    \draw[vgflow] (op) -- node[vglbl, above]{clear / monitor} (p5);
     \end{tikzpicture}%
     }
-    \caption{Level-1 DFD. Five processes (P1 Guard, P2 Lookup, P3 Verify, P4 Route, P5 Observe) operate over five data stores (D1 Cache, D2 Vector Index, D3 Budget/Rate, D4 Breaker, D5 Metrics). A verified hit in P3 answers the client directly; only a miss reaches P4 and the external provider.}
+    \caption{Level-1 DFD. The main data flow runs left to right along one lane (Client\,$\to$\,P1\,$\to$\,P2\,$\to$\,P3\,$\to$\,P4\,$\to$\,Provider); data stores connect by vertical (orthogonal) flows. A verified hit in P3 returns the answer to the client; only a miss reaches P4 and the external provider, whose answer is written back to the cache (D1).}
     \label{fig:dfd1}
 \end{figure}
 
@@ -220,33 +207,34 @@ The defining logic of VeriGate is the decision, taken for every query, among fou
 
 \begin{figure}[H]
     \centering
-    \resizebox{0.95\textwidth}{!}{
+    \resizebox{0.92\textwidth}{!}{
     \begin{tikzpicture}[
-        node distance=1.1cm and 1.7cm,
-        decision/.style={diamond, draw, thick, aspect=2, text width=2.6cm, align=center, inner sep=1pt, fill=gray!12},
-        block/.style={rectangle, draw, thick, text width=3.2cm, align=center, rounded corners, minimum height=1cm, fill=white},
-        term/.style={rectangle, draw, thick, text width=3.0cm, align=center, rounded corners=14pt, minimum height=1cm},
-        arrow/.style={thick, ->, >=stealth}
+        node distance=1.1cm and 1.9cm,
+        dec/.style={draw=black!72, line width=0.5pt, diamond, aspect=2, text width=2.5cm,
+                    align=center, inner sep=1pt, fill=black!4},
+        blk/.style={vgnode, text width=3.2cm},
+        outcome/.style={draw, line width=0.5pt, rounded corners=10pt, text width=3.0cm,
+                        align=center, minimum height=1cm, font=\small}
     ]
-    \node[block, fill=gray!10] (in) {\textbf{Query $q$}\\(tenant $t$)};
-    \node[decision, below=of in] (vol) {\textbf{Volatile?}};
-    \node[term, right=of vol, fill=gray!25] (bypass) {\textbf{BYPASS}\\call provider, do not cache};
-    \node[block, below=of vol] (emb) {Embed $q$; nearest neighbour $c$, similarity $s$};
-    \node[decision, below=of emb] (thr) {\textbf{$s \geq T_{\text{adaptive}}$?}};
-    \node[decision, right=of thr] (ver) {\textbf{Verifier\\accepts?}};
-    \node[term, right=of ver, fill=green!25, draw=green!60!black] (hit) {\textbf{HIT}\\serve cached answer};
-    \node[term, below=of ver, fill=red!25, draw=red!70!black] (blocked) {\textbf{blocked}\\false hit rejected};
-    \node[term, below=of thr, fill=orange!25, draw=orange!70!black] (miss) {\textbf{MISS}\\call provider, store answer};
+    \node[blk, fill=black!8] (in) {\textbf{Query} $q$ \; (tenant $t$)};
+    \node[dec, below=of in] (vol) {\textbf{Volatile?}};
+    \node[outcome, right=of vol, fill=black!6, draw=black!55] (bypass) {\textbf{BYPASS}\\call provider, do not cache};
+    \node[blk, below=of vol] (emb) {embed $q$; nearest neighbour $c$, similarity $s$};
+    \node[dec, below=of emb] (thr) {$s \geq T_{\text{adaptive}}$?};
+    \node[dec, right=of thr] (ver) {\textbf{Verifier}\\accepts?};
+    \node[outcome, right=of ver, fill=green!8, draw=green!50!black] (hit) {\textbf{HIT}\\serve cached answer};
+    \node[outcome, below=of ver, fill=red!7, draw=red!55!black] (blocked) {\textbf{blocked}\\false hit rejected};
+    \node[outcome, below=of thr, fill=orange!9, draw=orange!65!black] (miss) {\textbf{MISS}\\call provider, store answer};
 
-    \draw[arrow] (in) -- (vol);
-    \draw[arrow] (vol) -- node[above]{yes} (bypass);
-    \draw[arrow] (vol) -- node[right]{no} (emb);
-    \draw[arrow] (emb) -- (thr);
-    \draw[arrow] (thr) -- node[above]{yes} (ver);
-    \draw[arrow] (thr) -- node[right]{no} (miss);
-    \draw[arrow] (ver) -- node[above]{yes} (hit);
-    \draw[arrow] (ver) -- node[right]{no} (blocked);
-    \draw[arrow] (blocked) -- (miss);
+    \draw[vgflow] (in) -- (vol);
+    \draw[vgflow] (vol) -- node[vglbl, above]{yes} (bypass);
+    \draw[vgflow] (vol) -- node[vglbl, right]{no} (emb);
+    \draw[vgflow] (emb) -- (thr);
+    \draw[vgflow] (thr) -- node[vglbl, above]{yes} (ver);
+    \draw[vgflow] (thr) -- node[vglbl, right]{no} (miss);
+    \draw[vgflow] (ver) -- node[vglbl, above]{yes} (hit);
+    \draw[vgflow] (ver) -- node[vglbl, right]{no} (blocked);
+    \draw[vgflow] (blocked) -- (miss);
     \end{tikzpicture}
     }
     \caption{The four-outcome cache decision. A candidate whose similarity clears the adaptive threshold is still subjected to the verifier; only a verified candidate is served as a HIT, while a rejected one is demoted to a MISS (``blocked''). Volatile queries bypass the cache entirely.}
@@ -258,42 +246,49 @@ The defining logic of VeriGate is the decision, taken for every query, among fou
     \centering
     \resizebox{0.98\textwidth}{!}{%
     \begin{tikzpicture}[
-        >=stealth,
-        head/.style={draw, thick, minimum width=2.3cm, minimum height=0.7cm, fill=gray!12, font=\small\bfseries},
-        msg/.style={->, thick},
-        ret/.style={->, thick, dashed},
-        note/.style={draw, fill=yellow!14, font=\scriptsize, align=center, rounded corners, inner sep=2pt}
+        head/.style={vgnode, minimum width=2.4cm, minimum height=0.7cm, font=\small\bfseries, fill=black!6},
+        call/.style={-{Stealth[length=1.8mm,width=1.4mm]}, line width=0.55pt, draw=black!75},
+        ret/.style={-{Stealth[length=1.8mm,width=1.4mm]}, line width=0.5pt, draw=black!60, dashed},
+        note/.style={draw=black!45, line width=0.4pt, fill=blue!6, font=\scriptsize, align=center,
+                     rounded corners=1.5pt, inner sep=3pt},
+        act/.style={draw=black!55, line width=0.4pt, fill=black!7, minimum width=0.16cm}
     ]
-    \def\C{0} \def\G{4} \def\A{8.5} \def\P{13}
-    \def\bot{-9.4}
-    % lifeline heads
+    \def\C{0} \def\G{4.2} \def\A{8.6} \def\P{13}
+    \def\bot{-9.6}
+    % lifeline heads + dashed lifelines
     \node[head] (c) at (\C,0) {Client};
     \node[head] (g) at (\G,0) {Gateway};
     \node[head] (a) at (\A,0) {Cache + Index};
     \node[head] (p) at (\P,0) {Provider};
-    \foreach \x in {\C,\G,\A,\P} \draw[dashed, gray] (\x,-0.35) -- (\x,\bot);
+    \foreach \x in {\C,\G,\A,\P} \draw[line width=0.4pt, black!35, dashed] (\x,-0.38) -- (\x,\bot);
+    % activation bars
+    \fill[act] (\G-0.08,-1.2) rectangle (\G+0.08,-5.7);
+    \fill[act] (\A-0.08,-2.5) rectangle (\A+0.08,-3.1);
+    \fill[act] (\P-0.08,-3.7) rectangle (\P+0.08,-4.5);
+    \fill[act] (\G-0.08,-6.8) rectangle (\G+0.08,-9.2);
+    \fill[act] (\A-0.08,-7.4) rectangle (\A+0.08,-8.7);
 
     % ---- Cold MISS ----
-    \node[left, font=\scriptsize\itshape] at (\C-0.2,-0.9) {Cold request};
-    \draw[msg] (\C,-1.2) -- node[above,font=\scriptsize]{POST /v1/chat ($q_1$, key)} (\G,-1.2);
-    \node[note] at (\G,-1.9) {auth $\cdot$ tenant $\cdot$ rate $\cdot$ budget};
-    \draw[msg] (\G,-2.5) -- node[above,font=\scriptsize]{lookup($q_1$, $t$)} (\A,-2.5);
-    \draw[ret] (\A,-3.1) -- node[above,font=\scriptsize]{MISS (below $T$ / no entry)} (\G,-3.1);
-    \draw[msg] (\G,-3.7) -- node[above,font=\scriptsize]{complete($q_1$)} (\P,-3.7);
-    \draw[ret] (\P,-4.5) -- node[above,font=\scriptsize]{answer (stream)} (\G,-4.5);
-    \draw[msg] (\G,-5.1) -- node[above,font=\scriptsize]{store($q_1$, answer, $t$)} (\A,-5.1);
-    \draw[ret] (\G,-5.7) -- node[above,font=\scriptsize]{answer \{cache: MISS, $\sim$800\,ms\}} (\C,-5.7);
+    \node[left, font=\scriptsize\itshape, text=black!65] at (\C-0.25,-0.95) {Cold request};
+    \draw[call] (\C,-1.2) -- node[vglbl, above]{POST /v1/chat ($q_1$, key)} (\G-0.1,-1.2);
+    \node[note, anchor=north] at (\G,-1.75) {auth \textbullet\ tenant \textbullet\ rate \textbullet\ budget};
+    \draw[call] (\G+0.1,-2.5) -- node[vglbl, above]{lookup($q_1$, $t$)} (\A-0.1,-2.5);
+    \draw[ret] (\A-0.1,-3.1) -- node[vglbl, above]{MISS (below $T$)} (\G+0.1,-3.1);
+    \draw[call] (\G+0.1,-3.7) -- node[vglbl, above]{complete($q_1$)} (\P-0.1,-3.7);
+    \draw[ret] (\P-0.1,-4.5) -- node[vglbl, above]{answer (stream)} (\G+0.1,-4.5);
+    \draw[call] (\G+0.1,-5.1) -- node[vglbl, above]{store($q_1$, answer, $t$)} (\A-0.1,-5.1);
+    \draw[ret] (\G-0.1,-5.7) -- node[vglbl, above]{answer \{MISS, $\sim$800\,ms\}} (\C,-5.7);
 
     % ---- Warm HIT ----
-    \node[left, font=\scriptsize\itshape] at (\C-0.2,-6.5) {Reworded request};
-    \draw[msg] (\C,-6.8) -- node[above,font=\scriptsize]{POST /v1/chat ($q_2 \approx q_1$)} (\G,-6.8);
-    \draw[msg] (\G,-7.4) -- node[above,font=\scriptsize]{lookup + verify($q_2$, $t$)} (\A,-7.4);
-    \node[note] at (\A,-8.05) {$s \geq T_{\text{adaptive}}$ \\ Tier-1 verify OK};
-    \draw[ret] (\A,-8.7) -- node[above,font=\scriptsize]{HIT (verified)} (\G,-8.7);
-    \draw[ret] (\G,-9.2) -- node[above,font=\scriptsize]{answer \{cache: HIT, $\sim$10\,ms, \$0\}} (\C,-9.2);
+    \node[left, font=\scriptsize\itshape, text=black!65] at (\C-0.25,-6.55) {Reworded request};
+    \draw[call] (\C,-6.8) -- node[vglbl, above]{POST /v1/chat ($q_2 \approx q_1$)} (\G-0.1,-6.8);
+    \draw[call] (\G+0.1,-7.4) -- node[vglbl, above]{lookup + verify($q_2$, $t$)} (\A-0.1,-7.4);
+    \node[note, anchor=north] at (\A,-7.95) {$s \geq T_{\text{adaptive}}$, Tier-1 OK};
+    \draw[ret] (\A-0.1,-8.7) -- node[vglbl, above]{HIT (verified)} (\G+0.1,-8.7);
+    \draw[ret] (\G-0.1,-9.2) -- node[vglbl, above]{answer \{HIT, $\sim$10\,ms, \$0\}} (\C,-9.2);
     \end{tikzpicture}%
     }
-    \caption{Request sequence. A cold query misses the cache, is answered by the provider ($\sim$800\,ms), and is stored. A subsequently reworded query clears the adaptive threshold, passes verification, and is served from cache ($\sim$10\,ms, \$0) without touching the provider --- the core cost/latency win.}
+    \caption{Request sequence. A cold query misses the cache, is answered by the provider ($\sim$800\,ms), and is stored. A subsequently reworded query clears the adaptive threshold, passes verification, and is served from cache ($\sim$10\,ms, \$0) without touching the provider --- the core cost/latency win. Solid arrows are calls; dashed arrows are returns; bars are activations.}
     \label{fig:sequence}
 \end{figure}
 
@@ -334,22 +329,18 @@ For queries that miss the cache, a complexity score $\kappa(q) \in [0,1]$ (based
 \begin{figure}[H]
     \centering
     \resizebox{0.9\textwidth}{!}{
-    \begin{tikzpicture}[
-        node distance=1.2cm and 2.1cm,
-        block/.style={rectangle, draw, thick, text width=3.0cm, align=center, rounded corners, minimum height=1cm, fill=white},
-        decision/.style={diamond, draw, thick, aspect=2.2, text width=2.4cm, align=center, inner sep=1pt, fill=gray!12},
-        arrow/.style={thick, ->, >=stealth}
-    ]
-    \node[block, fill=orange!15] (miss) {Cache MISS query $q$};
-    \node[decision, right=of miss] (score) {$\kappa(q) < \tau$?};
-    \node[block, above right=0.4cm and 2cm of score, fill=green!18] (cheap) {\textbf{Cheap model}\\(e.g. flash-lite / mini)};
-    \node[block, below right=0.4cm and 2cm of score, fill=violet!18] (strong) {\textbf{Strong model}\\(e.g. 3.5-flash / 4o)};
-    \node[block, right=5.4cm of score, fill=gray!12] (ans) {Answer $\rightarrow$ store in cache};
-    \draw[arrow] (miss) -- (score);
-    \draw[arrow] (score) -- node[above left]{yes (easy)} (cheap);
-    \draw[arrow] (score) -- node[below left]{no (hard)} (strong);
-    \draw[arrow] (cheap) -- (ans);
-    \draw[arrow] (strong) -- (ans);
+    \begin{tikzpicture}[x=1cm, y=1cm]
+    \node[vgnode, text width=2.6cm] (miss) at (0,0) {Cache MISS\\query $q$};
+    \node[draw=black!72, line width=0.5pt, diamond, aspect=2.2, text width=2.2cm, align=center,
+          inner sep=1pt, fill=black!4] (score) at (3.6,0) {$\kappa(q) < \tau$?};
+    \node[vgnode, text width=2.8cm] (cheap) at (7.6,1.4) {\textbf{Cheap model}\\(flash-lite / mini)};
+    \node[vgacc, text width=2.8cm] (strong) at (7.6,-1.4) {\textbf{Strong model}\\(3.5-flash / 4o)};
+    \node[vgnode, text width=2.6cm] (ans) at (11.6,0) {answer $\rightarrow$\\store in cache};
+    \draw[vgflow] (miss) -- (score);
+    \draw[vgflow] (score.north) |- node[vglbl, pos=0.7, above]{yes (easy)} (cheap.west);
+    \draw[vgflow] (score.south) |- node[vglbl, pos=0.7, below]{no (hard)} (strong.west);
+    \draw[vgflow] (cheap.east) -| (ans.north);
+    \draw[vgflow] (strong.east) -| (ans.south);
     \end{tikzpicture}
     }
     \caption{Cost-aware cascade. A transparent complexity score routes easy queries to the cheap model and escalates only hard ones to the strong model; the unused tier remains as a failover.}
@@ -436,31 +427,26 @@ The same image runs from a laptop to a cluster by configuration alone. Figure~\r
 \begin{figure}[H]
     \centering
     \resizebox{0.95\textwidth}{!}{%
-    \begin{tikzpicture}[
-        >=stealth,
-        box/.style={draw, thick, rounded corners, align=center, minimum height=1cm, minimum width=2.4cm},
-        arrow/.style={->, thick},
-        biarrow/.style={<->, thick}
-    ]
-    \node[box, fill=blue!10] (client) at (0,0) {Client Apps};
-    \node[box, fill=gray!12] (lb) at (3.4,0) {Load\\Balancer / TLS};
-    \node[box, fill=teal!14] (g1) at (6.9,1.6) {Gateway\\replica 1};
-    \node[box, fill=teal!14] (g2) at (6.9,-1.6) {Gateway\\replica $n$};
-    \node[box, fill=orange!14, text width=3.5cm] (redis) at (11.4,2.7) {Redis / Redis Stack\\(shared state + index)};
-    \node[box, fill=violet!14, text width=3.0cm] (prov) at (11.4,0.2) {LLM Provider\\(OpenAI / Gemini)};
-    \node[box, fill=red!12, text width=3.0cm] (prom) at (11.4,-2.5) {Prometheus\\+ Grafana};
-
-    \draw[arrow] (client) -- (lb);
-    \draw[arrow] (lb) -- (g1);
-    \draw[arrow] (lb) -- (g2);
-    \draw[biarrow] (g1) -- (redis);
-    \draw[biarrow] (g2) -- (redis);
-    \draw[arrow] (g1) -- (prov);
-    \draw[arrow] (g2) -- (prov);
-    \draw[arrow, dashed] (prom.west) to[out=180,in=-100] node[left,font=\scriptsize,pos=0.55]{scrape /metrics} (g2.-70);
+    \begin{tikzpicture}[x=1cm, y=1cm]
+    \node[vgext, minimum width=2.0cm] (client) at (0,0) {Client\\Apps};
+    \node[vgnode, text width=1.9cm] (lb) at (3.0,0) {Load\\Balancer + TLS};
+    % stacked "replicas" box
+    \node[vgnode, minimum width=2.6cm, minimum height=1.1cm] at (6.35,0.2) {};
+    \node[vgnode, minimum width=2.6cm, minimum height=1.1cm] at (6.25,0.1) {};
+    \node[vgacc, minimum width=2.6cm, minimum height=1.1cm] (gw) at (6.15,0) {Gateway replicas\\(stateless, $\times N$)};
+    % backing services (right column)
+    \node[vgnode, text width=3.2cm] (redis) at (10.4,2.1) {Redis / Redis Stack\\(shared state + index)};
+    \node[vgext, text width=2.9cm] (prov)  at (10.4,0) {LLM Provider\\(OpenAI / Gemini)};
+    \node[vgnode, text width=2.9cm] (prom)  at (10.4,-2.1) {Prometheus\\+ Grafana};
+    % connections (orthogonal fan-out from a shared channel)
+    \draw[vgflow] (client) -- (lb);
+    \draw[vgflow] (lb) -- (gw);
+    \draw[vgbi]  (gw.east) -- ++(0.9,0) |- (redis.west);
+    \draw[vgflow] (gw.east) -- ++(0.9,0) |- (prov.west);
+    \draw[vgdash] (prom.west) -- node[vglbl, pos=0.85, above]{scrape} ++(-0.9,0) |- (gw.east);
     \end{tikzpicture}%
     }
-    \caption{Production deployment topology. Stateless gateway replicas sit behind a TLS-terminating load balancer and share one Redis for all state, so the cache, budgets, and breaker are consistent across replicas; Prometheus/Grafana observe every replica.}
+    \caption{Production deployment topology. Stateless gateway replicas (drawn as a stack) sit behind a TLS-terminating load balancer and share one Redis for all state, so the cache, budgets, and breaker are consistent across replicas; Prometheus/Grafana observe every replica. Connectors fan out orthogonally from a single channel.}
     \label{fig:deploy}
 \end{figure}
 

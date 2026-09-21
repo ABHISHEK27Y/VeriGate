@@ -11,7 +11,29 @@
 \usepackage{fouriernc}
 \usepackage{subcaption}
 \usepackage{tikz}
-\usetikzlibrary{shapes.geometric, arrows, positioning, fit, calc, backgrounds}
+\usetikzlibrary{shapes.geometric, arrows, arrows.meta, positioning, fit, calc, backgrounds}
+
+% ---- Shared diagram design system (one restrained visual language for all figures) ----
+\tikzset{
+  vgnode/.style={draw=black!72, line width=0.5pt, rounded corners=2pt, fill=black!4,
+                 align=center, font=\small, inner sep=6pt, minimum height=0.9cm},
+  vgacc/.style={vgnode, fill=blue!7, draw=blue!50!black},
+  vgext/.style={draw=black!72, line width=0.5pt, sharp corners, fill=black!9,
+                align=center, font=\small, inner sep=6pt, minimum height=0.9cm},
+  vgproc/.style={draw=black!72, line width=0.5pt, circle, fill=black!4,
+                 align=center, font=\footnotesize, inner sep=1pt, minimum size=1.5cm},
+  % classic open (DeMarco) data store: top + bottom rule only
+  vgds/.style={draw=none, fill=none, align=center, font=\footnotesize, inner sep=4pt,
+               minimum width=2.5cm, minimum height=0.78cm,
+               append after command={\pgfextra{%
+                 \draw[black!72, line width=0.5pt] (\tikzlastnode.north west)--(\tikzlastnode.north east);
+                 \draw[black!72, line width=0.5pt] (\tikzlastnode.south west)--(\tikzlastnode.south east);}}},
+  vgflow/.style={-{Stealth[length=1.8mm,width=1.4mm]}, line width=0.55pt, draw=black!72, rounded corners=2.5pt},
+  vgbi/.style={{Stealth[length=1.8mm,width=1.4mm]}-{Stealth[length=1.8mm,width=1.4mm]},
+               line width=0.55pt, draw=black!72, rounded corners=2.5pt},
+  vgdash/.style={vgflow, dashed},
+  vglbl/.style={font=\footnotesize, text=black!78, inner sep=1.6pt, fill=white}
+}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
 \usepackage{longtable}
