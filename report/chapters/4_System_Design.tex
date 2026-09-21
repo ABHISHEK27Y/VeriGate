@@ -430,10 +430,8 @@ The same image runs from a laptop to a cluster by configuration alone. Figure~\r
     \begin{tikzpicture}[x=1cm, y=1cm]
     \node[vgext, minimum width=2.0cm] (client) at (0,0) {Client\\Apps};
     \node[vgnode, text width=1.9cm] (lb) at (3.0,0) {Load\\Balancer + TLS};
-    % stacked "replicas" box
-    \node[vgnode, minimum width=2.6cm, minimum height=1.1cm] at (6.35,0.2) {};
-    \node[vgnode, minimum width=2.6cm, minimum height=1.1cm] at (6.25,0.1) {};
-    \node[vgacc, minimum width=2.6cm, minimum height=1.1cm] (gw) at (6.15,0) {Gateway replicas\\(stateless, $\times N$)};
+    % gateway replicas (single clean box; "x N" conveys replication)
+    \node[vgacc, minimum width=2.7cm, minimum height=1.15cm] (gw) at (6.15,0) {Gateway replicas\\stateless \textbullet\ $\times N$};
     % backing services (right column)
     \node[vgnode, text width=3.2cm] (redis) at (10.4,2.1) {Redis / Redis Stack\\(shared state + index)};
     \node[vgext, text width=2.9cm] (prov)  at (10.4,0) {LLM Provider\\(OpenAI / Gemini)};
@@ -446,7 +444,7 @@ The same image runs from a laptop to a cluster by configuration alone. Figure~\r
     \draw[vgdash] (prom.west) -- node[vglbl, pos=0.85, above]{scrape} ++(-0.9,0) |- (gw.east);
     \end{tikzpicture}%
     }
-    \caption{Production deployment topology. Stateless gateway replicas (drawn as a stack) sit behind a TLS-terminating load balancer and share one Redis for all state, so the cache, budgets, and breaker are consistent across replicas; Prometheus/Grafana observe every replica. Connectors fan out orthogonally from a single channel.}
+    \caption{Production deployment topology. Stateless gateway replicas ($\times N$) sit behind a TLS-terminating load balancer and share one Redis for all state, so the cache, budgets, and breaker are consistent across replicas; Prometheus/Grafana observe every replica. Connectors fan out orthogonally from a single channel.}
     \label{fig:deploy}
 \end{figure}
 
