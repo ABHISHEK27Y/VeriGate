@@ -1,0 +1,123 @@
+\section{Background}
+Large Language Models (LLMs) such as the GPT and Gemini families have moved rapidly from research artifacts into production software, powering chat assistants, retrieval-augmented question answering, code generation, and agentic workflows. The transformer architecture that underpins them \cite{vaswani2017attention, devlin2019bert} delivers remarkable general-purpose language capability, but it does so at a recurring price: every request to a hosted LLM incurs a per-token monetary cost and a network-and-inference latency that is frequently measured in seconds rather than milliseconds. At the scale of a real application serving thousands of users, these two quantities --- cost and latency --- become the dominant operational constraints, and reducing them without degrading answer quality is a central problem in efficient LLM serving \cite{zhu2023survey}.
+
+A widely adopted mitigation is the \textbf{semantic cache}. A conventional cache keys on an exact string, so it only helps when the identical request repeats. A semantic cache instead embeds the incoming query into a dense vector \cite{reimers2019sentencebert} and, if a previously answered query lies ``close enough'' in that vector space, returns the stored answer without calling the LLM at all. Because natural-language questions are frequently reworded (\textit{``how do I reset my password''} versus \textit{``what is the process to recover my account password''}), a semantic cache captures far more reuse than an exact cache, converting a slow, paid model call into an instant, free lookup. Open-source systems such as GPTCache \cite{bang2023gptcache} have popularised this pattern.
+
+However, the semantic cache carries a failure mode that the exact cache does not. Because it serves an answer whenever similarity crosses a threshold, two questions that are lexically and semantically \emph{close} but factually \emph{distinct} can collide. The canonical example is \textit{``what is the capital of Austria''} versus \textit{``what is the capital of Australia''}: the two sentences differ by two characters, embed very near each other, and yet demand entirely different answers. When a fixed-threshold cache serves the stored ``Vienna'' answer to the ``Australia'' query, it commits a \textbf{false cache hit} --- confidently returning a wrong answer. This is more dangerous than a cache \emph{miss}, because a miss merely forfeits a saving whereas a false hit silently corrupts correctness.
+
+\section{Motivation}
+The motivation for this project is the observation that the quality of a semantic cache is governed almost entirely by a single, brittle hyper-parameter: the similarity threshold. Set it too high and the cache rarely fires, forfeiting the cost and latency savings that justify its existence. Set it too low and false hits proliferate. Crucially, \emph{no single fixed threshold is correct for all queries.} The ideal threshold depends on how densely the neighbourhood around a query is populated, on how factually load-bearing the query's tokens are (a swapped digit or a negation flips the answer), and on whether the query is even cacheable at all (a request for \textit{today's} weather must never be served from yesterday's cache).
+
+Existing systems treat this as a configuration value the operator must guess, and they trust the similarity score alone to decide a hit. There is therefore a clear gap between the \emph{detection} of a nearby cached answer and the \emph{verification} that the answer is actually correct for the new question. Bridging that gap --- making the cache adapt its strictness per query and \emph{verify} a candidate hit before serving it --- is the intellectual core of this work. A cache that can decline to answer when it is not sure, rather than confidently serving a look-alike, represents a safer and more deployable design.
+
+A second, complementary motivation is cost. Even with a perfect cache, the queries that \emph{do} reach the LLM need not all go to the most expensive model. Many are trivial and can be answered correctly by a small, cheap model; only the genuinely hard queries warrant an expensive one. A gateway that routes by query difficulty can cut spend substantially without sacrificing quality on the queries that matter.
+
+\section{Problem Definition}
+The core problem addressed in this project is that contemporary semantic caches for LLMs are \textbf{fixed-threshold and unverified}, which makes them unsafe: they trade correctness for savings in a way the operator cannot tune away. Specifically, the problem decomposes into the following sub-challenges:
+
+\begin{enumerate}
+    \item \textbf{Threshold brittleness.} A single global similarity threshold cannot simultaneously maximise reuse and avoid false hits, because the correct strictness is query-dependent. The optimal threshold also shifts with the embedding model, so a value tuned for one embedder is wrong for another.
+    \item \textbf{Unverified hits (the false-hit problem).} Similarity above a threshold is not proof of semantic equivalence. Queries differing only in a number, a negation, or a named entity embed very close together yet require different answers, and a naive cache serves the wrong one.
+    \item \textbf{Uncacheable (volatile) queries.} Time-sensitive queries (\textit{``weather today''}, \textit{``current stock price''}) must never be served from cache, but a similarity-only cache has no notion of staleness.
+    \item \textbf{Latency of the cache itself.} A cache is only worthwhile if the lookup is dramatically faster than the LLM call it replaces; a naive linear scan over stored vectors degrades as the cache grows.
+    \item \textbf{Uniform-cost routing.} Sending every cache-missed query to a single expensive model wastes money on queries a cheap model would answer correctly.
+    \item \textbf{Production safety.} A shared cache in front of an LLM introduces multi-tenant data-leakage, cost-exhaustion, and reliability risks that a research prototype typically ignores.
+\end{enumerate}
+
+\section{Project Objectives}
+To address the above, this project designs, implements, and evaluates \textbf{VeriGate}, a production-grade LLM Gateway. The main objectives are:
+
+\begin{itemize}
+    \item \textbf{Adaptive similarity threshold.} To raise or lower the effective threshold \emph{per query} based on the density of the query's neighbourhood in embedding space, so that ambiguous regions are treated more strictly than isolated ones (Section~\ref{sec:adaptive}).
+    \item \textbf{A self-verifying cache (the central contribution).} To interpose a two-tier verifier between a candidate hit and the served answer: a near-free Tier-1 structural check on numbers, negation, and named entities, and an optional Tier-2 Natural Language Inference (NLI) check for bidirectional entailment, so that a look-alike whose similarity is \emph{above} the threshold is still rejected (Section~\ref{sec:verifier}).
+    \item \textbf{Volatility detection.} To classify time-sensitive queries and bypass the cache for them, preventing stale answers (Section~\ref{sec:volatility}).
+    \item \textbf{A sub-linear cache-hit path.} To replace the naive linear scan with a vectorised in-process index (and an optional distributed RediSearch/HNSW backend \cite{malkov2018hnsw, redis_stack}) so that the hit path stays an order of magnitude faster than an LLM call as the cache scales (Section~\ref{sec:index}).
+    \item \textbf{A cost-aware model cascade (second contribution).} To score query complexity and route easy queries to a cheap model, escalating only hard ones to a strong model, cutting cost while preserving quality on hard queries \cite{chen2023frugalgpt} (Section~\ref{sec:cascade}).
+    \item \textbf{Production hardening.} To make the gateway safe to deploy: per-tenant cache isolation, per-key daily spend budgets, a provider circuit breaker, Prometheus/Grafana observability, and Docker packaging (Chapter~5).
+\end{itemize}
+
+\section{Scope of the Project}
+VeriGate is scoped as a self-hostable HTTP gateway that sits in front of one or more OpenAI-compatible LLM providers (it is verified live against Google Gemini and works unchanged with OpenAI). Its intelligence operates on the \emph{text} of queries and answers; it does not perform image, audio, or multi-modal caching. The default embedding model is the 384-dimensional \texttt{all-MiniLM-L6-v2} sentence encoder \cite{sentencetransformers}; the architecture is embedder-agnostic and exposes a fast lexical fallback used for deterministic testing.
+
+The evaluation is conducted on a controlled, hand-curated benchmark of positive (equivalent) pairs, hard negatives grouped by trap type (entity swap, number swap, negation, related topic), volatile queries, and stable controls. This design deliberately isolates the \emph{mechanism} being studied; the \emph{relative} improvement of VeriGate over the fixed-threshold baseline is the result, and the absolute numbers are acknowledged to be dataset-dependent (Chapter~6). Large-scale learned routing and threshold classifiers, and a direct empirical study on a million-scale corpus, are identified as future work (Chapter~7). The gateway is deployed as a containerised web service and exposes an operator dashboard for interactive testing.
+
+\section{Project Timeline}
+The development of VeriGate followed an iterative, phase-based approach spanning eighteen numbered phases, from the foundational streaming gateway through the two novel contributions, production hardening, and evaluation. Figure~\ref{fig:gantt} summarises the timeline; each phase concluded with a checkpoint at which the automated test suite was required to remain green and every quantitative result was recorded in a living results log so that it would drop directly into this report.
+
+\begin{figure}[H]
+    \centering
+    \resizebox{\textwidth}{!}{%
+    \begin{ganttchart}[
+        hgrid={draw=gray!30},
+        vgrid={draw=gray!20},
+        x unit=0.9cm,
+        y unit title=0.7cm,
+        y unit chart=0.6cm,
+        title/.style={fill=gray!85, draw=black, text=white},
+        title label font=\small\bfseries,
+        title left shift=0,
+        title right shift=0,
+        bar label font=\small,
+        bar height=0.55,
+        bar top shift=0.225,
+        group label font=\small\bfseries,
+        group right shift=0,
+        group top shift=0.2,
+        group height=0.5,
+        group peaks height=0.2,
+        milestone/.append style={fill=orange, draw=orange!80!black, xscale=0.6},
+        link/.style={->, thick, draw=gray!60}
+    ]{1}{12}
+        \gantttitle{\textbf{Project Timeline (Weeks 1--12)}}{12} \\
+        \gantttitlelist{1,...,12}{1} \\
+
+        \ganttgroup[
+            group/.append style={fill=blue!70!black, draw=blue!80!black}
+        ]{\textcolor{white}{\textbf{Phase 1: Foundation}}}{1}{2} \\
+        \ganttbar[
+            bar/.append style={fill=blue!45, draw=blue!70!black}
+        ]{Gateway, Auth, Rate-limit}{1}{2} \\
+
+        \ganttgroup[
+            group/.append style={fill=teal!70!black, draw=teal!80!black}
+        ]{\textcolor{white}{\textbf{Phase 2: Cache Core}}}{2}{5} \\
+        \ganttbar[
+            bar/.append style={fill=teal!40, draw=teal!70!black}
+        ]{Adaptive threshold + Verifier}{2}{4} \\
+        \ganttbar[
+            bar/.append style={fill=teal!40, draw=teal!70!black}
+        ]{Volatility + Embeddings}{4}{5} \\
+
+        \ganttgroup[
+            group/.append style={fill=orange!80!red!80, draw=orange!80!black}
+        ]{\textcolor{white}{\textbf{Phase 3: Performance}}}{5}{7} \\
+        \ganttbar[
+            bar/.append style={fill=orange!40, draw=orange!70!black}
+        ]{Vector index + RediSearch}{5}{7} \\
+
+        \ganttgroup[
+            group/.append style={fill=violet!65!black, draw=violet!80!black}
+        ]{\textcolor{white}{\textbf{Phase 4: Providers + Cascade}}}{7}{9} \\
+        \ganttbar[
+            bar/.append style={fill=violet!35, draw=violet!70!black}
+        ]{Live LLM + Failover}{7}{8} \\
+        \ganttbar[
+            bar/.append style={fill=violet!35, draw=violet!70!black}
+        ]{Cost-aware cascade}{8}{9} \\
+
+        \ganttgroup[
+            group/.append style={fill=red!65!black, draw=red!80!black}
+        ]{\textcolor{white}{\textbf{Phase 5: Hardening + Eval}}}{9}{12} \\
+        \ganttbar[
+            bar/.append style={fill=red!35, draw=red!70!black}
+        ]{Security, Observability, UI}{9}{11} \\
+        \ganttbar[
+            bar/.append style={fill=red!35, draw=red!70!black}
+        ]{Evaluation \& Documentation}{10}{12}
+    \end{ganttchart}%
+    }
+    \caption{VeriGate development timeline across twelve weekly sprints, colour-coded by phase: Foundation (blue), Cache Core (teal), Performance (orange), Providers and Cascade (purple), and Hardening and Evaluation (red).}
+    \label{fig:gantt}
+\end{figure}
+
+The phased approach ensured that each novel component --- the adaptive threshold, the verifier, and the cascade --- was validated in isolation on the evaluation harness before being integrated behind the gateway's runtime configuration flags, so that the measured behaviour of the evaluation is identical to the shipped behaviour of the deployed service.

@@ -1,0 +1,479 @@
+\section{Introduction to System Design}
+System design translates the requirements of Chapter~3 into a concrete, buildable blueprint. This chapter presents that blueprint at every level an examiner and an implementer need: the guiding design principles and the reusable design patterns that shape the code (Sections~4.2--4.3); the layered runtime architecture (Section~4.4); the behavioural models --- use cases, data-flow diagrams, the cache decision, and a request sequence (Sections~4.5--4.7); the design of the novel cache intelligence and the cost-aware cascade (Sections~4.8--4.9); the static structure --- modules, data model, and API surface (Sections~4.10--4.12); and finally the deployment topology and failure handling (Sections~4.13--4.14). Throughout, VeriGate is designed as a modular asynchronous proxy in which a single \texttt{CachePolicy} decision object is shared between the live server and the evaluation harness, so that the behaviour that is \emph{measured} is exactly the behaviour that is \emph{shipped}.
+
+\section{Design Goals and Guiding Principles}
+Every structural choice in VeriGate serves one of six explicit design goals. Stating them first makes the rest of the chapter legible as a set of decisions rather than a list of components.
+
+\begin{enumerate}
+    \item \textbf{Correctness over savings.} A wrong cached answer is worse than a missed saving. The design therefore separates the \emph{threshold} decision (does a candidate exist?) from the \emph{equivalence} decision (may it be served?), so that raw similarity can never, by itself, cause an answer to be served.
+    \item \textbf{Fail open, never fail closed.} The cache is an optimisation, not a dependency. Any error in Redis, the vector index, or a provider degrades to the next safe option (a provider call, a failover provider, a mock) rather than surfacing an error to the caller.
+    \item \textbf{Measured equals shipped.} The evaluation harness imports the identical policy object used at run time, eliminating the common gap between a paper's reported behaviour and a system's actual behaviour.
+    \item \textbf{Pluggability at every boundary.} Embedding, vector index, and provider are all swappable behind a stable interface, so a single node and a horizontally-scaled cluster run the same code with different configuration.
+    \item \textbf{Safe by construction for multi-tenancy.} Every piece of state is namespaced by a tenant identifier derived from the API key, so cross-tenant leakage --- the defining risk of a shared semantic cache --- is structurally impossible rather than merely discouraged.
+    \item \textbf{Observability as a first-class concern.} The same metrics that drive the Grafana dashboards are the evidence base for the evaluation, so the system is instrumented from the first request.
+\end{enumerate}
+
+\section{Design Patterns Employed}
+The design realises these goals through a small set of well-established software patterns. Table~\ref{tab:patterns} names each pattern, where it is applied, and the goal it serves.
+
+\begin{table}[H]
+    \centering
+    \resizebox{\textwidth}{!}{
+    \begin{tabular}{|l|p{5.4cm}|p{5.4cm}|}
+    \hline
+    \textbf{Pattern} & \textbf{Where applied in VeriGate} & \textbf{Purpose / goal served} \\ \hline
+    Gateway / Proxy & The service itself sits in front of the LLM providers & Single control point for caching, routing, auth, budgeting \\ \hline
+    Strategy (pluggable backend) & Embedding (\texttt{minilm}/\texttt{hash}), vector index (\texttt{inproc}/\texttt{redisearch}), provider (OpenAI/Gemini/mock) & Swap implementations by configuration without touching callers (pluggability) \\ \hline
+    Policy Object & \texttt{CachePolicy.decide()} as one pure decision function & Shared by server and evaluator (measured = shipped); unit-testable \\ \hline
+    Chain of Responsibility & Threshold $\rightarrow$ Tier-1 $\rightarrow$ Tier-2 verifier stages; provider failover chain & Cheap checks first; each stage can accept, reject, or defer \\ \hline
+    Circuit Breaker \cite{nygard2018release} & \texttt{breaker.py} per provider, state in Redis & Skip a dead upstream fast instead of retrying (fail open) \\ \hline
+    Token Bucket & Per-key rate limiting (atomic Redis) & Bound burst load fairly per client \\ \hline
+    Decorator / Middleware & Auth, tenant derivation, rate limit, budget wrap each request & Cross-cutting concerns kept out of the core logic \\ \hline
+    \end{tabular}
+    }
+    \caption{Design patterns used in VeriGate and the design goal each one serves.}
+    \label{tab:patterns}
+\end{table}
+
+\section{System Architecture}
+The gateway is organised into four cooperating layers. Requests descend through them; the cache policy short-circuits the descent whenever a verified hit is available.
+
+\begin{itemize}
+    \item \textbf{Layer 1 --- Edge / API (FastAPI).} Terminates HTTP, authenticates the API key, derives the tenant, applies rate limiting and the daily spend budget, and exposes the chat, health, metrics, admin, and dashboard routes. Streaming responses are served as Server-Sent Events.
+    \item \textbf{Layer 2 --- Cache Intelligence.} The heart of the system: it embeds the query, retrieves the nearest neighbour within the tenant, and applies the \texttt{CachePolicy} (adaptive threshold $\rightarrow$ verifier $\rightarrow$ decision). It also classifies volatile queries for bypass. On a verified hit it returns the stored answer; otherwise it forwards to Layer~3.
+    \item \textbf{Layer 3 --- Provider Routing.} Selects the upstream model. With the cascade enabled it scores complexity and chooses the cheap or strong tier; a circuit breaker skips unhealthy providers, and a mock provider is always retained as a terminal failover.
+    \item \textbf{Layer 4 --- State \& Storage.} Redis (or in-process \texttt{fakeredis}) holds cache entries, rate-limit buckets, budget counters, and breaker state, all namespaced per tenant. The vector index (in-process NumPy matrix or RediSearch/HNSW) provides the nearest-neighbour lookup.
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \resizebox{0.9\textwidth}{!}{%
+    \begin{tikzpicture}[node distance=0.5cm]
+    \node[vgnode, text width=0.82\textwidth] (edge)
+        {\textbf{Layer 1 \textbullet\ Edge / API} (FastAPI + uvicorn)\\[1pt]
+         Auth $\rightarrow$ tenant derivation $\rightarrow$ rate limit $\rightarrow$ spend budget \quad\textbar\quad Routes: \texttt{/v1/chat}, \texttt{/v1/chat/stream}, \texttt{/health}, \texttt{/metrics}, \texttt{/ui}};
+    \node[vgacc, text width=0.82\textwidth, below=of edge] (cache)
+        {\textbf{Layer 2 \textbullet\ Cache Intelligence} \; \textit{(the contribution)}\\[1pt]
+         embed $\rightarrow$ nearest neighbour (per tenant) $\rightarrow$ \texttt{CachePolicy}: adaptive threshold $\rightarrow$ Tier-1/Tier-2 verifier $\rightarrow$ HIT / MISS \quad\textbar\quad volatility $\rightarrow$ BYPASS};
+    \node[vgnode, text width=0.82\textwidth, below=of cache] (route)
+        {\textbf{Layer 3 \textbullet\ Provider Routing}\\[1pt]
+         cost-aware cascade (cheap $\leftrightarrow$ strong) $+$ circuit breaker $+$ failover to mock \quad\textbar\quad OpenAI-compatible client (OpenAI / Gemini)};
+    \node[vgnode, text width=0.82\textwidth, below=of route] (state)
+        {\textbf{Layer 4 \textbullet\ State \& Storage}\\[1pt]
+         Redis / fakeredis: cache entries, rate buckets, budget counters, breaker state (all per-tenant) \quad\textbar\quad vector index: in-process matrix \emph{or} RediSearch/HNSW};
+    \draw[vgflow] (edge) -- (cache);
+    \draw[vgflow] (cache) -- (route);
+    \draw[vgflow] (route) -- (state);
+    \end{tikzpicture}%
+    }
+    \caption{VeriGate four-layer architecture. Requests descend from the edge; a verified cache hit in Layer~2 (highlighted) short-circuits the provider call in Layer~3. All state in Layer~4 is namespaced per tenant.}
+    \label{fig:sys_arch}
+\end{figure}
+
+\section{Use Case Analysis}
+VeriGate has two human/system actors and one external actor. The \textbf{Client Application} (a developer's service) sends chat requests through the gateway. The \textbf{Operator} monitors the cache and manages it via the dashboard. The \textbf{LLM Provider} (OpenAI / Gemini) is an external actor that fulfils cache-missed calls. Figure~\ref{fig:usecase} shows the use cases within the system boundary.
+
+\begin{figure}[H]
+    \centering
+    \resizebox{0.92\textwidth}{!}{%
+    \begin{tikzpicture}[
+        uc/.style={draw=black!72, line width=0.5pt, ellipse, align=center,
+                   minimum width=3.2cm, minimum height=1.05cm, fill=black!4, font=\small},
+        ucacc/.style={uc, fill=blue!7, draw=blue!50!black},
+        act/.style={align=center, font=\small},
+        assoc/.style={line width=0.5pt, draw=black!72}
+    ]
+    \tikzset{person/.pic={
+        \draw[line width=0.6pt, black!75] (0,0) circle (3mm);
+        \draw[line width=0.6pt, black!75] (0,-0.3) -- (0,-0.95);
+        \draw[line width=0.6pt, black!75] (-0.38,-0.52) -- (0.38,-0.52);
+        \draw[line width=0.6pt, black!75] (0,-0.95) -- (-0.3,-1.38);
+        \draw[line width=0.6pt, black!75] (0,-0.95) -- (0.3,-1.38);
+    }}
+    % system boundary
+    \node[draw=black!60, line width=0.6pt, rounded corners=2pt,
+          minimum width=8.4cm, minimum height=6.6cm,
+          label={[font=\small\bfseries]above:VeriGate Gateway}] (bnd) at (0.6,0.3) {};
+    % actors
+    \pic at (-5.0,2.2) {person}; \node[act] at (-5.0,0.35) {Client\\Application};
+    \pic at (-5.0,-1.4) {person}; \node[act] at (-5.0,-3.25) {Operator};
+    \pic at (6.1,-0.5) {person};  \node[act] at (6.1,-2.35) {LLM Provider\\(external)};
+    % use cases: left column (actor-facing), right column (included steps)
+    \node[ucacc] (submit) at (-1.3,2.2) {Submit / stream\\query};
+    \node[uc]    (manage) at (-1.3,-1.4) {Manage / clear\\cache};
+    \node[uc] (lookup) at (2.5,2.2) {Semantic\\lookup};
+    \node[uc] (verify) at (2.5,0.4) {Verify hit\\(no false hit)};
+    \node[uc] (route)  at (2.5,-1.4) {Route to model\\(cascade)};
+    % associations
+    \draw[assoc] (-4.35,2.2) -- (submit.west);
+    \draw[assoc] (-4.35,-1.4) -- (manage.west);
+    \draw[assoc] (route.east) -- (5.35,-0.5);
+    % include / extend
+    \draw[vgdash] (submit.east) -- node[vglbl, above]{$\ll$include$\gg$} (lookup.west);
+    \draw[vgdash] (lookup.south) -- node[vglbl, right]{$\ll$include$\gg$} (verify.north);
+    \draw[vgdash] (verify.south) -- node[vglbl, right]{$\ll$extend$\gg$ (MISS)} (route.north);
+    \end{tikzpicture}%
+    }
+    \caption{UML use-case diagram. The Client Application submits and streams queries; every submission \emph{includes} a semantic lookup and a verify step, and \emph{extends} to a model route only on a miss. The Operator manages and clears the cache; the external LLM Provider fulfils missed calls.}
+    \label{fig:usecase}
+\end{figure}
+
+\section{Data Flow Diagrams}
+A Data-Flow Diagram (DFD) models how information moves through the system independently of control flow. The Level-0 (context) diagram treats the gateway as a single process; the Level-1 diagram decomposes it into sub-processes and data stores.
+
+\subsection{Level-0 DFD (Context Diagram)}
+\begin{figure}[H]
+    \centering
+    \resizebox{0.82\textwidth}{!}{%
+    \begin{tikzpicture}
+    \node[vgproc, minimum size=2.5cm] (g) at (0,0) {\textbf{0}\\VeriGate\\Gateway};
+    \node[vgext, text width=2.2cm] (client) at (-5.6,0) {Client\\Application};
+    \node[vgext, text width=2.4cm] (prov) at (5.6,0) {LLM Provider\\(OpenAI/Gemini)};
+    \node[vgext, text width=2.0cm] (op) at (0,-3.8) {Operator};
+    % client <-> gateway
+    \draw[vgflow] (client.8) -- node[vglbl, above]{query + key} (g.172);
+    \draw[vgflow] (g.188) -- node[vglbl, below]{answer + status} (client.-8);
+    % gateway <-> provider
+    \draw[vgflow] (g.8) -- node[vglbl, above]{prompt (on MISS)} (prov.172);
+    \draw[vgflow] (prov.188) -- node[vglbl, below]{completion} (g.-8);
+    % operator
+    \draw[vgflow] (op.100) -- node[vglbl, left]{clear / monitor} (g.-100);
+    \draw[vgflow] (g.-80) -- node[vglbl, right]{metrics / stats} (op.80);
+    \end{tikzpicture}%
+    }
+    \caption{Level-0 (context) DFD. The gateway exchanges queries and answers with the Client, prompts and completions with the external LLM Provider (only on a cache miss), and control/metrics with the Operator.}
+    \label{fig:dfd0}
+\end{figure}
+
+\subsection{Level-1 DFD (Process Decomposition)}
+The gateway decomposes into five processes (P1--P5) reading and writing five data stores (D1--D5).
+\begin{itemize}
+    \item \textbf{P1 Guard:} authenticate key, derive tenant, apply rate limit and spend budget (reads/writes D3).
+    \item \textbf{P2 Embed \& Lookup:} embed the query and find the nearest neighbour in the tenant's partition (reads D2, the vector index).
+    \item \textbf{P3 Verify \& Decide:} read the candidate entry (D1), apply the adaptive threshold and the verifier, classify volatility, and emit HIT/MISS/BYPASS.
+    \item \textbf{P4 Route \& Call:} on a miss, run the cascade, skip open breakers (reads/writes D4), call the provider, and store the answer (writes D1, D2).
+    \item \textbf{P5 Observe:} record counters and latencies (writes D5) exposed at \texttt{/metrics}.
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \resizebox{\textwidth}{!}{%
+    \begin{tikzpicture}[x=1cm, y=1cm]
+    % --- main horizontal flow lane (y = 0) ---
+    \node[vgext, minimum width=1.9cm] (client) at (-8.0,0) {Client\\App};
+    \node[vgproc, minimum size=1.4cm] (p1) at (-5.2,0) {P1\\Guard};
+    \node[vgproc, minimum size=1.4cm] (p2) at (-2.6,0) {P2\\Lookup};
+    \node[vgproc, minimum size=1.4cm] (p3) at (0.0,0)  {P3\\Verify};
+    \node[vgproc, minimum size=1.4cm] (p4) at (3.4,0)  {P4\\Route};
+    \node[vgext, minimum width=1.9cm] (prov) at (6.6,0) {LLM\\Provider};
+    % --- data stores: two on top, others below (grid-aligned) ---
+    \node[vgds] (d2) at (-2.6,2.3) {D2 Vector Index};
+    \node[vgds] (d1) at (0.0,2.3)  {D1 Cache Store};
+    \node[vgds] (d3) at (-5.2,-2.1) {D3 Budget/Rate};
+    \node[vgds] (d4) at (3.4,-2.1)  {D4 Breaker};
+    % --- P5 / metrics lane (below) ---
+    \node[vgproc, minimum size=1.4cm] (p5) at (0.0,-3.4) {P5\\Observe};
+    \node[vgds] (d5) at (2.7,-3.4) {D5 Metrics};
+    \node[vgext, minimum width=1.9cm] (op) at (-8.0,-3.4) {Operator};
+    % client <-> P1 (parallel, near-horizontal)
+    \draw[vgflow] (client.8) -- node[vglbl, above]{query} (p1.172);
+    \draw[vgflow] (p1.188) -- node[vglbl, below]{answer} (client.-8);
+    % forward chain
+    \draw[vgflow] (p1) -- (p2);
+    \draw[vgflow] (p2) -- (p3);
+    \draw[vgflow] (p3) -- node[vglbl, above]{MISS} (p4);
+    % provider I/O (parallel horizontal)
+    \draw[vgflow] (p4.15) -- node[vglbl, above]{prompt} (prov.165);
+    \draw[vgdash] (prov.195) -- node[vglbl, below]{completion} (p4.-15);
+    % store reads/writes (orthogonal, vertical)
+    \draw[vgdash] (d2.south) -- (p2.north);
+    \draw[vgdash] (d1.south) -- (p3.north);
+    \draw[vgdash] (p1.south) -- (d3.north);
+    \draw[vgdash] (p4.south) -- (d4.north);
+    % P4 store to cache (orthogonal elbow along the top)
+    \draw[vgdash] (p4.north) |- node[vglbl, pos=0.72, above]{store} (d1.east);
+    % observe lane
+    \draw[vgdash] (p3.south) -- (p5.north);
+    \draw[vgflow] (p5.east) -- (d5.west);
+    \draw[vgflow] (op) -- node[vglbl, above]{clear / monitor} (p5);
+    \end{tikzpicture}%
+    }
+    \caption{Level-1 DFD. The main data flow runs left to right along one lane (Client\,$\to$\,P1\,$\to$\,P2\,$\to$\,P3\,$\to$\,P4\,$\to$\,Provider); data stores connect by vertical (orthogonal) flows. A verified hit in P3 returns the answer to the client; only a miss reaches P4 and the external provider, whose answer is written back to the cache (D1).}
+    \label{fig:dfd1}
+\end{figure}
+
+\section{Request Lifecycle and the Cache Decision}
+The defining logic of VeriGate is the decision, taken for every query, among four outcomes: \textbf{BYPASS} (volatile, never cached), \textbf{HIT} (a verified equivalent answer is served), \textbf{blocked} (a candidate above threshold is rejected by the verifier and demoted to a miss), and \textbf{MISS} (the provider is called and the answer is stored). Figure~\ref{fig:decision} formalises this flow; Figure~\ref{fig:sequence} then traces the two dominant paths --- a cold MISS and a warm HIT --- as a sequence of messages between components.
+
+\begin{figure}[H]
+    \centering
+    \resizebox{0.92\textwidth}{!}{
+    \begin{tikzpicture}[
+        node distance=1.1cm and 1.9cm,
+        dec/.style={draw=black!72, line width=0.5pt, diamond, aspect=2, text width=2.5cm,
+                    align=center, inner sep=1pt, fill=black!4},
+        blk/.style={vgnode, text width=3.2cm},
+        outcome/.style={draw, line width=0.5pt, rounded corners=10pt, text width=3.0cm,
+                        align=center, minimum height=1cm, font=\small}
+    ]
+    \node[blk, fill=black!8] (in) {\textbf{Query} $q$ \; (tenant $t$)};
+    \node[dec, below=of in] (vol) {\textbf{Volatile?}};
+    \node[outcome, right=of vol, fill=black!6, draw=black!55] (bypass) {\textbf{BYPASS}\\call provider, do not cache};
+    \node[blk, below=of vol] (emb) {embed $q$; nearest neighbour $c$, similarity $s$};
+    \node[dec, below=of emb] (thr) {$s \geq T_{\text{adaptive}}$?};
+    \node[dec, right=of thr] (ver) {\textbf{Verifier}\\accepts?};
+    \node[outcome, right=of ver, fill=green!8, draw=green!50!black] (hit) {\textbf{HIT}\\serve cached answer};
+    \node[outcome, below=of ver, fill=red!7, draw=red!55!black] (blocked) {\textbf{blocked}\\false hit rejected};
+    \node[outcome, below=of thr, fill=orange!9, draw=orange!65!black] (miss) {\textbf{MISS}\\call provider, store answer};
+
+    \draw[vgflow] (in) -- (vol);
+    \draw[vgflow] (vol) -- node[vglbl, above]{yes} (bypass);
+    \draw[vgflow] (vol) -- node[vglbl, right]{no} (emb);
+    \draw[vgflow] (emb) -- (thr);
+    \draw[vgflow] (thr) -- node[vglbl, above]{yes} (ver);
+    \draw[vgflow] (thr) -- node[vglbl, right]{no} (miss);
+    \draw[vgflow] (ver) -- node[vglbl, above]{yes} (hit);
+    \draw[vgflow] (ver) -- node[vglbl, right]{no} (blocked);
+    \draw[vgflow] (blocked) -- (miss);
+    \end{tikzpicture}
+    }
+    \caption{The four-outcome cache decision. A candidate whose similarity clears the adaptive threshold is still subjected to the verifier; only a verified candidate is served as a HIT, while a rejected one is demoted to a MISS (``blocked''). Volatile queries bypass the cache entirely.}
+    \label{fig:decision}
+\end{figure}
+
+\subsection{Request Sequence (HIT vs MISS)}
+\begin{figure}[H]
+    \centering
+    \resizebox{0.98\textwidth}{!}{%
+    \begin{tikzpicture}[
+        head/.style={vgnode, minimum width=2.4cm, minimum height=0.7cm, font=\small\bfseries, fill=black!6},
+        call/.style={-{Stealth[length=1.8mm,width=1.4mm]}, line width=0.55pt, draw=black!75},
+        ret/.style={-{Stealth[length=1.8mm,width=1.4mm]}, line width=0.5pt, draw=black!60, dashed},
+        note/.style={draw=black!45, line width=0.4pt, fill=blue!6, font=\scriptsize, align=center,
+                     rounded corners=1.5pt, inner sep=3pt},
+        act/.style={draw=black!55, line width=0.4pt, fill=black!7, minimum width=0.16cm}
+    ]
+    \def\C{0} \def\G{4.2} \def\A{8.6} \def\P{13}
+    \def\bot{-9.6}
+    % lifeline heads + dashed lifelines
+    \node[head] (c) at (\C,0) {Client};
+    \node[head] (g) at (\G,0) {Gateway};
+    \node[head] (a) at (\A,0) {Cache + Index};
+    \node[head] (p) at (\P,0) {Provider};
+    \foreach \x in {\C,\G,\A,\P} \draw[line width=0.4pt, black!35, dashed] (\x,-0.38) -- (\x,\bot);
+    % activation bars
+    \fill[act] (\G-0.08,-1.2) rectangle (\G+0.08,-5.7);
+    \fill[act] (\A-0.08,-2.5) rectangle (\A+0.08,-3.1);
+    \fill[act] (\P-0.08,-3.7) rectangle (\P+0.08,-4.5);
+    \fill[act] (\G-0.08,-6.8) rectangle (\G+0.08,-9.2);
+    \fill[act] (\A-0.08,-7.4) rectangle (\A+0.08,-8.7);
+
+    % ---- Cold MISS ----
+    \node[left, font=\scriptsize\itshape, text=black!65] at (\C-0.25,-0.95) {Cold request};
+    \draw[call] (\C,-1.2) -- node[vglbl, above]{POST /v1/chat ($q_1$, key)} (\G-0.1,-1.2);
+    \node[note, anchor=north] at (\G,-1.75) {auth \textbullet\ tenant \textbullet\ rate \textbullet\ budget};
+    \draw[call] (\G+0.1,-2.5) -- node[vglbl, above]{lookup($q_1$, $t$)} (\A-0.1,-2.5);
+    \draw[ret] (\A-0.1,-3.1) -- node[vglbl, above]{MISS (below $T$)} (\G+0.1,-3.1);
+    \draw[call] (\G+0.1,-3.7) -- node[vglbl, above]{complete($q_1$)} (\P-0.1,-3.7);
+    \draw[ret] (\P-0.1,-4.5) -- node[vglbl, above]{answer (stream)} (\G+0.1,-4.5);
+    \draw[call] (\G+0.1,-5.1) -- node[vglbl, above]{store($q_1$, answer, $t$)} (\A-0.1,-5.1);
+    \draw[ret] (\G-0.1,-5.7) -- node[vglbl, above]{answer \{MISS, $\sim$800\,ms\}} (\C,-5.7);
+
+    % ---- Warm HIT ----
+    \node[left, font=\scriptsize\itshape, text=black!65] at (\C-0.25,-6.55) {Reworded request};
+    \draw[call] (\C,-6.8) -- node[vglbl, above]{POST /v1/chat ($q_2 \approx q_1$)} (\G-0.1,-6.8);
+    \draw[call] (\G+0.1,-7.4) -- node[vglbl, above]{lookup + verify($q_2$, $t$)} (\A-0.1,-7.4);
+    \node[note, anchor=north] at (\A,-7.95) {$s \geq T_{\text{adaptive}}$, Tier-1 OK};
+    \draw[ret] (\A-0.1,-8.7) -- node[vglbl, above]{HIT (verified)} (\G+0.1,-8.7);
+    \draw[ret] (\G-0.1,-9.2) -- node[vglbl, above]{answer \{HIT, $\sim$10\,ms, \$0\}} (\C,-9.2);
+    \end{tikzpicture}%
+    }
+    \caption{Request sequence. A cold query misses the cache, is answered by the provider ($\sim$800\,ms), and is stored. A subsequently reworded query clears the adaptive threshold, passes verification, and is served from cache ($\sim$10\,ms, \$0) without touching the provider --- the core cost/latency win. Solid arrows are calls; dashed arrows are returns; bars are activations.}
+    \label{fig:sequence}
+\end{figure}
+
+\section{Cache Intelligence Design}
+The cache intelligence is composed of three sub-designs that together constitute the novel contribution.
+
+\subsection{Adaptive Similarity Threshold}
+\label{sec:adaptive}
+Rather than a global constant $T_{\text{base}}$, the effective threshold is raised in \emph{dense} neighbourhoods, where many stored queries crowd around the incoming one and the risk of a look-alike collision is highest. Let $s$ be the top-1 cosine similarity and let a local density signal $\rho \in [0,1]$ measure how close the runner-up neighbours are to the top candidate. The adaptive threshold is
+\begin{equation}
+\label{eq:adaptive}
+    T_{\text{adaptive}} = \min\!\big(T_{\max},\; T_{\text{base}} + \alpha \cdot \rho\big),
+\end{equation}
+where $T_{\text{base}}$ is the calibrated base threshold for the embedding model (0.72 for \texttt{all-MiniLM-L6-v2}, see Chapter~6), $\alpha$ is a sensitivity coefficient, and $T_{\max}$ caps the strictness. In sparse regions the threshold stays near $T_{\text{base}}$ so genuine paraphrases still hit; in dense regions it rises so ambiguous look-alikes are held to a higher bar. This directly attacks the related-topic false hits that a fixed threshold cannot separate without also rejecting paraphrases.
+
+\subsection{Two-Tier Self-Verifier}
+\label{sec:verifier}
+The verifier is the mechanism that distinguishes VeriGate from all fixed-threshold caches. It runs \emph{after} a candidate clears the threshold and decides whether the two queries truly mean the same thing.
+
+\paragraph{Tier-1 (structural, near-free).} Most dangerous false hits differ in a small set of high-signal features. Tier-1 extracts and compares:
+\begin{itemize}
+    \item \textbf{Numbers} --- a query mentioning ``5 gb'' must not be served the ``50 gb'' answer;
+    \item \textbf{Negation} --- ``how to enable X'' must not be served ``how to disable X'';
+    \item \textbf{Named entities} --- ``capital of Austria'' must not be served ``capital of Australia''.
+\end{itemize}
+If the candidate and the query disagree on any of these, the hit is rejected with a reason code (e.g. \texttt{number\_mismatch}). Tier-1 deliberately does \emph{not} use blanket word-overlap, which an early design showed wrongly rejects legitimate paraphrases that share few words; it checks only the load-bearing tokens.
+
+\paragraph{Tier-2 (NLI, optional).} For correctness-critical domains, an NLI cross-encoder \cite{he2021deberta, bowman2015snli} tests \emph{bidirectional} entailment: the candidate is accepted only if $q \Rightarrow c$ and $c \Rightarrow q$. It is gated behind a configuration flag because it is comparatively expensive and, as Chapter~6 shows, largely redundant once the adaptive threshold is active.
+
+\subsection{Volatility Detection}
+\label{sec:volatility}
+A volatility classifier flags queries whose correct answer changes with time (weather, prices, ``today'', ``current'', ``now''). Such queries are marked BYPASS: they are never served from and never written to the cache, eliminating the staleness class of errors entirely.
+
+\section{Cost-Aware Cascade Design}
+\label{sec:cascade}
+For queries that miss the cache, a complexity score $\kappa(q) \in [0,1]$ (based on length, structure, and difficulty cues) decides the model tier: if $\kappa(q) < \tau$ the query is routed to the cheap model, otherwise it is escalated to the strong model. The unused tier is retained as failover. This realises the FrugalGPT cascade idea \cite{chen2023frugalgpt} in a transparent, dependency-free form.
+
+\begin{figure}[H]
+    \centering
+    \resizebox{0.9\textwidth}{!}{
+    \begin{tikzpicture}[x=1cm, y=1cm]
+    \node[vgnode, text width=2.6cm] (miss) at (0,0) {Cache MISS\\query $q$};
+    \node[draw=black!72, line width=0.5pt, diamond, aspect=2.2, text width=2.2cm, align=center,
+          inner sep=1pt, fill=black!4] (score) at (3.6,0) {$\kappa(q) < \tau$?};
+    \node[vgnode, text width=2.8cm] (cheap) at (7.6,1.4) {\textbf{Cheap model}\\(flash-lite / mini)};
+    \node[vgacc, text width=2.8cm] (strong) at (7.6,-1.4) {\textbf{Strong model}\\(3.5-flash / 4o)};
+    \node[vgnode, text width=2.6cm] (ans) at (11.6,0) {answer $\rightarrow$\\store in cache};
+    \draw[vgflow] (miss) -- (score);
+    \draw[vgflow] (score.north) |- node[vglbl, pos=0.7, above]{yes (easy)} (cheap.west);
+    \draw[vgflow] (score.south) |- node[vglbl, pos=0.7, below]{no (hard)} (strong.west);
+    \draw[vgflow] (cheap.east) -| (ans.north);
+    \draw[vgflow] (strong.east) -| (ans.south);
+    \end{tikzpicture}
+    }
+    \caption{Cost-aware cascade. A transparent complexity score routes easy queries to the cheap model and escalates only hard ones to the strong model; the unused tier remains as a failover.}
+    \label{fig:cascade_design}
+\end{figure}
+
+\section{Component and Module Design}
+The static structure follows the layers of Figure~\ref{fig:sys_arch}. Table~\ref{tab:modules} maps each source module to its responsibility and its principal collaborators, showing that the novel logic is concentrated in \texttt{app/cache/} behind a single policy object.
+
+\begin{table}[H]
+    \centering
+    \resizebox{\textwidth}{!}{
+    \begin{tabular}{|l|p{6.0cm}|l|}
+    \hline
+    \textbf{Module} & \textbf{Responsibility} & \textbf{Layer} \\ \hline
+    \texttt{app/main.py} & Routes, auth, tenant derivation, rate limit, budget wiring & 1 (Edge) \\ \hline
+    \texttt{app/config.py} & Single typed \texttt{Settings} (all env knobs) & cross-cutting \\ \hline
+    \texttt{app/cache/policy.py} & \texttt{CachePolicy.decide()} --- the shared decision object & 2 (Cache) \\ \hline
+    \texttt{app/cache/threshold.py} & Adaptive threshold (Eq.~\ref{eq:adaptive}) & 2 \\ \hline
+    \texttt{app/cache/verifier.py} & Tier-1 structural + Tier-2 NLI verification & 2 \\ \hline
+    \texttt{app/cache/volatility.py} & Volatility (staleness) classifier & 2 \\ \hline
+    \texttt{app/cache/semantic\_cache.py} & Per-tenant embed / lookup / store; in-process index & 2, 4 \\ \hline
+    \texttt{app/cache/redisearch\_store.py} & RediSearch/HNSW backend with \texttt{tenant} TAG & 4 \\ \hline
+    \texttt{app/complexity.py} & Query complexity score for the cascade & 3 \\ \hline
+    \texttt{app/providers/registry.py} & Build providers / cascade; \texttt{route\_stream} & 3 \\ \hline
+    \texttt{app/providers/openai\_compat.py} & OpenAI/Gemini streaming client & 3 \\ \hline
+    \texttt{app/providers/breaker.py} & Per-provider circuit breaker (Redis state) & 3, 4 \\ \hline
+    \texttt{app/budget.py} & Per-key daily spend budget & 1, 4 \\ \hline
+    \texttt{app/metrics.py} & Prometheus counters and histograms & cross-cutting \\ \hline
+    \texttt{app/static/dashboard.html} & Operator dashboard served at \texttt{/ui} & 1 \\ \hline
+    \end{tabular}
+    }
+    \caption{Module responsibilities mapped to architectural layers. The contribution is concentrated in \texttt{app/cache/}, reached through the single \texttt{CachePolicy} object.}
+    \label{tab:modules}
+\end{table}
+
+\section{Data Model and Tenant Namespacing}
+All state is partitioned per tenant to close the cross-tenant leakage risk. The tenant identifier is derived deterministically from the API key so that keys never appear in storage:
+\begin{equation}
+    \texttt{tenant\_id} = \texttt{"t\_"} + \mathrm{SHA256}(\texttt{api\_key})[{:}16].
+\end{equation}
+Table~\ref{tab:datamodel} lists the namespaced keys. The in-process index is a dictionary of per-tenant NumPy matrices; the RediSearch backend stores a \texttt{tenant} TAG field and pre-filters every $k$-nearest-neighbour query by it.
+
+\begin{table}[H]
+    \centering
+    \resizebox{\textwidth}{!}{
+    \begin{tabular}{|l|l|l|}
+    \hline
+    \textbf{Purpose} & \textbf{Key pattern} & \textbf{Notes} \\ \hline
+    Cache entry ids & \texttt{cache:ids:<tenant>} & set of entry ids for the tenant \\ \hline
+    Cache entry & \texttt{cache:entry:<tenant>:<id>} & stored query, answer, vector; optional TTL \\ \hline
+    Rate-limit bucket & \texttt{ratelimit:<api\_key>} & token-bucket state (atomic) \\ \hline
+    Spend budget & \texttt{budget:<api\_key>:<day>} & provider-call counter; hits are free \\ \hline
+    Circuit breaker & \texttt{breaker:open:<provider>} & open/closed state + failure count \\ \hline
+    RediSearch doc & \texttt{vec:<tenant>:<id>} & HNSW-indexed vector with \texttt{tenant} TAG \\ \hline
+    \end{tabular}
+    }
+    \caption{Namespaced state in Redis. Every cache and index key is scoped by \texttt{tenant\_id}, so one tenant can never read another's entries.}
+    \label{tab:datamodel}
+\end{table}
+
+\section{API Route Design}
+\begin{table}[H]
+    \centering
+    \resizebox{\textwidth}{!}{
+    \begin{tabular}{|l|l|l|p{6.2cm}|}
+    \hline
+    \textbf{Route} & \textbf{Method} & \textbf{Auth} & \textbf{Purpose} \\ \hline
+    \texttt{/v1/chat} & POST & Yes & Chat completion (non-streaming JSON) with cache lookup. \\ \hline
+    \texttt{/v1/chat/stream} & POST & Yes & Streaming completion (Server-Sent Events). \\ \hline
+    \texttt{/health} & GET & No & Liveness + live configuration (backends, provider). \\ \hline
+    \texttt{/metrics} & GET & No$^{\dagger}$ & Prometheus metrics (requests, cache outcomes, latency). \\ \hline
+    \texttt{/admin/cache/clear} & POST & Yes & Clears \emph{only} the caller's tenant cache. \\ \hline
+    \texttt{/} , \texttt{/ui} & GET & No & Operator dashboard (interactive testing). \\ \hline
+    \end{tabular}
+    }
+    \caption{Primary API routes. $^{\dagger}$\,\texttt{/metrics} is public in the demo build and is flagged for lock-down before any multi-tenant public deployment (Chapter~5, security).}
+    \label{tab:api_routes}
+\end{table}
+
+\section{Deployment Topology}
+The same image runs from a laptop to a cluster by configuration alone. Figure~\ref{fig:deploy} shows the production topology: clients reach one or more stateless gateway replicas behind a load balancer; the replicas share one Redis (or Redis Stack) for cache, budgets, and breaker state, and call the external provider on misses; Prometheus scrapes each replica and Grafana renders the dashboards. Because all state lives in shared Redis, replicas are horizontally scalable and interchangeable.
+
+\begin{figure}[H]
+    \centering
+    \resizebox{0.95\textwidth}{!}{%
+    \begin{tikzpicture}[x=1cm, y=1cm]
+    \node[vgext, minimum width=2.0cm] (client) at (0,0) {Client\\Apps};
+    \node[vgnode, text width=1.9cm] (lb) at (3.0,0) {Load\\Balancer + TLS};
+    % gateway replicas (single clean box; "x N" conveys replication)
+    \node[vgacc, minimum width=2.7cm, minimum height=1.15cm] (gw) at (6.15,0) {Gateway replicas\\stateless \textbullet\ $\times N$};
+    % backing services (right column)
+    \node[vgnode, text width=3.2cm] (redis) at (10.4,2.1) {Redis / Redis Stack\\(shared state + index)};
+    \node[vgext, text width=2.9cm] (prov)  at (10.4,0) {LLM Provider\\(OpenAI / Gemini)};
+    \node[vgnode, text width=2.9cm] (prom)  at (10.4,-2.1) {Prometheus\\+ Grafana};
+    % connections: each service on its own clean orthogonal path (no shared/overlapping stubs)
+    \draw[vgflow] (client) -- (lb);
+    \draw[vgflow] (lb) -- (gw);
+    \draw[vgbi]   (gw.north) |- (redis.west);      % up from the gateway, then into Redis (read/write)
+    \draw[vgflow] (gw.east)  -- (prov.west);        % straight across to the Provider (calls)
+    \draw[vgdash] (prom.west) -- node[vglbl, above]{scrape} ++(-1.3,0) |- (gw.south); % Prometheus scrapes the gateway
+    \end{tikzpicture}%
+    }
+    \caption{Production deployment topology. Stateless gateway replicas ($\times N$) sit behind a TLS-terminating load balancer and share one Redis for all state, so the cache, budgets, and breaker are consistent across replicas; Prometheus/Grafana observe every replica. Each connector uses an orthogonal path on its own side of the gateway.}
+    \label{fig:deploy}
+\end{figure}
+
+\section{Failure-Mode and Error-Handling Design}
+The gateway is designed to degrade gracefully rather than fail:
+\begin{enumerate}
+    \item \textbf{Cache fails open.} If Redis or the vector index errors, the request degrades to a normal provider call rather than returning an error --- the cache is an optimisation, never a dependency.
+    \item \textbf{Provider failover.} If the selected provider fails (outage, bad key), the router tries the next candidate and finally a mock provider, so a request never hard-fails on a provider problem.
+    \item \textbf{Circuit breaker.} After $N$ failures within a window a provider's breaker opens and the router skips it for a cooldown, preventing repeated slow failures against a dead upstream \cite{nygard2018release}.
+    \item \textbf{Budget and rate limits.} Over-budget or over-rate requests are rejected cleanly with HTTP~429; cache hits are exempt from the budget so the cache extends, rather than consumes, the allowance.
+    \item \textbf{TTL and cleanup.} Optional per-entry TTL bounds memory and self-heals staleness; dangling ids are removed on index rebuild.
+\end{enumerate}
+
+Table~\ref{tab:failure} summarises the fault-tolerance design as a fault/detection/response matrix.
+
+\begin{table}[H]
+    \centering
+    \resizebox{\textwidth}{!}{
+    \begin{tabular}{|p{3.6cm}|p{3.6cm}|p{5.4cm}|}
+    \hline
+    \textbf{Fault} & \textbf{Detection} & \textbf{System response} \\ \hline
+    Redis / index unavailable & exception on lookup/store & degrade to direct provider call (fail open) \\ \hline
+    Provider outage / bad key & non-2xx or timeout & failover to next provider, then mock \\ \hline
+    Repeated provider failures & breaker failure counter & open breaker, skip provider for cooldown \\ \hline
+    Cost-exhaustion (bill shock) & per-key daily counter & HTTP 429; cache hits stay free \\ \hline
+    Request burst & token bucket empty & HTTP 429 (rate limited) \\ \hline
+    Stale cached answer & TTL expiry / volatility flag & entry expires; volatile queries bypass \\ \hline
+    \end{tabular}
+    }
+    \caption{Fault-tolerance matrix: how each anticipated fault is detected and handled without surfacing an error to the caller.}
+    \label{tab:failure}
+\end{table}

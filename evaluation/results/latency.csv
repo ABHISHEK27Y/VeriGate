@@ -1,0 +1,9 @@
+stage,cache_size,p50_ms,p95_ms,p99_ms,mean_ms
+embed query,-,9.857,11.231,11.866,9.841
+KNN lookup (100 entries),100,0.011,0.014,0.028,0.013
+KNN lookup (500 entries),500,0.030,0.032,0.041,0.031
+KNN lookup (1000 entries),1000,0.052,0.123,0.167,0.059
+KNN lookup (5000 entries),5000,0.158,0.234,0.363,0.178
+Tier-1 verify,-,0.013,0.019,0.024,0.014
+Tier-2 NLI verify,-,96.719,125.209,129.419,104.375
+HIT path (embed+KNN+Tier-1),1000,11.876,24.285,28.567,14.398

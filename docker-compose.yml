@@ -1,0 +1,37 @@
+# Full local stack: the gateway + Redis Stack (vector search).
+#   docker compose up --build
+# Gateway on http://localhost:8000, Redis Stack on 6379 (RedisInsight UI on 8001).
+#
+# Secrets come from your shell / .env (never baked into the image):
+#   LLM_PROVIDER=gemini GEMINI_API_KEY=... docker compose up --build
+services:
+  redis:
+    image: redis/redis-stack:latest
+    ports:
+      - "6379:6379"     # Redis
+      - "8001:8001"     # RedisInsight web UI
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  gateway:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      VECTOR_BACKEND: redisearch
+      EMBEDDING_BACKEND: minilm
+      LLM_PROVIDER: ${LLM_PROVIDER:-mock}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    depends_on:
+      redis:
+        condition: service_healthy
+
+volumes:
+  redis-data:

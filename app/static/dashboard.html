@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>VeriGate — self-verifying semantic cache</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a0b; --surface:#101012; --surface2:#161619; --raise:#1b1b1f;
+  --line:#232327; --line2:#33333a;
+  --text:#f3f3f1; --muted:#8b8b91; --faint:#5c5c63;
+  --accent:#57d98a; --accent-soft:rgba(87,217,138,.10);
+  --hit:#57d98a; --miss:#e0a13a; --bypass:#6b7078; --block:#e8556b;
+  --r:10px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--text);
+  font-family:Inter,system-ui,sans-serif;font-size:15px;line-height:1.6;
+  -webkit-font-smoothing:antialiased;letter-spacing:-.005em}
+/* faint technical dot-grid that fades toward the edges — texture, not decoration */
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background-image:radial-gradient(circle at 1px 1px,rgba(255,255,255,.028) 1px,transparent 0);
+  background-size:28px 28px;
+  -webkit-mask-image:radial-gradient(ellipse 90% 55% at 50% -5%,#000 25%,transparent 72%);
+  mask-image:radial-gradient(ellipse 90% 55% at 50% -5%,#000 25%,transparent 72%)}
+::selection{background:var(--accent);color:#04120a}
+a{color:inherit;text-decoration:none}
+.mono{font-family:'JetBrains Mono',monospace;font-variant-numeric:tabular-nums}
+.wrap{max-width:1080px;margin:0 auto;padding:0 28px}
+.eyebrow{font-family:'JetBrains Mono',monospace;font-size:11.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--faint)}
+.divider{border-top:1px solid var(--line);margin:0}
+
+/* nav */
+nav{position:sticky;top:0;z-index:40;background:rgba(10,10,11,.78);
+  backdrop-filter:saturate(140%) blur(8px);border-bottom:1px solid var(--line)}
+nav .in{display:flex;align-items:center;gap:26px;height:58px}
+nav .brand{display:flex;align-items:center;gap:9px;font-weight:600;font-size:15px}
+nav .brand .m{width:9px;height:9px;border-radius:2px;background:var(--accent)}
+nav .sp{flex:1}
+nav a.link{color:var(--muted);font-size:13.5px;font-weight:450;transition:color .15s}
+nav a.link:hover{color:var(--text)}
+.status{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--muted)}
+.status .d{width:7px;height:7px;border-radius:50%;background:var(--accent)}
+
+/* hero */
+.hero{padding:92px 0 60px}
+.hero h1{font-size:clamp(34px,5.4vw,56px);line-height:1.04;font-weight:600;
+  letter-spacing:-.03em;margin:20px 0 22px;max-width:15ch}
+.hero h1 em{font-style:normal;color:var(--muted)}
+.hero p{color:var(--muted);font-size:17px;max-width:56ch;margin:0 0 32px}
+.actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.btn{cursor:pointer;font-family:inherit;font-size:14px;font-weight:500;border-radius:8px;
+  padding:11px 18px;transition:.15s;border:1px solid transparent}
+.btn.pri{background:var(--accent);color:#04120a}
+.btn.pri:hover{filter:brightness(1.07)}
+.btn.sec{background:transparent;border-color:var(--line2);color:var(--text)}
+.btn.sec:hover{border-color:var(--muted);background:var(--surface)}
+.btn.sm{padding:9px 14px;font-size:13px}
+
+/* config strip */
+.cfg{display:flex;gap:0;flex-wrap:wrap;margin-top:44px;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.cfg .c{flex:1;min-width:150px;padding:14px 18px;border-right:1px solid var(--line)}
+.cfg .c:last-child{border-right:none}
+.cfg .k{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.1em}
+.cfg .v{font-family:'JetBrains Mono',monospace;font-size:13.5px;margin-top:4px;color:var(--text)}
+
+/* section scaffolding */
+section{padding:74px 0}
+.shead{display:flex;align-items:baseline;gap:14px;margin-bottom:34px}
+.shead .no{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent)}
+.shead h2{font-size:clamp(22px,3vw,30px);font-weight:600;letter-spacing:-.02em;margin:0}
+.reveal{opacity:0;transform:translateY(14px);transition:opacity .6s ease,transform .6s ease}
+.reveal.in{opacity:1;transform:none}
+
+/* contribution list */
+.contrib{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);
+  border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+@media(max-width:820px){.contrib{grid-template-columns:1fr}}
+.contrib .item{background:var(--surface);padding:26px 24px;transition:background .18s}
+.contrib .item:hover{background:var(--surface2)}
+.contrib .item:hover .n{color:var(--accent)}
+.contrib .n{transition:color .18s}
+.contrib .n{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--faint)}
+.contrib .item h3{font-size:16.5px;font-weight:600;margin:12px 0 8px}
+.contrib .item p{color:var(--muted);font-size:14px;margin:0}
+
+/* metrics */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
+  border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+@media(max-width:820px){.metrics{grid-template-columns:1fr 1fr}}
+.metrics .m{background:var(--surface);padding:26px 22px}
+.metrics .num{font-family:'JetBrains Mono',monospace;font-size:33px;font-weight:500;
+  letter-spacing:-.02em;color:var(--accent)}
+.metrics .lbl{color:var(--muted);font-size:13px;margin-top:8px;line-height:1.45}
+.metrics .lbl b{color:var(--text);font-weight:500}
+
+/* comparison */
+.cmp{margin-top:22px;border:1px solid var(--line);border-radius:var(--r);padding:24px}
+.cmp .t{font-size:13px;color:var(--muted);margin-bottom:18px}
+.cmprow{display:flex;align-items:center;gap:16px;margin:12px 0}
+.cmprow .nm{width:120px;font-size:13px;color:var(--muted)}
+.track{flex:1;height:10px;background:var(--surface2);border-radius:6px;overflow:hidden}
+.track>i{display:block;height:100%;width:0;border-radius:6px;transition:width 1s cubic-bezier(.2,.7,.2,1)}
+.cmprow .pct{width:56px;text-align:right;font-family:'JetBrains Mono',monospace;font-size:13px}
+.foot{margin-top:20px;font-size:12.5px;color:var(--faint);line-height:1.7}
+
+/* playground */
+.play{display:grid;grid-template-columns:1fr 296px;gap:20px}
+@media(max-width:820px){.play{grid-template-columns:1fr}}
+.panel{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:22px}
+label{display:block;font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px}
+input,textarea{width:100%;background:var(--bg);color:var(--text);border:1px solid var(--line2);
+  border-radius:8px;padding:11px 12px;font-size:14.5px;font-family:inherit;transition:border-color .15s}
+input:focus,textarea:focus{outline:none;border-color:var(--accent)}
+textarea{resize:vertical;min-height:56px;line-height:1.5}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.chip{cursor:pointer;font-size:12.5px;color:var(--muted);background:var(--bg);
+  border:1px solid var(--line2);border-radius:7px;padding:7px 11px;transition:.15s}
+.chip:hover{border-color:var(--accent);color:var(--text)}
+.chip small{color:var(--faint);margin-left:2px}
+.result{margin-top:18px;border-top:1px solid var(--line);padding-top:18px;display:none}
+.rbadge{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500;border-radius:6px;
+  padding:5px 10px;letter-spacing:.03em}
+.b-HIT{background:var(--accent-soft);color:var(--hit);border:1px solid rgba(87,217,138,.3)}
+.b-MISS{background:rgba(224,161,58,.1);color:var(--miss);border:1px solid rgba(224,161,58,.3)}
+.b-BYPASS{background:rgba(107,112,120,.14);color:#9aa0a8;border:1px solid var(--line2)}
+.b-REJECT{background:rgba(232,85,107,.1);color:var(--block);border:1px solid rgba(232,85,107,.3)}
+.answer{margin:14px 0;padding:13px 14px;background:var(--bg);border:1px solid var(--line);
+  border-radius:8px;white-space:pre-wrap;font-size:14.5px}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:1px;
+  background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.meta div{background:var(--surface);padding:10px 12px}
+.meta span{display:block;font-size:10.5px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em}
+.meta b{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:500}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);
+  border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.stat{background:var(--surface);padding:13px 14px}
+.stat span{font-size:11px;color:var(--muted)}
+.stat b{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:500;display:block;margin-top:2px}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:middle}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line)}
+th{color:var(--faint);font-weight:450;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+td.c{font-family:'JetBrains Mono',monospace;color:var(--muted)}
+.err{color:var(--block);font-size:12.5px;margin-top:10px;min-height:15px}
+.hint{color:var(--faint);font-size:12px;margin-top:11px}
+
+/* pipeline */
+.flow{display:flex;flex-wrap:wrap;gap:10px}
+.step{flex:1;min-width:150px;border:1px solid var(--line);border-radius:var(--r);
+  background:var(--surface);padding:18px 16px;transition:border-color .18s,transform .18s}
+.step:hover{border-color:var(--line2);transform:translateY(-2px)}
+.tech{transition:border-color .18s,color .18s}
+.tech:hover{border-color:var(--line2);color:var(--text)}
+.step .n{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent)}
+.step h4{margin:8px 0 5px;font-size:14.5px;font-weight:600}
+.step p{margin:0;color:var(--muted);font-size:13px}
+.stack{display:flex;gap:8px;flex-wrap:wrap;margin-top:22px}
+.tech{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);
+  border:1px solid var(--line);border-radius:6px;padding:6px 10px}
+footer{border-top:1px solid var(--line);padding:34px 0 60px;color:var(--faint);font-size:12.5px}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap in">
+    <div class="brand"><span class="m"></span> VeriGate</div>
+    <div class="sp"></div>
+    <a class="link" href="#contribution">Contribution</a>
+    <a class="link" href="#results">Results</a>
+    <a class="link" href="#playground">Playground</a>
+    <a class="link" href="#pipeline">Pipeline</a>
+    <span class="status"><span class="d"></span><span id="stat" class="mono">…</span></span>
+  </div>
+</nav>
+
+<header class="hero"><div class="wrap">
+  <div class="eyebrow">B.Tech Major Project — LLM Gateway</div>
+  <h1>A semantic cache that verifies every hit <em>before it answers.</em></h1>
+  <p>VeriGate reuses answers for reworded questions to cut LLM cost and latency — but a two-tier
+     verifier rejects look-alike matches, so a query like “capital of Australia” never receives
+     the cached answer for “capital of Austria.”</p>
+  <div class="actions">
+    <a class="btn pri" href="#playground">Open playground</a>
+    <a class="btn sec" href="#results">View results</a>
+  </div>
+  <div class="cfg" id="cfg"></div>
+</div></header>
+
+<div class="divider"></div>
+
+<section id="contribution"><div class="wrap reveal">
+  <div class="shead"><span class="no">01</span><h2>The contribution</h2></div>
+  <div class="contrib">
+    <div class="item"><div class="n">A</div><h3>Adaptive threshold</h3>
+      <p>Match strictness is computed per query from entities, numbers, length and neighbourhood
+         density — not one global constant.</p></div>
+    <div class="item"><div class="n">B</div><h3>Self-verifier</h3>
+      <p>Two tiers — structural checks (numbers, negation, entities) then NLI equivalence —
+         reject false hits similarity alone would accept.</p></div>
+    <div class="item"><div class="n">C</div><h3>Staleness detection</h3>
+      <p>Time-sensitive queries are detected and never cached, so a cached answer can’t go
+         stale.</p></div>
+  </div>
+</div></section>
+
+<div class="divider"></div>
+
+<section id="results"><div class="wrap reveal">
+  <div class="shead"><span class="no">02</span><h2>Measured results</h2></div>
+  <div class="metrics">
+    <div class="m"><div class="num" data-to="0" data-suffix="%">0%</div>
+      <div class="lbl">false-hit rate<br><b>baseline: 46.7%</b></div></div>
+    <div class="m"><div class="num" data-to="100" data-suffix="%">100%</div>
+      <div class="lbl">cache precision<br><b>baseline: 46%</b></div></div>
+    <div class="m"><div class="num" data-to="1000" data-prefix="~" data-suffix="×">~1000×</div>
+      <div class="lbl">faster on a hit<br><b>Gemini 23s → 22ms</b></div></div>
+    <div class="m"><div class="num" data-to="7000" data-prefix="~" data-suffix="×">~7000×</div>
+      <div class="lbl">faster KNN lookup<br><b>293ms → 0.04ms</b></div></div>
+  </div>
+  <div class="cmp">
+    <div class="t">False-hit rate — wrong answers served (lower is better)</div>
+    <div class="cmprow"><div class="nm">Static baseline</div>
+      <div class="track"><i data-w="93" style="background:var(--block)"></i></div><div class="pct">46.7%</div></div>
+    <div class="cmprow"><div class="nm">VeriGate</div>
+      <div class="track"><i data-w="1.5" style="background:var(--accent)"></i></div><div class="pct">0.0%</div></div>
+    <div class="foot">Also verified: staleness detector 5/5 volatile caught · 12/12 tests ·
+      two vector backends (in-process NumPy + RediSearch/HNSW) · real Gemini integration ·
+      13 documented build phases.</div>
+  </div>
+</div></section>
+
+<div class="divider"></div>
+
+<section id="playground"><div class="wrap reveal">
+  <div class="shead"><span class="no">03</span><h2>Playground</h2></div>
+  <div class="play">
+    <div class="panel">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+        <div style="flex:1;min-width:160px"><label>API key</label><input id="apikey" value="demo-key-123"></div>
+      </div>
+      <label>Query</label>
+      <textarea id="query" placeholder="how do I reset my password"></textarea>
+      <div class="actions" style="margin-top:12px">
+        <button class="btn pri sm" id="ask">Ask</button>
+        <button class="btn sec sm" id="clear">Clear cache</button>
+        <button class="btn sec sm" id="reset">Reset stats</button>
+      </div>
+      <div class="chips" id="chips"></div>
+      <div class="err" id="err"></div>
+      <div class="result" id="result">
+        <span class="rbadge" id="rbadge">—</span>
+        <div class="answer" id="ranswer"></div>
+        <div class="meta">
+          <div><span>provider</span><b id="rprov">—</b></div>
+          <div><span>latency</span><b id="rlat">—</b></div>
+          <div><span>similarity</span><b id="rsim">—</b></div>
+          <div><span>threshold</span><b id="rthr">—</b></div>
+          <div style="grid-column:1/-1"><span>reason</span><b id="rreason">—</b></div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="panel">
+        <label>Session</label>
+        <div class="stats">
+          <div class="stat"><span>requests</span><b id="s-total">0</b></div>
+          <div class="stat"><span>hit rate</span><b id="s-rate">0%</b></div>
+          <div class="stat"><span><span class="dot" style="background:var(--hit)"></span>hits</span><b id="s-hits">0</b></div>
+          <div class="stat"><span><span class="dot" style="background:var(--miss)"></span>miss</span><b id="s-miss">0</b></div>
+          <div class="stat"><span><span class="dot" style="background:var(--bypass)"></span>bypass</span><b id="s-bypass">0</b></div>
+          <div class="stat"><span><span class="dot" style="background:var(--block)"></span>blocked</span><b id="s-block">0</b></div>
+        </div>
+        <div class="hint">“blocked” = the verifier caught a look-alike and refused the wrong cached answer.</div>
+      </div>
+      <div class="panel" style="margin-top:16px">
+        <label>History</label>
+        <table><thead><tr><th>cache</th><th>query</th><th>sim</th><th>ms</th></tr></thead><tbody id="log"></tbody></table>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<div class="divider"></div>
+
+<section id="pipeline"><div class="wrap reveal">
+  <div class="shead"><span class="no">04</span><h2>Request pipeline</h2></div>
+  <div class="flow">
+    <div class="step"><div class="n">01</div><h4>Auth · rate limit</h4><p>API key + Redis token bucket.</p></div>
+    <div class="step"><div class="n">02</div><h4>Staleness</h4><p>Volatile query → skip cache.</p></div>
+    <div class="step"><div class="n">03</div><h4>Embed · KNN</h4><p>MiniLM vector → nearest match.</p></div>
+    <div class="step"><div class="n">04</div><h4>Adapt · verify</h4><p>Per-query threshold, then verifier.</p></div>
+    <div class="step"><div class="n">05</div><h4>Hit or LLM</h4><p>Serve cache, else provider + failover.</p></div>
+  </div>
+  <div class="stack">
+    <span class="tech">FastAPI</span><span class="tech">Redis · RediSearch HNSW</span>
+    <span class="tech">sentence-transformers</span><span class="tech">NLI cross-encoder</span>
+    <span class="tech">Prometheus</span><span class="tech">Docker</span>
+    <span class="tech">OpenAI · Gemini</span><span class="tech">NumPy</span>
+  </div>
+</div></section>
+
+<footer><div class="wrap">VeriGate · adaptive self-verifying semantic cache · served by the gateway at <span class="mono">/ui</span></div></footer>
+
+<script>
+const $=id=>document.getElementById(id);
+let s={total:0,hits:0,miss:0,bypass:0,block:0};
+const EX=[
+  {t:"how do I reset my password",d:"MISS"},
+  {t:"what is the process to recover my account password",d:"→ HIT"},
+  {t:"what is the capital of Austria",d:"MISS"},
+  {t:"what is the capital of Australia",d:"look-alike"},
+  {t:"what is the weather today",d:"→ BYPASS"},
+];
+$("chips").innerHTML="";EX.forEach(e=>{const c=document.createElement("div");c.className="chip";
+  c.innerHTML=`${e.t}<small>${e.d}</small>`;c.onclick=()=>{$("query").value=e.t;ask();};$("chips").appendChild(c);});
+
+async function health(){try{const h=await(await fetch("/health")).json();
+  $("cfg").innerHTML=[["redis",h.redis],["vector index",h.vector_backend],["embeddings",h.embedding_backend],
+    ["provider",(h.providers||[]).join(", ")]].map(([k,v])=>`<div class="c"><div class="k">${k}</div><div class="v">${v}</div></div>`).join("");
+  $("stat").textContent=h.vector_backend+" · "+(h.providers||[]).join(",");
+}catch(e){$("stat").textContent="offline";}}
+
+function setS(){$("s-total").textContent=s.total;const d=s.hits+s.miss;
+  $("s-rate").textContent=d?Math.round(100*s.hits/d)+"%":"0%";
+  $("s-hits").textContent=s.hits;$("s-miss").textContent=s.miss;$("s-bypass").textContent=s.bypass;$("s-block").textContent=s.block;}
+
+async function ask(){const q=$("query").value.trim();if(!q)return;$("ask").disabled=true;$("err").textContent="";
+  try{const r=await fetch("/v1/chat",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":$("apikey").value},body:JSON.stringify({prompt:q})});
+    if(r.status===429){$("err").textContent="Rate limited (429).";return;}
+    if(r.status===401){$("err").textContent="Invalid API key (401).";return;}
+    const d=await r.json();const rej=d.note&&d.note.startsWith("verify_rejected");
+    const b=$("rbadge");b.textContent=(rej?"BLOCKED · ":"")+d.cache;b.className="rbadge b-"+(rej?"REJECT":d.cache);
+    $("ranswer").textContent=d.answer;$("rprov").textContent=d.provider;$("rlat").textContent=(d.latency_ms??0)+" ms";
+    $("rsim").textContent=d.similarity!=null?d.similarity.toFixed(3):"—";$("rthr").textContent=d.threshold!=null?d.threshold.toFixed(3):"—";
+    $("rreason").textContent=d.note||"—";$("result").style.display="block";
+    s.total++;if(d.cache==="HIT")s.hits++;else if(d.cache==="BYPASS")s.bypass++;else s.miss++;if(rej)s.block++;setS();
+    const col=rej?"var(--block)":d.cache==="HIT"?"var(--hit)":d.cache==="BYPASS"?"var(--bypass)":"var(--miss)";
+    const tr=document.createElement("tr");
+    tr.innerHTML=`<td><span class="dot" style="background:${col}"></span>${rej?"BLOCK":d.cache}</td>
+      <td>${q.replace(/</g,"&lt;")}</td><td class="c">${d.similarity!=null?d.similarity.toFixed(2):"—"}</td><td class="c">${d.latency_ms??"—"}</td>`;
+    $("log").prepend(tr);
+  }catch(e){$("err").textContent="Request failed: "+e.message;}finally{$("ask").disabled=false;}}
+
+$("ask").onclick=ask;
+$("clear").onclick=async()=>{try{await fetch("/admin/cache/clear",{method:"POST",headers:{"x-api-key":$("apikey").value}});$("err").textContent="Cache cleared.";}catch(e){$("err").textContent="Clear failed.";}};
+$("reset").onclick=()=>{s={total:0,hits:0,miss:0,bypass:0,block:0};$("log").innerHTML="";setS();};
+$("query").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();ask();}});
+
+const io=new IntersectionObserver(es=>es.forEach(en=>{if(en.isIntersecting){en.target.classList.add("in");
+  en.target.querySelectorAll('.num[data-to]').forEach(cu);
+  en.target.querySelectorAll('.track>i').forEach(i=>i.style.width=i.dataset.w+"%");io.unobserve(en.target);}}),{threshold:.18});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+function cu(el){const to=+el.dataset.to,pre=el.dataset.prefix||"",su=el.dataset.suffix||"";let t0=null;
+  function f(ts){if(!t0)t0=ts;const p=Math.min(1,(ts-t0)/900);el.textContent=pre+Math.round(to*(1-Math.pow(1-p,3))).toLocaleString()+su;if(p<1)requestAnimationFrame(f);}requestAnimationFrame(f);}
+health();setS();
+</script>
+</body>
+</html>
