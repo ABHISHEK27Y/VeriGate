@@ -6,6 +6,7 @@ short queries are matched STRICTLY and long open-ended queries LOOSELY.
 Scaffold version: interpretable heuristic. Phase-4 upgrade: learn the weights (or a
 logistic-regression accept-classifier) on the benchmark validation split.
 """
+
 from __future__ import annotations
 
 import re
@@ -19,6 +20,8 @@ _CAP_RE = re.compile(r"\b[A-Z][a-zA-Z]+\b")
 
 T_MIN = 0.70
 T_MAX = 0.98
+SHORT_QUERY_MAX_TOKENS = 3
+LONG_QUERY_MIN_TOKENS = 20
 
 
 def _clip(x: float, lo: float, hi: float) -> float:
@@ -40,11 +43,11 @@ def has_number(query: str) -> bool:
 def shortness(query: str) -> float:
     """Return higher for shorter queries (0..1)."""
     n = len(tokenize(query))
-    if n <= 3:
+    if n <= SHORT_QUERY_MAX_TOKENS:
         return 1.0
-    if n >= 20:
+    if n >= LONG_QUERY_MIN_TOKENS:
         return 0.0
-    return (20 - n) / 17.0
+    return (LONG_QUERY_MIN_TOKENS - n) / (LONG_QUERY_MIN_TOKENS - SHORT_QUERY_MAX_TOKENS)
 
 
 def adaptive_threshold(query: str, neighbourhood_density: float = 0.0) -> float:
@@ -56,9 +59,9 @@ def adaptive_threshold(query: str, neighbourhood_density: float = 0.0) -> float:
     base = settings.cache_similarity_base
     t = (
         base
-        + 0.10 * entity_density(query)      # w1: proper nouns -> stricter
+        + 0.10 * entity_density(query)  # w1: proper nouns -> stricter
         + 0.06 * (1.0 if has_number(query) else 0.0)  # w2: numbers -> stricter
-        + 0.06 * shortness(query)           # w3: short -> stricter
-        + 0.06 * neighbourhood_density      # w4: crowded -> stricter
+        + 0.06 * shortness(query)  # w3: short -> stricter
+        + 0.06 * neighbourhood_density  # w4: crowded -> stricter
     )
     return _clip(t, T_MIN, T_MAX)

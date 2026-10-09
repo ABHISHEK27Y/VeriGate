@@ -1,5 +1,10 @@
 """End-to-end behaviour tests. Each test asserts one guarantee of the system."""
-from conftest import HEADERS
+
+from conftest import HEADERS, METRICS_HEADERS
+
+HTTP_OK = 200
+HTTP_UNAUTHORIZED = 401
+HTTP_TOO_MANY_REQUESTS = 429
 
 
 def _chat(client, text):
@@ -8,13 +13,13 @@ def _chat(client, text):
 
 def test_health(client):
     r = client.get("/health")
-    assert r.status_code == 200
+    assert r.status_code == HTTP_OK
     assert r.json()["status"] == "ok"
 
 
 def test_auth_required(client):
     r = client.post("/v1/chat", json={"prompt": "hi"})  # no key
-    assert r.status_code == 401
+    assert r.status_code == HTTP_UNAUTHORIZED
 
 
 def test_cache_miss_then_hit(client):
@@ -52,24 +57,32 @@ def test_volatile_query_bypasses_cache(client):
 def test_rate_limit_returns_429(client):
     # capacity=5 in tests; the 6th rapid request should be throttled.
     codes = [_chat(client, f"unique query number {i}").status_code for i in range(8)]
-    assert 429 in codes
+    assert HTTP_TOO_MANY_REQUESTS in codes
 
 
 def test_tenant_isolation(client):
     """Security: one tenant must NEVER be served another tenant's cached answer."""
-    A = {"x-api-key": "demo-key-123"}
-    B = {"x-api-key": "tenant-b-key"}
+    tenant_a = {"x-api-key": "demo-key-123"}
+    tenant_b = {"x-api-key": "tenant-b-key"}
     q = {"prompt": "how do I reset my password"}
 
-    assert client.post("/v1/chat", json=q, headers=A).json()["cache"] == "MISS"  # A caches it
+    assert (
+        client.post("/v1/chat", json=q, headers=tenant_a).json()["cache"] == "MISS"
+    )  # A caches it
     # B asks the identical question -> must be a MISS (B has its own empty cache)
-    assert client.post("/v1/chat", json=q, headers=B).json()["cache"] == "MISS"
+    assert client.post("/v1/chat", json=q, headers=tenant_b).json()["cache"] == "MISS"
     # A asks again -> HIT from A's own cache
-    assert client.post("/v1/chat", json=q, headers=A).json()["cache"] == "HIT"
+    assert client.post("/v1/chat", json=q, headers=tenant_a).json()["cache"] == "HIT"
 
 
 def test_metrics_endpoint(client):
     _chat(client, "hello there")
-    r = client.get("/metrics")
-    assert r.status_code == 200
+    r = client.get("/metrics", headers=METRICS_HEADERS)
+    assert r.status_code == HTTP_OK
     assert b"verigate_requests_total" in r.content
+
+
+def test_metrics_endpoint_requires_auth(client):
+    _chat(client, "hello there")
+    r = client.get("/metrics")
+    assert r.status_code == HTTP_UNAUTHORIZED

@@ -7,6 +7,7 @@ Run with a live Redis Stack:
 Verifies a MISS -> HIT (semantic paraphrase) and the Austria/Australia rejection, all
 served through the shared Redis HNSW index.
 """
+
 import logging
 
 logging.getLogger("httpx").setLevel(logging.WARNING)

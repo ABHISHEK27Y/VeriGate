@@ -2,11 +2,13 @@
 
 Uses structlog for JSON output with contextvars (request_id, tenant, etc.).
 """
+
 from __future__ import annotations
 
+import hashlib
 import logging
 import sys
-from typing import Any
+import uuid
 
 import structlog
 
@@ -71,7 +73,6 @@ class LoggingMiddleware:
             await self.app(scope, receive, send)
             return
 
-        import uuid
         request_id = str(uuid.uuid4())[:8]
 
         # Bind request_id to contextvars for this request
@@ -82,7 +83,6 @@ class LoggingMiddleware:
         api_key = headers.get(b"x-api-key", b"").decode() if b"x-api-key" in headers else None
         if api_key:
             # Use same tenant derivation as main.py
-            import hashlib
             tenant = "t_" + hashlib.sha256(api_key.encode()).hexdigest()[:16]
             structlog.contextvars.bind_contextvars(tenant=tenant)
 

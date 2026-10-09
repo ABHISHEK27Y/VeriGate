@@ -5,6 +5,7 @@ Tracks failures per provider in Redis. After `breaker_fail_threshold` failures w
 `breaker_cooldown_sec` (fail fast instead of hammering a dead upstream). A success resets the
 count. State lives in Redis so all gateway replicas agree.
 """
+
 from __future__ import annotations
 
 from ..config import settings

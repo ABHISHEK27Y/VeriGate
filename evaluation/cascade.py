@@ -12,13 +12,14 @@ model). Quality proxy: a hard query answered by the cheap model is a quality los
     python -m evaluation.cascade
 Outputs evaluation/results/cascade.{png,csv}.
 """
+
 from __future__ import annotations
 
 import csv
-import os
 from pathlib import Path
 
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
@@ -27,18 +28,29 @@ from app.complexity import complexity_score  # noqa: E402
 RESULTS = Path(__file__).parent / "results"
 RESULTS.mkdir(exist_ok=True)
 
-CHEAP_COST, STRONG_COST = 1.0, 15.0   # strong model is 15x the cheap one
+CHEAP_COST, STRONG_COST = 1.0, 15.0  # strong model is 15x the cheap one
 
 # ---- labelled dataset: (query, "easy"|"hard") ----
 EASY = [
-    "what is the capital of France", "who wrote Hamlet", "what is 15% of 200",
-    "convert 10 usd to inr", "define photosynthesis", "what is the boiling point of water",
-    "how many days in a leap year", "what is the chemical symbol for gold",
-    "what is the tallest mountain", "what year did world war 2 end",
-    "what is the speed of light", "capital city of Japan", "what is a noun",
-    "how many continents are there", "what is the freezing point of water",
-    "who painted the Mona Lisa", "what is the square root of 144",
-    "what is the currency of Germany", "how many sides does a hexagon have",
+    "what is the capital of France",
+    "who wrote Hamlet",
+    "what is 15% of 200",
+    "convert 10 usd to inr",
+    "define photosynthesis",
+    "what is the boiling point of water",
+    "how many days in a leap year",
+    "what is the chemical symbol for gold",
+    "what is the tallest mountain",
+    "what year did world war 2 end",
+    "what is the speed of light",
+    "capital city of Japan",
+    "what is a noun",
+    "how many continents are there",
+    "what is the freezing point of water",
+    "who painted the Mona Lisa",
+    "what is the square root of 144",
+    "what is the currency of Germany",
+    "how many sides does a hexagon have",
     "what is the largest ocean",
 ]
 HARD = [
@@ -69,7 +81,7 @@ N_HARD = len(HARD)
 
 def evaluate(threshold: float) -> dict:
     escalated = 0
-    hard_kept = 0        # truly-hard queries routed to strong (quality retained)
+    hard_kept = 0  # truly-hard queries routed to strong (quality retained)
     tp = fp = fn = tn = 0
     for q, label in DATA:
         hard_pred = complexity_score(q) >= threshold
@@ -77,14 +89,14 @@ def evaluate(threshold: float) -> dict:
             escalated += 1
         if label == "hard":
             if hard_pred:
-                hard_kept += 1; tp += 1
+                hard_kept += 1
+                tp += 1
             else:
                 fn += 1
+        elif hard_pred:
+            fp += 1
         else:
-            if hard_pred:
-                fp += 1
-            else:
-                tn += 1
+            tn += 1
     n = len(DATA)
     f = escalated / n
     cascade_cost = escalated * STRONG_COST + (n - escalated) * CHEAP_COST
@@ -93,8 +105,8 @@ def evaluate(threshold: float) -> dict:
         "threshold": threshold,
         "escalation_rate": f,
         "cost_reduction": 1 - cascade_cost / baseline_cost,
-        "quality_retention": hard_kept / N_HARD,          # hard-recall
-        "random_retention": f,                            # random routing at same rate
+        "quality_retention": hard_kept / N_HARD,  # hard-recall
+        "random_retention": f,  # random routing at same rate
         "precision": tp / (tp + fp) if (tp + fp) else 1.0,
         "recall": tp / (tp + fn) if (tp + fn) else 0.0,
         "f1": 2 * tp / (2 * tp + fp + fn) if (2 * tp + fp + fn) else 0.0,
@@ -102,8 +114,10 @@ def evaluate(threshold: float) -> dict:
 
 
 def main() -> None:
-    print(f"\nDataset: {len(EASY)} easy + {len(HARD)} hard queries. "
-          f"Cost: cheap={CHEAP_COST}, strong={STRONG_COST} (strong is {STRONG_COST/CHEAP_COST:.0f}x).\n")
+    print(
+        f"\nDataset: {len(EASY)} easy + {len(HARD)} hard queries. "
+        f"Cost: cheap={CHEAP_COST}, strong={STRONG_COST} (strong is {STRONG_COST / CHEAP_COST:.0f}x).\n"
+    )
 
     thresholds = [round(0.05 * i, 3) for i in range(0, 21)]
     rows = [evaluate(t) for t in thresholds]
@@ -112,39 +126,64 @@ def main() -> None:
     print(f"{'thr':>5}{'escalated':>11}{'cost -':>9}{'quality':>9}{'random':>8}{'F1':>7}")
     for r in rows:
         if round(r["threshold"], 2) in (0.0, 0.3, 0.5, 0.7, 1.0):
-            print(f"{r['threshold']:>5}{r['escalation_rate']*100:>10.0f}%"
-                  f"{r['cost_reduction']*100:>8.0f}%{r['quality_retention']*100:>8.0f}%"
-                  f"{r['random_retention']*100:>7.0f}%{r['f1']:>7.2f}")
+            print(
+                f"{r['threshold']:>5}{r['escalation_rate'] * 100:>10.0f}%"
+                f"{r['cost_reduction'] * 100:>8.0f}%{r['quality_retention'] * 100:>8.0f}%"
+                f"{r['random_retention'] * 100:>7.0f}%{r['f1']:>7.2f}"
+            )
 
     default = evaluate(0.5)
-    print(f"\nDefault threshold 0.5: cut cost {default['cost_reduction']*100:.0f}% while "
-          f"keeping {default['quality_retention']*100:.0f}% of hard queries on the strong model "
-          f"(routing F1={default['f1']:.2f}).\n")
+    print(
+        f"\nDefault threshold 0.5: cut cost {default['cost_reduction'] * 100:.0f}% while "
+        f"keeping {default['quality_retention'] * 100:.0f}% of hard queries on the strong model "
+        f"(routing F1={default['f1']:.2f}).\n"
+    )
 
     with open(RESULTS / "cascade.csv", "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))
-        w.writeheader(); w.writerows(rows)
+        w.writeheader()
+        w.writerows(rows)
 
     # money graph: quality retention vs cost reduction — cascade vs random
     cx = [r["cost_reduction"] * 100 for r in rows]
     plt.figure(figsize=(7.5, 5.2))
-    plt.plot(cx, [r["quality_retention"] * 100 for r in rows], "o-", color="#2ca02c",
-             label="cost-aware cascade (complexity classifier)")
-    plt.plot(cx, [r["random_retention"] * 100 for r in rows], "s--", color="#999",
-             label="random routing (same escalation rate)")
-    plt.scatter(default["cost_reduction"] * 100, default["quality_retention"] * 100,
-                marker="*", s=300, color="#1f77b4", zorder=6, edgecolors="black",
-                linewidths=.6, label="default (threshold 0.5)")
+    plt.plot(
+        cx,
+        [r["quality_retention"] * 100 for r in rows],
+        "o-",
+        color="#2ca02c",
+        label="cost-aware cascade (complexity classifier)",
+    )
+    plt.plot(
+        cx,
+        [r["random_retention"] * 100 for r in rows],
+        "s--",
+        color="#999",
+        label="random routing (same escalation rate)",
+    )
+    plt.scatter(
+        default["cost_reduction"] * 100,
+        default["quality_retention"] * 100,
+        marker="*",
+        s=300,
+        color="#1f77b4",
+        zorder=6,
+        edgecolors="black",
+        linewidths=0.6,
+        label="default (threshold 0.5)",
+    )
     plt.xlabel("Cost reduction vs. always-strong  → higher is cheaper")
     plt.ylabel("Quality retention  (hard queries kept on strong)  ↑")
-    plt.title("Cost-aware cascade: keep quality while cutting cost\n"
-              "the classifier beats random routing at every cost level")
+    plt.title(
+        "Cost-aware cascade: keep quality while cutting cost\n"
+        "the classifier beats random routing at every cost level"
+    )
     plt.legend(fontsize=8, loc="lower left")
-    plt.grid(True, alpha=.3)
+    plt.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.savefig(RESULTS / "cascade.png", dpi=150)
     plt.close()
-    print(f"Saved: {RESULTS/'cascade.csv'} and cascade.png\n")
+    print(f"Saved: {RESULTS / 'cascade.csv'} and cascade.png\n")
 
 
 if __name__ == "__main__":

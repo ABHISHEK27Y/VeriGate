@@ -8,16 +8,47 @@ and escalate only the hard ones — cutting cost while preserving quality.
 Scaffold: an interpretable heuristic. Phase-2 upgrade: train a small classifier on labelled
 easy/hard queries (see evaluation/cascade.py for the benchmark).
 """
+
 from __future__ import annotations
 
 import re
 
 _HARD_WORDS = {
-    "why", "explain", "compare", "comparison", "difference", "differences", "versus", "vs",
-    "analyze", "analyse", "prove", "derive", "evaluate", "design", "optimize", "optimise",
-    "reason", "reasoning", "implications", "tradeoff", "tradeoffs", "trade-off", "architecture",
-    "debug", "refactor", "algorithm", "complexity", "summarize", "summarise", "pros and cons",
-    "step by step", "how would", "how do i implement", "walk me through", "critique",
+    "why",
+    "explain",
+    "compare",
+    "comparison",
+    "difference",
+    "differences",
+    "versus",
+    "vs",
+    "analyze",
+    "analyse",
+    "prove",
+    "derive",
+    "evaluate",
+    "design",
+    "optimize",
+    "optimise",
+    "reason",
+    "reasoning",
+    "implications",
+    "tradeoff",
+    "tradeoffs",
+    "trade-off",
+    "architecture",
+    "debug",
+    "refactor",
+    "algorithm",
+    "complexity",
+    "summarize",
+    "summarise",
+    "pros and cons",
+    "step by step",
+    "how would",
+    "how do i implement",
+    "walk me through",
+    "critique",
 }
 _CODE = re.compile(r"```|def |class |function |select \*|import |{.*}|=>|public |void ")
 _MATH = re.compile(r"\b(integral|derivative|matrix|probability|theorem|equation|gradient)\b")

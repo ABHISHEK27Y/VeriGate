@@ -3,6 +3,7 @@
 Lets you run and load-test the ENTIRE gateway with no API keys and no cost. Answers are
 deterministic per prompt so cache behaviour is easy to observe and test.
 """
+
 from __future__ import annotations
 
 import asyncio

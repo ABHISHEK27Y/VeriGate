@@ -27,11 +27,10 @@ if settings.llm_provider == "mock" or registry.providers()[0].name == "mock":
 from fastapi.testclient import TestClient  # noqa: E402
 from app.main import app  # noqa: E402
 
-client = TestClient(app)
 H = {"x-api-key": "demo-key-123"}
 
 
-def ask(q):
+def ask(q, client):
     t0 = time.time()
     d = client.post("/v1/chat", json={"prompt": q}, headers=H).json()
     ms = (time.time() - t0) * 1000
@@ -39,11 +38,14 @@ def ask(q):
     print(f"          -> {d['answer'][:90]}")
 
 
-print(f"\nProvider order: {[p.name for p in registry.providers()]}\n")
-print("CACHE PROVIDER  LATENCY   QUERY")
-ask("what is a semantic cache")                      # MISS -> real model (slow, paid)
-ask("what is a semantic cache")                      # HIT  -> cache (instant, free)
-ask("explain what a semantic cache is in one line")  # HIT  -> cache (semantic paraphrase)
-ask("what is Redis used for")                        # MISS -> real model again
-print("\nThe cache turned slow, paid LLM calls into instant, free hits — including the "
-      "reworded question, matched by meaning.\n")
+# Use TestClient as context manager to properly initialize lifespan
+with TestClient(app, raise_server_exceptions=True) as client:
+
+    print(f"\nProvider order: {[p.name for p in registry.providers()]}\n")
+    print("CACHE PROVIDER  LATENCY   QUERY")
+    ask("what is a semantic cache", client)                      # MISS -> real model (slow, paid)
+    ask("what is a semantic cache", client)                      # HIT  -> cache (instant, free)
+    ask("explain what a semantic cache is in one line", client)  # HIT  -> cache (semantic paraphrase)
+    ask("what is Redis used for", client)                        # MISS -> real model again
+    print("\nThe cache turned slow, paid LLM calls into instant, free hits — including the "
+          "reworded question, matched by meaning.\n")

@@ -5,29 +5,31 @@
 Forces the real 'minilm' embeddings so scores are meaningful. Outputs go to
 evaluation/results/ :  metrics.csv, tradeoff.png (the money graph), ablation.png.
 """
+
 from __future__ import annotations
 
 import csv
 import os
 from pathlib import Path
 
-os.environ["EMBEDDING_BACKEND"] = "minilm"   # real semantic embeddings for evaluation
-os.environ.setdefault("REDIS_URL", "")        # no server needed; eval works on pairs
+os.environ["EMBEDDING_BACKEND"] = "minilm"  # real semantic embeddings for evaluation
+os.environ.setdefault("REDIS_URL", "")  # no server needed; eval works on pairs
 
-import matplotlib                              # noqa: E402
-matplotlib.use("Agg")                          # headless: save PNGs, no window
-import matplotlib.pyplot as plt                # noqa: E402
+import matplotlib  # noqa: E402
 
-from app.cache.policy import CachePolicy       # noqa: E402
-from app.cache.volatility import is_volatile   # noqa: E402
-from app.embeddings import cosine, embed       # noqa: E402
-from evaluation import benchmark               # noqa: E402
+matplotlib.use("Agg")  # headless: save PNGs, no window
+import matplotlib.pyplot as plt  # noqa: E402
+
+from app.cache.policy import CachePolicy  # noqa: E402
+from app.cache.volatility import is_volatile  # noqa: E402
+from app.embeddings import cosine, embed  # noqa: E402
+from evaluation import benchmark  # noqa: E402
 
 RESULTS = Path(__file__).parent / "results"
 RESULTS.mkdir(exist_ok=True)
 
 # ---- embed every query once ----
-_VECS: dict[str, "object"] = {}
+_VECS: dict[str, object] = {}
 
 
 def vec(q: str):
@@ -47,7 +49,7 @@ def evaluate(policy: CachePolicy) -> dict:
     tp = sum(pair_is_hit(policy, a, b) for a, b in benchmark.POSITIVES)
     fp = sum(pair_is_hit(policy, a, b) for a, b in benchmark.NEGATIVES)
     P, N = len(benchmark.POSITIVES), len(benchmark.NEGATIVES)
-    fn, tn = P - tp, N - fp
+    fn = P - tp
     hit_rate = tp / P
     false_hit_rate = fp / N
     precision = tp / (tp + fp) if (tp + fp) else 1.0
@@ -81,21 +83,24 @@ def evaluate_volatility() -> dict:
 
 # ---- the systems we compare (the ablation) ----
 SYSTEMS = {
-    "Baseline (static T=0.72)": CachePolicy(use_adaptive=False, use_verifier=False,
-                                            static_threshold=0.72),
+    "Baseline (static T=0.72)": CachePolicy(
+        use_adaptive=False, use_verifier=False, static_threshold=0.72
+    ),
     "+ Adaptive T": CachePolicy(use_adaptive=True, use_verifier=False),
-    "+ Verifier (Tier-1)": CachePolicy(use_adaptive=False, use_verifier=True,
-                                       static_threshold=0.72),
+    "+ Verifier (Tier-1)": CachePolicy(
+        use_adaptive=False, use_verifier=True, static_threshold=0.72
+    ),
     "VeriGate (Tier-1)": CachePolicy(use_adaptive=True, use_verifier=True),
-    "VeriGate (Tier-1+2 NLI)": CachePolicy(use_adaptive=True, use_verifier=True,
-                                           use_nli=True),
+    "VeriGate (Tier-1+2 NLI)": CachePolicy(use_adaptive=True, use_verifier=True, use_nli=True),
 }
 
 
 def main() -> None:
-    print(f"\nBenchmark: {len(benchmark.POSITIVES)} positive pairs, "
-          f"{len(benchmark.NEGATIVES)} hard-negative pairs, "
-          f"{len(benchmark.VOLATILE)} volatile queries.\n")
+    print(
+        f"\nBenchmark: {len(benchmark.POSITIVES)} positive pairs, "
+        f"{len(benchmark.NEGATIVES)} hard-negative pairs, "
+        f"{len(benchmark.VOLATILE)} volatile queries.\n"
+    )
 
     # 1) Ablation table
     rows = []
@@ -104,8 +109,10 @@ def main() -> None:
     for name, pol in SYSTEMS.items():
         m = evaluate(pol)
         rows.append({"system": name, **m})
-        print(f"{name:<26}{m['hit_rate']*100:>9.1f}%{m['false_hit_rate']*100:>10.1f}%"
-              f"{m['precision']*100:>10.1f}%{m['f1']:>7.2f}")
+        print(
+            f"{name:<26}{m['hit_rate'] * 100:>9.1f}%{m['false_hit_rate'] * 100:>10.1f}%"
+            f"{m['precision'] * 100:>10.1f}%{m['f1']:>7.2f}"
+        )
     print()
 
     # false hits by failure mode (shows which component catches what)
@@ -119,13 +126,25 @@ def main() -> None:
     print()
 
     v = evaluate_volatility()
-    print(f"Staleness detector: recall {v['recall']} on volatile queries, "
-          f"false positives {v['false_positives']} on stable controls.\n")
+    print(
+        f"Staleness detector: recall {v['recall']} on volatile queries, "
+        f"false positives {v['false_positives']} on stable controls.\n"
+    )
 
     # 2) write CSV
-    with open(RESULTS / "metrics.csv", "w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=["system", "hit_rate", "false_hit_rate",
-                                          "precision", "f1", "true_hits", "false_hits"])
+    with (RESULTS / "metrics.csv").open("w", newline="") as f:
+        w = csv.DictWriter(
+            f,
+            fieldnames=[
+                "system",
+                "hit_rate",
+                "false_hit_rate",
+                "precision",
+                "f1",
+                "true_hits",
+                "false_hits",
+            ],
+        )
         w.writeheader()
         w.writerows(rows)
 
@@ -134,9 +153,17 @@ def main() -> None:
     sweep_t = [round(0.45 + 0.025 * i, 3) for i in range(21)]  # 0.45 .. 0.95
 
     def sweep(use_verifier: bool, use_nli: bool = False):
-        pts = [evaluate(CachePolicy(use_adaptive=False, use_verifier=use_verifier,
-                                    use_nli=use_nli, static_threshold=t))
-               for t in sweep_t]
+        pts = [
+            evaluate(
+                CachePolicy(
+                    use_adaptive=False,
+                    use_verifier=use_verifier,
+                    use_nli=use_nli,
+                    static_threshold=t,
+                )
+            )
+            for t in sweep_t
+        ]
         return [p["false_hit_rate"] for p in pts], [p["hit_rate"] for p in pts]
 
     base_fx, base_hy = sweep(False)
@@ -145,19 +172,37 @@ def main() -> None:
     full = evaluate(SYSTEMS["VeriGate (Tier-1)"])  # recommended default config
 
     plt.figure(figsize=(7.5, 5.5))
-    plt.plot(base_fx, base_hy, "o-", color="#d62728", alpha=0.8,
-             label="Static-threshold baseline (T swept)")
-    plt.plot(veri_fx, veri_hy, "s-", color="#1f77b4", alpha=0.8,
-             label="+ Tier-1 verifier (T swept)")
-    plt.plot(nli_fx, nli_hy, "^-", color="#9467bd", alpha=0.8,
-             label="+ Tier-1 & Tier-2 NLI (T swept)")
-    plt.scatter(full["false_hit_rate"], full["hit_rate"], marker="*", s=320,
-                color="#2ca02c", zorder=6, edgecolors="black", linewidths=0.6,
-                label="VeriGate default (adaptive + Tier-1)")
+    plt.plot(
+        base_fx,
+        base_hy,
+        "o-",
+        color="#d62728",
+        alpha=0.8,
+        label="Static-threshold baseline (T swept)",
+    )
+    plt.plot(
+        veri_fx, veri_hy, "s-", color="#1f77b4", alpha=0.8, label="+ Tier-1 verifier (T swept)"
+    )
+    plt.plot(
+        nli_fx, nli_hy, "^-", color="#9467bd", alpha=0.8, label="+ Tier-1 & Tier-2 NLI (T swept)"
+    )
+    plt.scatter(
+        full["false_hit_rate"],
+        full["hit_rate"],
+        marker="*",
+        s=320,
+        color="#2ca02c",
+        zorder=6,
+        edgecolors="black",
+        linewidths=0.6,
+        label="VeriGate default (adaptive + Tier-1)",
+    )
     plt.xlabel("False-hit rate  (wrong answers served)   ← lower is better")
     plt.ylabel("Hit rate  (cost savings)   ↑ higher is better")
-    plt.title("A correctness–savings spectrum\n"
-              "each verifier tier pushes the curve left (fewer wrong answers)")
+    plt.title(
+        "A correctness–savings spectrum\n"
+        "each verifier tier pushes the curve left (fewer wrong answers)"
+    )
     plt.legend(fontsize=8, loc="lower right")
     plt.grid(True, alpha=0.3)
     plt.xlim(left=-0.02)
@@ -181,9 +226,9 @@ def main() -> None:
     plt.savefig(RESULTS / "ablation.png", dpi=150)
     plt.close()
 
-    print(f"Saved: {RESULTS/'metrics.csv'}")
-    print(f"Saved: {RESULTS/'tradeoff.png'}   (the money graph)")
-    print(f"Saved: {RESULTS/'ablation.png'}\n")
+    print(f"Saved: {RESULTS / 'metrics.csv'}")
+    print(f"Saved: {RESULTS / 'tradeoff.png'}   (the money graph)")
+    print(f"Saved: {RESULTS / 'ablation.png'}\n")
 
 
 if __name__ == "__main__":

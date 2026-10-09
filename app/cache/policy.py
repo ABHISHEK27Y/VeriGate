@@ -4,6 +4,7 @@ Both the live gateway (semantic_cache.lookup) and the evaluation harness use thi
 result measured in evaluation is exactly the behaviour that ships. Toggling the flags is
 what produces the ablation study (baseline vs +adaptive vs +verifier vs full).
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -14,9 +15,9 @@ from .verifier import verify_equivalent
 
 @dataclass
 class CachePolicy:
-    use_adaptive: bool = True     # Sub-contribution A
-    use_verifier: bool = True     # Sub-contribution B (Tier-1 structural checks)
-    use_nli: bool = False         # Sub-contribution B (Tier-2 NLI equivalence)
+    use_adaptive: bool = True  # Sub-contribution A
+    use_verifier: bool = True  # Sub-contribution B (Tier-1 structural checks)
+    use_nli: bool = False  # Sub-contribution B (Tier-2 NLI equivalence)
     static_threshold: float = 0.72  # used only when use_adaptive is False
 
     def threshold(self, query: str, density: float = 0.0) -> float:

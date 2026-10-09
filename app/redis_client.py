@@ -4,6 +4,7 @@ If REDIS_URL is set  -> connect to a real Redis server via redis.asyncio.
 If REDIS_URL is blank -> use fakeredis.aioredis (async in-memory Redis).
 Same code path either way.
 """
+
 from __future__ import annotations
 
 import logging

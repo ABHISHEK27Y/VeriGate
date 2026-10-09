@@ -12,6 +12,7 @@ Storage (Redis is the source of truth):
 Lookup uses a per-tenant in-process vectorised index (one NumPy matrix per tenant), or the
 shared RediSearch HNSW index filtered by a tenant TAG when VECTOR_BACKEND=redisearch.
 """
+
 from __future__ import annotations
 
 import time
@@ -23,13 +24,17 @@ import numpy as np
 from ..config import settings
 from ..embeddings import embed
 from ..redis_client import get_redis
+from . import redisearch_store as rs
 from .policy import CachePolicy
 from .volatility import is_volatile
+
+# Constants
+_SIMILARITY_DENSITY_WINDOW = 0.1  # similarity window for density calculation
 
 
 @dataclass(slots=True, frozen=True)
 class LookupResult:
-    status: str            # HIT | MISS | BYPASS
+    status: str  # HIT | MISS | BYPASS
     answer: str | None = None
     threshold: float | None = None
     similarity: float | None = None
@@ -80,7 +85,9 @@ class SemanticCache:
         for eid in await r.smembers(self._ids_key(tenant)):
             d = await r.hgetall(self._entry_key(tenant, eid))
             if not d:
-                await r.srem(self._ids_key(tenant), eid)   # entry expired (TTL): drop the dangling id
+                await r.srem(
+                    self._ids_key(tenant), eid
+                )  # entry expired (TTL): drop the dangling id
                 continue
             t["ids"].append(eid)
             t["queries"].append(d["query"])
@@ -126,12 +133,13 @@ class SemanticCache:
         sims = t["mat"] @ qvec.astype(np.float32)
         idx = int(np.argmax(sims))
         best_sim = float(sims[idx])
-        within = int(np.count_nonzero((sims < best_sim) & (best_sim - sims <= 0.1)))
+        within = int(
+            np.count_nonzero((sims < best_sim) & (best_sim - sims <= _SIMILARITY_DENSITY_WINDOW))
+        )
         density = min(1.0, within / len(sims))
         return {"query": t["queries"][idx], "answer": t["answers"][idx]}, best_sim, density
 
     async def _nearest_redisearch(self, qvec: np.ndarray, tenant: str):
-        from . import redisearch_store as rs
         try:
             hits = await rs.knn(qvec, tenant, k=5)
         except Exception:
@@ -140,7 +148,7 @@ class SemanticCache:
             return None, -1.0, 0.0
         best_q, best_a, best_sim = hits[0]
         sims = [h[2] for h in hits]
-        within = sum(1 for s in sims[1:] if best_sim - s <= 0.1)
+        within = sum(1 for s in sims[1:] if best_sim - s <= _SIMILARITY_DENSITY_WINDOW)
         density = min(1.0, within / len(sims))
         return {"query": best_q, "answer": best_a}, float(best_sim), density
 
@@ -156,19 +164,23 @@ class SemanticCache:
         if not settings.cache_enabled:
             return LookupResult(status="MISS", reason="cache_disabled")
 
-        if is_volatile(query):                                  # Sub-contribution C
+        if is_volatile(query):  # Sub-contribution C
             return LookupResult(status="BYPASS", reason="volatile_query")
 
+        # Ensure index is built from Redis before searching
+        await self._ensure(tenant)
+
         qvec = embed(query)
-        best, sim, density = await self._nearest(qvec, tenant)             # tenant-scoped
+        best, sim, density = await self._nearest(qvec, tenant)  # tenant-scoped
         if best is None:
             return LookupResult(status="MISS", similarity=None, reason="empty_cache")
 
         hit, reason, threshold = self._policy.decide(query, best["query"], sim, density)
         if not hit:
             return LookupResult(status="MISS", threshold=threshold, similarity=sim, reason=reason)
-        return LookupResult(status="HIT", answer=best["answer"], threshold=threshold,
-                            similarity=sim, reason=reason)
+        return LookupResult(
+            status="HIT", answer=best["answer"], threshold=threshold, similarity=sim, reason=reason
+        )
 
     async def store(self, query: str, answer: str, tenant: str) -> None:
         if not settings.cache_enabled or is_volatile(query):
@@ -176,7 +188,6 @@ class SemanticCache:
         vec = embed(query)
 
         if settings.vector_backend == "redisearch":
-            from . import redisearch_store as rs
             await rs.ensure_index(len(vec))
             await rs.add(query, answer, vec, tenant)
             return
@@ -185,10 +196,16 @@ class SemanticCache:
         eid = uuid.uuid4().hex
         ekey = self._entry_key(tenant, eid)
         now = time.time()
-        await r.hset(ekey, mapping={
-            "query": query, "answer": answer, "vec": self._vec_to_str(vec), "ts": str(now),
-        })
-        if settings.cache_ttl_sec > 0:               # optional TTL: bounds memory + self-heals staleness
+        await r.hset(
+            ekey,
+            mapping={
+                "query": query,
+                "answer": answer,
+                "vec": self._vec_to_str(vec),
+                "ts": str(now),
+            },
+        )
+        if settings.cache_ttl_sec > 0:  # optional TTL: bounds memory + self-heals staleness
             await r.expire(ekey, settings.cache_ttl_sec)
         await r.sadd(self._ids_key(tenant), eid)
         # LRU tracking for eviction

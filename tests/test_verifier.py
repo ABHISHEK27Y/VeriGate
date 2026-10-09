@@ -3,6 +3,7 @@
 Locks in the key design decision: reject entity/number/negation mismatches, but ALLOW
 genuine paraphrases that share few words.
 """
+
 from app.cache.verifier import verify_equivalent
 
 

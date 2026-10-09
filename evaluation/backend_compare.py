@@ -7,6 +7,7 @@ Requires a live Redis Stack. Run:
 Populates both backends with the same vectors at several sizes and times a KNN lookup on
 each. Saves evaluation/results/backend_compare.{png,csv}.
 """
+
 from __future__ import annotations
 
 import csv
@@ -16,15 +17,16 @@ from pathlib import Path
 
 os.environ.setdefault("EMBEDDING_BACKEND", "minilm")
 
-import numpy as np                              # noqa: E402
-import matplotlib                               # noqa: E402
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt                 # noqa: E402
+import matplotlib  # noqa: E402
+import numpy as np  # noqa: E402
 
-from app import embeddings                      # noqa: E402
-from app.cache import redisearch_store as rs    # noqa: E402
-from app.cache import semantic_cache as sc      # noqa: E402
-from app.embeddings import embed                # noqa: E402
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt  # noqa: E402
+
+from app import embeddings  # noqa: E402
+from app.cache import redisearch_store as rs  # noqa: E402
+from app.cache import semantic_cache as sc  # noqa: E402
+from app.embeddings import embed  # noqa: E402
 
 RESULTS = Path(__file__).parent / "results"
 SIZES = [1000, 5000, 10000]
@@ -54,6 +56,7 @@ def main():
 
     # reset RediSearch index
     from app.redis_client import get_redis
+
     os.environ["REDIS_URL"]  # ensure present
     get_redis().flushall()
 
@@ -63,8 +66,11 @@ def main():
     for n in SIZES:
         # ---- in-process: set the tenant's matrix directly to the first n vectors ----
         sc._INDEX[TEN] = {
-            "ids": [f"e{i}" for i in range(n)], "queries": queries[:n],
-            "answers": [f"answer {i}" for i in range(n)], "mat": vecs[:n].copy(), "built": True,
+            "ids": [f"e{i}" for i in range(n)],
+            "queries": queries[:n],
+            "answers": [f"answer {i}" for i in range(n)],
+            "mat": vecs[:n].copy(),
+            "built": True,
         }
         t_inproc = p50(lambda: sc._nearest_inproc(probe, TEN))
 
@@ -95,7 +101,7 @@ def main():
     plt.tight_layout()
     plt.savefig(RESULTS / "backend_compare.png", dpi=150)
     plt.close()
-    print(f"\nSaved: {RESULTS/'backend_compare.csv'} and backend_compare.png\n")
+    print(f"\nSaved: {RESULTS / 'backend_compare.csv'} and backend_compare.png\n")
 
 
 if __name__ == "__main__":

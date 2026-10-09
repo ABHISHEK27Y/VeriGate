@@ -19,6 +19,7 @@ real NER model (spaCy) instead of the capitalization heuristic below.
 Policy: conservative on the checks it does make. A miss costs money; a false hit costs
 correctness, and we optimize for correctness.
 """
+
 from __future__ import annotations
 
 import functools
@@ -26,6 +27,7 @@ import logging
 import re
 
 import numpy as np
+from sentence_transformers import CrossEncoder
 
 from ..config import settings
 from ..embeddings import tokenize
@@ -36,9 +38,32 @@ _NUMBER_RE = re.compile(r"\d+(?:[.,]\d+)?")
 _NEGATIONS = {"not", "no", "never", "without", "cannot", "cant", "dont", "doesnt", "isnt"}
 # Common words that are capitalized as sentence-starters, not because they're entities.
 _NON_ENTITY_CAPS = {
-    "what", "how", "when", "where", "why", "who", "which", "is", "are", "do", "does",
-    "can", "could", "would", "should", "tell", "give", "list", "explain", "the", "a",
-    "an", "please", "i", "my", "me",
+    "what",
+    "how",
+    "when",
+    "where",
+    "why",
+    "who",
+    "which",
+    "is",
+    "are",
+    "do",
+    "does",
+    "can",
+    "could",
+    "would",
+    "should",
+    "tell",
+    "give",
+    "list",
+    "explain",
+    "the",
+    "a",
+    "an",
+    "please",
+    "i",
+    "my",
+    "me",
 }
 _WORD_RE = re.compile(r"[A-Za-z][A-Za-z]+")
 
@@ -72,17 +97,15 @@ def _entities(text: str) -> set[str]:
 # already passed Tier-1, and results are cached per pair (independent of threshold), so the
 # overhead is paid at most once per distinct pair.
 # ---------------------------------------------------------------------------
-_nli_model = None
+_nli_model: CrossEncoder | None = None
 _nli_unavailable = False
 
 
-def _load_nli():
-    global _nli_model, _nli_unavailable
+def _load_nli() -> None:
+    global _nli_model, _nli_unavailable  # noqa: PLW0603
     if _nli_model is not None or _nli_unavailable:
         return
     try:
-        from sentence_transformers import CrossEncoder
-
         log.info("Loading NLI model %s ...", settings.nli_model)
         _nli_model = CrossEncoder(settings.nli_model)
     except Exception as e:  # noqa: BLE001 - any failure -> disable Tier-2 (fail-open)

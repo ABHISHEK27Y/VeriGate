@@ -9,11 +9,11 @@ Two interchangeable implementations, chosen automatically:
 
 Both are correct under concurrency; time is supplied from Python so behaviour matches.
 """
+
 from __future__ import annotations
 
 import time
 
-import redis.asyncio as redis_asyncio
 import redis.exceptions as redis_exc
 
 from .config import settings

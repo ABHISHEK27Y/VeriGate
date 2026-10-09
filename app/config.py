@@ -1,4 +1,5 @@
 """Central configuration, loaded from environment / .env file."""
+
 from __future__ import annotations
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -78,8 +79,8 @@ class Settings(BaseSettings):
 
     # Cost-aware model cascade: send easy queries to the cheap model, escalate hard ones.
     cascade_enabled: bool = False
-    cascade_threshold: float = 0.35          # complexity >= this => use the strong model
-    openai_strong_model: str = "gpt-4o"      # cheap = openai_model (e.g. gpt-4o-mini)
+    cascade_threshold: float = 0.35  # complexity >= this => use the strong model
+    openai_strong_model: str = "gpt-4o"  # cheap = openai_model (e.g. gpt-4o-mini)
     gemini_strong_model: str = "gemini-3.5-flash"  # cheap = gemini_model (flash-lite)
 
     @property

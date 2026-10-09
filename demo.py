@@ -15,11 +15,10 @@ logging.getLogger("verigate.redis").setLevel(logging.WARNING)
 
 from app.main import app
 
-client = TestClient(app)
 H = {"x-api-key": "demo-key-123"}
 
 
-def ask(text):
+def ask(text, client):
     r = client.post("/v1/chat", json={"prompt": text}, headers=H)
     if r.status_code == 429:
         print(f"  429 RATE LIMITED   | {text!r}")
@@ -30,20 +29,23 @@ def ask(text):
     print(f"  {d['cache']:<6} sim={sim} T={thr} | {text!r}\n         -> {d['answer'][:60]}")
 
 
-print("\n=== 1) MISS then HIT (paraphrase) ===")
-ask("how do I reset my password")
-ask("how do I reset my password please")
+# Use TestClient as context manager to properly initialize lifespan
+with TestClient(app, raise_server_exceptions=True) as client:
 
-print("\n=== 2) FALSE HIT REJECTED (near-identical wording, different number) ===")
-ask("please tell me the total monthly cost of the 5 gb data plan for a new user")
-ask("please tell me the total monthly cost of the 50 gb data plan for a new user")  # MISS, not the 5gb answer
+    print("\n=== 1) MISS then HIT (paraphrase) ===")
+    ask("how do I reset my password", client)
+    ask("how do I reset my password please", client)
 
-print("\n=== 3) VOLATILE query BYPASSES cache ===")
-ask("what is the weather today")
-ask("what is the weather today")
+    print("\n=== 2) FALSE HIT REJECTED (near-identical wording, different number) ===")
+    ask("please tell me the total monthly cost of the 5 gb data plan for a new user", client)
+    ask("please tell me the total monthly cost of the 50 gb data plan for a new user", client)  # MISS, not the 5gb answer
 
-print("\n=== 4) RATE LIMIT (burst of requests) ===")
-for i in range(25):
-    ask(f"distinct question {i}")
+    print("\n=== 3) VOLATILE query BYPASSES cache ===")
+    ask("what is the weather today", client)
+    ask("what is the weather today", client)
 
-print("\nDone. Check GET /metrics when running as a server for the counters.\n")
+    print("\n=== 4) RATE LIMIT (burst of requests) ===")
+    for i in range(25):
+        ask(f"distinct question {i}", client)
+
+    print("\nDone. Check GET /metrics when running as a server for the counters.\n")

@@ -13,6 +13,7 @@
 Selected via settings.embedding_backend. The rest of the system is unchanged — it only
 calls embed()/cosine().
 """
+
 from __future__ import annotations
 
 import logging
@@ -20,14 +21,15 @@ import re
 import zlib
 
 import numpy as np
+from sentence_transformers import SentenceTransformer
 
 from .config import settings
 
 log = logging.getLogger("verigate.embeddings")
 
 _TOKEN_RE = re.compile(r"[a-z0-9]+")
-_model = None          # lazily-loaded SentenceTransformer
-_active_backend = None  # resolved on first use
+_model: SentenceTransformer | None = None  # lazily-loaded SentenceTransformer
+_active_backend: str | None = None  # resolved on first use
 
 
 def tokenize(text: str) -> list[str]:
@@ -50,23 +52,22 @@ def _hash_embed(text: str) -> np.ndarray:
     return vec
 
 
-def _load_minilm():
+def _load_minilm() -> None:
     """Load the model once; fall back to the hash backend if unavailable."""
-    global _model, _active_backend
+    global _model, _active_backend  # noqa: PLW0603
     try:
-        from sentence_transformers import SentenceTransformer
-
         log.info("Loading embedding model %s ...", settings.embedding_model)
         _model = SentenceTransformer(settings.embedding_model)
         _active_backend = "minilm"
     except Exception as e:  # noqa: BLE001 - any import/download failure -> fallback
-        log.warning("Could not load '%s' (%s); falling back to hash embedder.",
-                    settings.embedding_model, e)
+        log.warning(
+            "Could not load '%s' (%s); falling back to hash embedder.", settings.embedding_model, e
+        )
         _active_backend = "hash"
 
 
 def _resolve_backend() -> str:
-    global _active_backend
+    global _active_backend  # noqa: PLW0603
     if _active_backend is not None:
         return _active_backend
     if settings.embedding_backend == "minilm":

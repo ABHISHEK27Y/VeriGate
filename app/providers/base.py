@@ -1,4 +1,5 @@
 """Common provider interface. Adding a new LLM = implementing this class."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod

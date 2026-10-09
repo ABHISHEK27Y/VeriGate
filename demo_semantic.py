@@ -20,11 +20,10 @@ from fastapi.testclient import TestClient  # noqa: E402
 
 from app.main import app  # noqa: E402
 
-client = TestClient(app)
 H = {"x-api-key": "demo-key-123"}
 
 
-def ask(text):
+def ask(text, client):
     d = client.post("/v1/chat", json={"prompt": text}, headers=H).json()
     sim = f"{d['similarity']:.3f}" if d.get("similarity") is not None else "  -  "
     thr = f"{d['threshold']:.3f}" if d.get("threshold") is not None else "  -  "
@@ -33,18 +32,21 @@ def ask(text):
         print(f"         reason: {d['note']}")
 
 
-print("\nLoading model + warming up (first run downloads ~90MB)...")
-ask("warm up the model")
+# Use TestClient as context manager to properly initialize lifespan
+with TestClient(app, raise_server_exceptions=True) as client:
 
-print("\n=== 1) SEMANTIC HIT: different words, same meaning ===")
-ask("how do I reset my password")
-ask("what is the process to recover my account password")  # no shared keywords -> still HIT
+    print("\nLoading model + warming up (first run downloads ~90MB)...")
+    ask("warm up the model", client)
 
-print("\n=== 2) THE AUSTRIA / AUSTRALIA TRAP (semantic false-hit prevention) ===")
-ask("what is the capital of Austria")
-ask("what is the capital of Australia")  # look-alike, DIFFERENT answer -> must be MISS
+    print("\n=== 1) SEMANTIC HIT: different words, same meaning ===")
+    ask("how do I reset my password", client)
+    ask("what is the process to recover my account password", client)  # no shared keywords -> still HIT
 
-print("\n=== 3) A genuinely equivalent country question DOES hit ===")
-ask("tell me the capital city of Austria")  # same meaning as #2's first -> HIT
+    print("\n=== 2) THE AUSTRIA / AUSTRALIA TRAP (semantic false-hit prevention) ===")
+    ask("what is the capital of Austria", client)
+    ask("what is the capital of Australia", client)  # look-alike, DIFFERENT answer -> must be MISS
 
-print("\nDone.\n")
+    print("\n=== 3) A genuinely equivalent country question DOES hit ===")
+    ask("tell me the capital city of Austria", client)  # same meaning as #2's first -> HIT
+
+    print("\nDone.\n")

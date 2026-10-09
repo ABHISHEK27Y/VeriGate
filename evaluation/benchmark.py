@@ -12,6 +12,7 @@ This is a compact, hand-curated seed set for demonstrating the method. For the f
 report, expand it (e.g. mine Quora Question Pairs + generate paraphrases) and document the
 datasheet — see docs/EVALUATION_PLAN.md.
 """
+
 from __future__ import annotations
 
 # ---- POSITIVES: should be a cache HIT (equivalent meaning) ----

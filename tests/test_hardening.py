@@ -1,23 +1,30 @@
 """Production hardening: spend budget, circuit breaker, cache TTL cleanup."""
-import asyncio
+
+from __future__ import annotations
+
+import pytest
+from conftest import HEADERS
 
 from app import budget
 from app.config import settings
 from app.providers import breaker, registry
 from app.providers.mock import FlakyProvider, MockProvider
-from conftest import HEADERS
+
+HTTP_OK = 200
+HTTP_TOO_MANY_REQUESTS = 429
 
 
 # ---- spend budget ----
-def test_budget_counter_blocks_over_limit(client):
+@pytest.mark.asyncio
+async def test_budget_counter_blocks_over_limit(client):
     old = settings.daily_request_budget
     settings.daily_request_budget = 2
     try:
-        assert budget.check_and_count("k1") is True    # 1
-        assert budget.check_and_count("k1") is True     # 2
-        assert budget.check_and_count("k1") is False    # 3 -> over budget
+        assert await budget.check_and_count("k1") is True  # 1
+        assert await budget.check_and_count("k1") is True  # 2
+        assert await budget.check_and_count("k1") is False  # 3 -> over budget
         # a different key has its own budget
-        assert budget.check_and_count("k2") is True
+        assert await budget.check_and_count("k2") is True
     finally:
         settings.daily_request_budget = old
 
@@ -26,32 +33,34 @@ def test_budget_blocks_requests_but_hits_are_free(client):
     old = settings.daily_request_budget
     settings.daily_request_budget = 2
     try:
-        H = HEADERS
+        h = HEADERS
         # 2 unique misses consume the budget; the 3rd unique miss is blocked (429)
-        c1 = client.post("/v1/chat", json={"prompt": "budget one"}, headers=H).status_code
-        c2 = client.post("/v1/chat", json={"prompt": "budget two"}, headers=H).status_code
-        c3 = client.post("/v1/chat", json={"prompt": "budget three"}, headers=H).status_code
-        assert c1 == 200 and c2 == 200 and c3 == 429
+        c1 = client.post("/v1/chat", json={"prompt": "budget one"}, headers=h).status_code
+        c2 = client.post("/v1/chat", json={"prompt": "budget two"}, headers=h).status_code
+        c3 = client.post("/v1/chat", json={"prompt": "budget three"}, headers=h).status_code
+        assert c1 == HTTP_OK and c2 == HTTP_OK and c3 == HTTP_TOO_MANY_REQUESTS
         # a cache HIT does NOT consume budget (repeat of an already-cached query)
-        hit = client.post("/v1/chat", json={"prompt": "budget one"}, headers=H)
-        assert hit.status_code == 200 and hit.json()["cache"] == "HIT"
+        hit = client.post("/v1/chat", json={"prompt": "budget one"}, headers=h)
+        assert hit.status_code == HTTP_OK and hit.json()["cache"] == "HIT"
     finally:
         settings.daily_request_budget = old
 
 
 # ---- circuit breaker ----
-def test_circuit_breaker_opens_after_failures(client):
+@pytest.mark.asyncio
+async def test_circuit_breaker_opens_after_failures(client):
     old = settings.breaker_fail_threshold
     settings.breaker_fail_threshold = 3
     try:
-        registry.set_cascade(None, None)
-        registry.set_providers([FlakyProvider(fail=True), MockProvider()])
+        # Create a custom registry with flaky provider
+        custom_registry = registry.ProviderRegistry(
+            providers=[FlakyProvider(fail=True), MockProvider()], cascade=None
+        )
         # each call: flaky fails -> breaker records a failure -> mock answers
         for _ in range(4):
-            name, _stream = asyncio.run(registry.route_stream("hi"))
-            assert name == "mock"          # failover always succeeds
-        assert breaker.is_open("flaky")     # breaker tripped for the flaky provider
+            name, _stream = await custom_registry.route_stream("hi")
+            assert name == "mock"  # failover always succeeds
+        assert await breaker.is_open("flaky")  # breaker tripped for the flaky provider
     finally:
         settings.breaker_fail_threshold = old
-        breaker.record_success("flaky")
-        registry.set_providers(registry.build_from_settings())
+        await breaker.record_success("flaky")

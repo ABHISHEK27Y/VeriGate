@@ -9,6 +9,7 @@ One class covers multiple vendors because they expose the same `/chat/completion
 Keys are read from settings (.env) — never hardcoded, never logged. Streaming is parsed
 from the Server-Sent-Events `data:` lines.
 """
+
 from __future__ import annotations
 
 import json
@@ -16,17 +17,20 @@ from collections.abc import AsyncIterator
 
 import httpx
 
+from ..config import settings
 from .base import Provider
 
 
 class OpenAICompatibleProvider(Provider):
-    def __init__(self, name: str, api_key: str, base_url: str, model: str,
-                 timeout: float = 60.0) -> None:
+    def __init__(
+        self, name: str, api_key: str, base_url: str, model: str, timeout: float | None = None
+    ) -> None:
         self.name = name
         self._key = api_key
         self._base = base_url.rstrip("/")
         self._model = model
-        self._timeout = timeout
+        # Use settings timeout if not explicitly provided
+        self._timeout = timeout if timeout is not None else settings.provider_timeout
 
     async def stream(self, prompt: str) -> AsyncIterator[str]:
         url = f"{self._base}/chat/completions"
@@ -36,13 +40,15 @@ class OpenAICompatibleProvider(Provider):
             "messages": [{"role": "user", "content": prompt}],
             "stream": True,
         }
-        async with httpx.AsyncClient(timeout=self._timeout) as client:
+        # Use separate connect/read timeouts
+        timeout = httpx.Timeout(connect=5.0, read=self._timeout)
+        async with httpx.AsyncClient(timeout=timeout) as client:
             async with client.stream("POST", url, json=payload, headers=headers) as resp:
                 resp.raise_for_status()
                 async for line in resp.aiter_lines():
                     if not line or not line.startswith("data:"):
                         continue
-                    data = line[len("data:"):].strip()
+                    data = line[len("data:") :].strip()
                     if data == "[DONE]":
                         break
                     try:
