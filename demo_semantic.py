@@ -11,19 +11,19 @@ hashing embedder could NOT do:
 import logging
 import os
 
+from fastapi.testclient import TestClient
+
+from app.main import app
+
 os.environ["EMBEDDING_BACKEND"] = "minilm"  # force the real model for this demo
 
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("verigate.redis").setLevel(logging.WARNING)
 
-from fastapi.testclient import TestClient  # noqa: E402
-
-from app.main import app  # noqa: E402
-
 H = {"x-api-key": "demo-key-123"}
 
 
-def ask(text, client):
+def ask(text: str, client: TestClient) -> None:
     d = client.post("/v1/chat", json={"prompt": text}, headers=H).json()
     sim = f"{d['similarity']:.3f}" if d.get("similarity") is not None else "  -  "
     thr = f"{d['threshold']:.3f}" if d.get("threshold") is not None else "  -  "
@@ -40,7 +40,9 @@ with TestClient(app, raise_server_exceptions=True) as client:
 
     print("\n=== 1) SEMANTIC HIT: different words, same meaning ===")
     ask("how do I reset my password", client)
-    ask("what is the process to recover my account password", client)  # no shared keywords -> still HIT
+    ask(
+        "what is the process to recover my account password", client
+    )  # no shared keywords -> still HIT
 
     print("\n=== 2) THE AUSTRIA / AUSTRALIA TRAP (semantic false-hit prevention) ===")
     ask("what is the capital of Austria", client)

@@ -6,7 +6,6 @@ Writes docs/demo.gif.
 """
 from __future__ import annotations
 
-import time
 from pathlib import Path
 
 from PIL import Image
@@ -62,7 +61,7 @@ def main() -> None:
         im = Image.open(f).convert("RGB")
         w = 960
         im = im.resize((w, int(im.height * w / im.width)))
-        imgs.append(im.convert("P", palette=Image.ADAPTIVE, colors=128))
+        imgs.append(im.convert("P", palette=Image.ADAPTIVE, colors=128))  # type: ignore[attr-defined]
 
     # hold each frame ~1.7s, last frame ~2.6s
     durations = [1700] * (len(imgs) - 1) + [2600]

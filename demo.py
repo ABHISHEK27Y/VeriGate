@@ -9,18 +9,19 @@ import logging
 
 from fastapi.testclient import TestClient
 
+from app.main import app
+
 # Keep the demo output readable (hide per-request HTTP/redis INFO logs).
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("verigate.redis").setLevel(logging.WARNING)
 
-from app.main import app
-
+HTTP_TOO_MANY_REQUESTS = 429
 H = {"x-api-key": "demo-key-123"}
 
 
-def ask(text, client):
+def ask(text: str, client: TestClient) -> None:
     r = client.post("/v1/chat", json={"prompt": text}, headers=H)
-    if r.status_code == 429:
+    if r.status_code == HTTP_TOO_MANY_REQUESTS:
         print(f"  429 RATE LIMITED   | {text!r}")
         return
     d = r.json()
@@ -38,7 +39,10 @@ with TestClient(app, raise_server_exceptions=True) as client:
 
     print("\n=== 2) FALSE HIT REJECTED (near-identical wording, different number) ===")
     ask("please tell me the total monthly cost of the 5 gb data plan for a new user", client)
-    ask("please tell me the total monthly cost of the 50 gb data plan for a new user", client)  # MISS, not the 5gb answer
+    ask(
+        "please tell me the total monthly cost of the 50 gb data plan for a new user",
+        client,
+    )  # MISS, not the 5gb answer
 
     print("\n=== 3) VOLATILE query BYPASSES cache ===")
     ask("what is the weather today", client)
