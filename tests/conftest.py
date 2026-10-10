@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import os
 
 os.environ.setdefault("REDIS_URL", "")  # force fakeredis
@@ -19,8 +18,9 @@ os.environ.setdefault("CACHE_SIMILARITY_BASE", "0.5")  # lower threshold for has
 import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app
-from app.redis_client import close_redis, get_redis
+from app.cache import redisearch_store as rs
+from app.config import settings
+from app.main import create_app
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -30,23 +30,31 @@ def _set_test_metrics_token():
 
 
 @pytest.fixture()
-def client():
+def client(request):
+    overrides = getattr(request.node.function, "config_overrides", {})
+    app = create_app(settings.model_copy(update=overrides))
     # Use TestClient with lifespan to properly initialize app.state
     # Note: TestClient automatically handles lifespan events
+    if os.environ.get("REDIS_URL") and os.environ.get("TEST_ALLOW_REDIS_FLUSHDB") != "1":
+        raise RuntimeError(
+            "Real Redis tests require explicit TEST_ALLOW_REDIS_FLUSHDB=1 on a disposable database"
+        )
     with TestClient(app, raise_server_exceptions=True) as client:
         # Clean slate before each test.
-        asyncio.run(_async_reset(client))
+        client.portal.call(_async_reset, client)
         yield client
 
 
 async def _async_reset(client):
     """Async reset of Redis and cache state."""
-    r = await get_redis()
-    await r.flushall()
+    r = client.app.state.redis
+    # Tests use a dedicated Redis database in CI; never flush unrelated databases.
+    await r.flushdb()
     # Clear the semantic cache in app.state
     if hasattr(client.app.state, "semantic_cache"):
         await client.app.state.semantic_cache.clear()
-    await close_redis()
+    if settings.vector_backend == "redisearch":
+        await rs.ensure_index(len(client.app.state.model.embed("probe")))
 
 
 HEADERS = {"x-api-key": "demo-key-123"}

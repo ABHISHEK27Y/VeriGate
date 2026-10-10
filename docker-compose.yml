@@ -6,10 +6,12 @@
 #   LLM_PROVIDER=gemini GEMINI_API_KEY=... docker compose up --build
 services:
   redis:
-    image: redis/redis-stack:latest
+    image: redis/redis-stack@sha256:5d5154123426693540ea6c1d9e638eae2bf2024879c839db6fcfdd7717e817c7
     ports:
-      - "6379:6379"     # Redis
-      - "8001:8001"     # RedisInsight web UI
+      - "127.0.0.1:6379:6379"     # Redis
+      - "127.0.0.1:8001:8001"     # RedisInsight web UI
+    environment:
+      REDIS_ARGS: "--maxmemory 512mb --maxmemory-policy noeviction"
     volumes:
       - redis-data:/data
     healthcheck:

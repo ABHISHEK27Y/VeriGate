@@ -21,11 +21,12 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -e .[dev]
+          pip install --require-hashes --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.lock
+          pip install --no-deps --no-build-isolation -e .
 
       - name: Run Ruff (lint)
         run: |
-          ruff check app/ tests/ evaluation/
+          ruff check .
 
       - name: Run Ruff (format check)
         run: |
@@ -49,7 +50,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -e .[dev]
+          pip install --require-hashes --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.lock
+          pip install --no-deps --no-build-isolation -e .
 
       - name: Run tests
         run: |
@@ -71,7 +73,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       redis:
-        image: redis/redis-stack:latest
+        image: redis/redis-stack@sha256:5d5154123426693540ea6c1d9e638eae2bf2024879c839db6fcfdd7717e817c7
         ports:
           - 6379:6379
         options: >-
@@ -90,17 +92,20 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -e .[dev]
+          pip install --require-hashes --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.lock
+          pip install --no-deps --no-build-isolation -e .
 
       - name: Wait for Redis
         run: |
           sleep 10
-          redis-cli ping
+          python -c "import redis; assert redis.Redis(host='localhost', port=6379).ping()"
 
       - name: Run tests with Redis
         env:
           REDIS_URL: redis://localhost:6379/0
           VECTOR_BACKEND: redisearch
+          CACHE_MATCH_MODE: semantic
+          TEST_ALLOW_REDIS_FLUSHDB: "1"
         run: |
           python -m pytest tests/ -v --tb=short
 
@@ -118,11 +123,12 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -e .[dev]
+          pip install --require-hashes --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.lock
+          pip install --no-deps --no-build-isolation -e .
 
       - name: Run pip-audit
         run: |
-          pip-audit --desc --strict
+          python scripts/audit_dependencies.py
 
   docker-build:
     name: Docker Build

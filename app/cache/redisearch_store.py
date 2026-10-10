@@ -1,139 +1,193 @@
-"""RediSearch vector store — the production, multi-replica form of the KNN index (async).
-
-The in-process vectorised index in `semantic_cache.py` is exact and sub-millisecond for
-thousands of vectors, but each gateway replica keeps its own copy. For horizontal scale and
-millions of vectors, the index should live in Redis itself as an ANN (HNSW) index that all
-replicas share. That is what this module provides.
-
-REQUIRES **Redis Stack** (RediSearch module) — plain Redis / fakeredis do NOT support
-FT.CREATE. This sandbox has no Docker, so this path is provided as a ready-to-run reference
-and is validated by `smoke_test()` once you point it at a Redis Stack instance
-(see docs/REDISEARCH_UPGRADE.md).
-
-Design notes:
- * Vectors are stored as raw FLOAT32 bytes (not CSV) in the hash field `vec`, so this module
-   uses its OWN binary-safe client (decode_responses=False).
- * Cosine distance; similarity = 1 - distance.
-"""
+"""Binary-safe RediSearch storage with bounded connections and atomic cache metadata."""
 
 from __future__ import annotations
 
+import logging
+import re
+import time
 import uuid
+from contextlib import asynccontextmanager
+from contextvars import ContextVar
 
 import numpy as np
 import redis.asyncio as redis
+from redis.exceptions import ResponseError
 
-from ..config import settings
+from ..config import get_settings
 from ..embeddings import embed
+from . import storage
+from .namespace import namespace
 
-_INDEX = "verigate_idx"
-_PREFIX = "cache:entry:"
+log = logging.getLogger(__name__)
+active_client: ContextVar[redis.Redis | None] = ContextVar("redisearch_client", default=None)
 
 
-async def _client() -> redis.Redis:
-    """A binary-safe async Redis client (decode_responses=False) for byte vectors."""
-    url = settings.redis_url or "redis://localhost:6379/0"
-    return redis.from_url(url, decode_responses=False)
+def _index() -> str:
+    return namespace().replace(":", "_") + "_idx"
+
+
+def _namespace() -> str:
+    return namespace() + ":rs"
+
+
+@asynccontextmanager
+async def _client():
+    existing = active_client.get()
+    if existing is not None:
+        yield existing
+        return
+    if not get_settings().redis_url:
+        raise RuntimeError("RediSearch requires REDIS_URL")
+    r = redis.from_url(
+        get_settings().redis_url,
+        decode_responses=False,
+        socket_connect_timeout=5,
+        socket_timeout=5,
+        max_connections=20,
+    )
+    try:
+        yield r
+    finally:
+        await r.aclose()
 
 
 async def redisearch_available() -> bool:
-    """True only if the server has the RediSearch module (i.e. Redis Stack)."""
     try:
-        r = await _client()
-        modules = await r.execute_command("MODULE", "LIST")
-        names = [str(m[1], "utf-8").lower() for m in modules] if modules else []
-        await r.aclose()
-        return any("search" in n for n in names)
+        async with _client() as r:
+            await r.execute_command("FT._LIST")
     except Exception:
+        log.warning("RediSearch availability check failed", exc_info=True)
         return False
+    else:
+        return True
 
 
 async def ensure_index(dim: int) -> None:
-    """Create the HNSW vector index if it does not already exist."""
-    r = await _client()
-    try:
-        await r.execute_command("FT.INFO", _INDEX)
-        await r.aclose()
-    except Exception:
-        await r.execute_command(
-            "FT.CREATE",
-            _INDEX,
-            "ON",
-            "HASH",
-            "PREFIX",
-            1,
-            _PREFIX,
-            "SCHEMA",
-            "tenant",
-            "TAG",
-            "query",
-            "TEXT",
-            "answer",
-            "TEXT",
-            "vec",
-            "VECTOR",
-            "HNSW",
-            6,
-            "TYPE",
-            "FLOAT32",
-            "DIM",
-            dim,
-            "DISTANCE_METRIC",
-            "COSINE",
-        )
-        await r.aclose()
+    async with _client() as r:
+        try:
+            await r.execute_command(
+                "FT.CREATE",
+                _index(),
+                "ON",
+                "HASH",
+                "PREFIX",
+                1,
+                f"{_namespace()}:entry:",
+                "SCHEMA",
+                "tenant",
+                "TAG",
+                "query",
+                "TEXT",
+                "answer",
+                "TEXT",
+                "vec",
+                "VECTOR",
+                "HNSW",
+                6,
+                "TYPE",
+                "FLOAT32",
+                "DIM",
+                dim,
+                "DISTANCE_METRIC",
+                "COSINE",
+            )
+        except ResponseError as exc:
+            if "index already exists" not in str(exc).lower():
+                raise
+    await validate_index(dim)
+
+
+async def validate_index(dim: int) -> None:
+    async with _client() as r:
+        info = await r.execute_command("FT.INFO", _index())
+    fields = dict(zip(info[::2], info[1::2], strict=True))
+    for attribute in fields.get(b"attributes", []):
+        values = dict(zip(attribute[::2], attribute[1::2], strict=True))
+        if values.get(b"attribute") == b"vec":
+            if (
+                int(values.get(b"dim", 0)) != dim
+                or values.get(b"distance_metric") != b"COSINE"
+                or values.get(b"data_type") != b"FLOAT32"
+            ):
+                raise RuntimeError("Incompatible RediSearch vector schema")
+            return
+    raise RuntimeError("RediSearch vector field missing")
 
 
 async def add(query: str, answer: str, vec: np.ndarray, tenant: str) -> str:
-    r = await _client()
     eid = uuid.uuid4().hex
-    await r.hset(
-        f"{_PREFIX}{tenant}:{eid}",
-        mapping={
-            b"tenant": tenant.encode("utf-8"),
-            b"query": query.encode("utf-8"),
-            b"answer": answer.encode("utf-8"),
-            b"vec": np.asarray(vec, dtype=np.float32).tobytes(),
-        },
-    )
-    await r.aclose()
+    async with _client() as r:
+        await storage.put(
+            r,
+            tenant,
+            eid,
+            {
+                "tenant": tenant,
+                "query": query,
+                "answer": answer,
+                "vec": np.asarray(vec, dtype=np.float32).tobytes(),
+            },
+            namespace=_namespace(),
+        )
     return eid
 
 
+async def clear(tenant: str | None = None) -> None:
+    async with _client() as r:
+        if tenant is not None:
+            await storage.clear(r, tenant, namespace=_namespace())
+        else:
+            async for key in r.scan_iter(match=f"{_namespace()}:ids:*"):
+                await storage.clear(
+                    r, key.decode().split(f"{_namespace()}:ids:", 1)[1], namespace=_namespace()
+                )
+
+
 async def knn(vec: np.ndarray, tenant: str, k: int = 1):
-    """Return [(query, answer, similarity), ...] for the k nearest neighbours of this tenant."""
-    r = await _client()
-    # Pre-filter by tenant TAG, then KNN within that partition (tenant isolation).
-    q = f"(@tenant:{{{tenant}}})=>[KNN {k} @vec $BLOB AS score]"
-    res = await r.execute_command(
-        "FT.SEARCH",
-        _INDEX,
-        q,
-        "PARAMS",
-        2,
-        "BLOB",
-        np.asarray(vec, dtype=np.float32).tobytes(),
-        "SORTBY",
-        "score",
-        "RETURN",
-        3,
-        "query",
-        "answer",
-        "score",
-        "DIALECT",
-        2,
-    )
-    await r.aclose()
-    out = []
-    # res = [count, key1, [field, val, field, val, ...], key2, [...], ...]
-    for i in range(1, len(res), 2):
-        fields = res[i + 1]
-        d = {str(fields[j], "utf-8"): fields[j + 1] for j in range(0, len(fields), 2)}
-        query = str(d.get("query", b""), "utf-8")
-        answer = str(d.get("answer", b""), "utf-8")
-        dist = float(d.get("score", b"1"))
-        out.append((query, answer, 1.0 - dist))  # cosine distance -> similarity
-    return out
+    # Escape TAG syntax even for callers outside the authenticated gateway.
+    escaped = re.sub(r"([^a-zA-Z0-9_])", lambda m: "\\" + m[0], tenant)
+    q = f"(@tenant:{{{escaped}}})=>[KNN {k} @vec $BLOB AS score]"
+    async with _client() as r:
+        res = await r.execute_command(
+            "FT.SEARCH",
+            _index(),
+            q,
+            "PARAMS",
+            2,
+            "BLOB",
+            np.asarray(vec, dtype=np.float32).tobytes(),
+            "SORTBY",
+            "score",
+            "RETURN",
+            3,
+            "query",
+            "answer",
+            "score",
+            "LIMIT",
+            0,
+            k,
+            "DIALECT",
+            2,
+        )
+        out = []
+        for i in range(1, len(res), 2):
+            # Confirm existence after search; a concurrent TTL/clear cannot revive stale answers.
+            key = res[i]
+            row = await r.hgetall(key)
+            if not row:
+                continue
+            fields = res[i + 1]
+            values = dict(zip(fields[::2], fields[1::2], strict=True))
+            out.append(
+                (
+                    row[b"query"].decode(),
+                    row[b"answer"].decode(),
+                    1.0 - float(values.get(b"score", b"1")),
+                )
+            )
+            eid = key.decode().rsplit(":", 1)[1]
+            await r.zadd(f"{_namespace()}:lru:{tenant}", {eid: time.time()}, xx=True)
+        return out
 
 
 async def smoke_test() -> None:

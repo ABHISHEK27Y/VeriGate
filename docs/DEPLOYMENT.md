@@ -1,3 +1,5 @@
+> Current behavior and release requirements: [Production configuration](PRODUCTION_CONFIGURATION.md). Historical experiment/checklist claims below are not a deployment approval.
+
 # Deployment & Docker
 
 This explains **what Docker is doing in this project**, how to run the whole stack, and how

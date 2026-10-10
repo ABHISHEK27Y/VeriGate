@@ -1,3 +1,5 @@
+> Current behavior and release requirements: [Production configuration](PRODUCTION_CONFIGURATION.md). Historical experiment/checklist claims below are not a deployment approval.
+
 # Code Walkthrough (viva prep)
 
 Read this to be able to defend **every file** in the project. It maps the codebase, traces a
@@ -138,7 +140,7 @@ for easy queries, escalate only hard ones.
 `base.Provider` = interface (`stream()`, `health()`). `mock.MockProvider` = free deterministic
 answers (`FlakyProvider` for failover demos). `openai_compat.OpenAICompatibleProvider` = one
 class for OpenAI **and** Gemini (Gemini via its OpenAI-compat endpoint), parsing SSE streams.
-`registry` builds the provider order and routes: **failover** (try in order, mock last) plus
+`registry` builds the provider order and routes: **failover** (try configured providers in order) plus
 the **cascade** (`_order_for(prompt)` puts strong-first for hard queries, cheap-first for easy,
 keeping the other as failover). **Why:** provider-agnostic core; reliability + cost control.
 
@@ -175,7 +177,7 @@ and provides the interactive playground.
    *parsing*, not the algorithm; vectorising fixed it; RediSearch is the multi-replica path.
 6. **fakeredis + hash embedder + mock provider** → the whole system runs and is tested with no
    infra, no keys, no cost; real backends switch on via env vars.
-7. **Failover always ends at mock** → the gateway never hard-fails on a provider outage.
+7. **Failover uses configured real providers** → an outage returns 502; mock is explicitly selected for demos.
 
 ---
 

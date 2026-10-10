@@ -24,6 +24,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
 from app.complexity import complexity_score  # noqa: E402
+from app.config import settings  # noqa: E402
 
 RESULTS = Path(__file__).parent / "results"
 RESULTS.mkdir(exist_ok=True)
@@ -114,9 +115,10 @@ def evaluate(threshold: float) -> dict:
 
 
 def main() -> None:
+    strong_ratio = STRONG_COST / CHEAP_COST
     print(
         f"\nDataset: {len(EASY)} easy + {len(HARD)} hard queries. "
-        f"Cost: cheap={CHEAP_COST}, strong={STRONG_COST} (strong is {STRONG_COST / CHEAP_COST:.0f}x).\n"
+        f"Cost: cheap={CHEAP_COST}, strong={STRONG_COST} (strong is {strong_ratio:.0f}x).\n"
     )
 
     thresholds = [round(0.05 * i, 3) for i in range(0, 21)]
@@ -132,14 +134,15 @@ def main() -> None:
                 f"{r['random_retention'] * 100:>7.0f}%{r['f1']:>7.2f}"
             )
 
-    default = evaluate(0.5)
+    default = evaluate(settings.cascade_threshold)
     print(
-        f"\nDefault threshold 0.5: cut cost {default['cost_reduction'] * 100:.0f}% while "
+        f"\nDefault threshold {settings.cascade_threshold}: "
+        f"cut cost {default['cost_reduction'] * 100:.0f}% while "
         f"keeping {default['quality_retention'] * 100:.0f}% of hard queries on the strong model "
         f"(routing F1={default['f1']:.2f}).\n"
     )
 
-    with open(RESULTS / "cascade.csv", "w", newline="") as fh:
+    with (RESULTS / "cascade.csv").open("w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))
         w.writeheader()
         w.writerows(rows)
@@ -170,7 +173,7 @@ def main() -> None:
         zorder=6,
         edgecolors="black",
         linewidths=0.6,
-        label="default (threshold 0.5)",
+        label=f"default (threshold {settings.cascade_threshold})",
     )
     plt.xlabel("Cost reduction vs. always-strong  → higher is cheaper")
     plt.ylabel("Quality retention  (hard queries kept on strong)  ↑")

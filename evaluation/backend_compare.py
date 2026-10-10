@@ -10,6 +10,7 @@ each. Saves evaluation/results/backend_compare.{png,csv}.
 
 from __future__ import annotations
 
+import asyncio
 import csv
 import os
 import time
@@ -25,8 +26,9 @@ import matplotlib.pyplot as plt  # noqa: E402
 
 from app import embeddings  # noqa: E402
 from app.cache import redisearch_store as rs  # noqa: E402
-from app.cache import semantic_cache as sc  # noqa: E402
+from app.cache.semantic_cache import SemanticCache  # noqa: E402
 from app.embeddings import embed  # noqa: E402
+from app.redis_client import create_redis  # noqa: E402
 
 RESULTS = Path(__file__).parent / "results"
 SIZES = [1000, 5000, 10000]
@@ -42,49 +44,57 @@ def p50(fn, reps=REPS):
     return float(np.percentile(xs, 50))
 
 
-def main():
-    if not rs.redisearch_available():
+async def main() -> None:
+    if not await rs.redisearch_available():
         raise SystemExit("Redis Stack not reachable. Set REDIS_URL to a Redis Stack server.")
 
     print(f"\nEmbedding {max(SIZES)} queries once (batch)...")
     embed("warm up")
-    model = embeddings._model
+    model = embeddings.default_embedder().model
+    assert model is not None, "Model should be loaded when backend is minilm"
     queries = [f"how do I configure feature number {i} in module {i}" for i in range(max(SIZES))]
     vecs = model.encode(queries, normalize_embeddings=True, batch_size=128).astype(np.float32)
 
     probe = embed("what are the steps to set up feature number 7 in module 7")
 
     # reset RediSearch index
-    from app.redis_client import get_redis
-
     os.environ["REDIS_URL"]  # ensure present
-    get_redis().flushall()
+    r = create_redis()
+    # Use unique benchmark tenancy; never erase an existing Redis server.
+    await r.aclose()
 
-    TEN = "t_bench"
+    ten = "t_bench_" + str(time.time_ns())
     rows = []
     added = 0
+    # Create a SemanticCache instance for in-process testing
+    cache = SemanticCache()
     for n in SIZES:
         # ---- in-process: set the tenant's matrix directly to the first n vectors ----
-        sc._INDEX[TEN] = {
+        cache._index[ten] = {
             "ids": [f"e{i}" for i in range(n)],
             "queries": queries[:n],
             "answers": [f"answer {i}" for i in range(n)],
             "mat": vecs[:n].copy(),
             "built": True,
         }
-        t_inproc = p50(lambda: sc._nearest_inproc(probe, TEN))
+        t_inproc = p50(lambda: cache._nearest_inproc(probe, ten))
 
         # ---- redisearch: add up to n ----
-        rs.ensure_index(vecs.shape[1])
+        await rs.ensure_index(vecs.shape[1])
         for i in range(added, n):
-            rs.add(queries[i], f"answer {i}", vecs[i], TEN)
+            await rs.add(queries[i], f"answer {i}", vecs[i], ten)
         added = n
-        t_redis = p50(lambda: rs.knn(probe, TEN, k=1))
+        samples = []
+        for _ in range(REPS):
+            start = time.perf_counter()
+            await rs.knn(probe, ten, k=1)
+            samples.append((time.perf_counter() - start) * 1000)
+        t_redis = float(np.percentile(samples, 50))
 
         rows.append((n, t_inproc, t_redis))
         print(f"  n={n:<6}  in-process {t_inproc:7.3f} ms   redisearch {t_redis:7.3f} ms")
 
-    with open(RESULTS / "backend_compare.csv", "w", newline="") as f:
+    with (RESULTS / "backend_compare.csv").open("w", newline="") as f:
         w = csv.writer(f)
         w.writerow(["cache_size", "inproc_p50_ms", "redisearch_p50_ms"])
         w.writerows(rows)
@@ -105,4 +115,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

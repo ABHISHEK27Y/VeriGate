@@ -9,6 +9,11 @@ venv/
 __pycache__/
 *.pyc
 .pytest_cache/
+audit/tmp/
+.coverage
+build/
+dist/
+*.egg-info/
 
 # --- ML model / HF caches (downloaded at runtime, huge) ---
 .cache/

@@ -1,48 +1,53 @@
-"""Redis connection (async).
-
-If REDIS_URL is set  -> connect to a real Redis server via redis.asyncio.
-If REDIS_URL is blank -> use fakeredis.aioredis (async in-memory Redis).
-Same code path either way.
-"""
+"""Application-owned async Redis connections."""
 
 from __future__ import annotations
 
-import logging
+from collections.abc import Awaitable
+from typing import cast
 
-from .config import settings
+import fakeredis.aioredis
+import redis.asyncio as redis
+from fastapi import Request
 
-log = logging.getLogger("verigate.redis")
-
-_client = None
+from .config import get_settings
 
 
-async def get_redis():
-    """Return a singleton async Redis client (real or fake)."""
-    global _client
-    if _client is not None:
-        return _client
+def create_redis(*, binary: bool = False) -> redis.Redis:
+    """Caller owns and closes this connection on its originating event loop."""
+    if get_settings().redis_url:
+        return cast(
+            redis.Redis,
+            redis.from_url(
+                get_settings().redis_url,
+                decode_responses=not binary,
+                socket_connect_timeout=5,
+                socket_timeout=5,
+                max_connections=100,
+            ),
+        )
+    return fakeredis.aioredis.FakeRedis(decode_responses=not binary)
 
-    if settings.redis_url:
-        import redis.asyncio as redis
 
-        _client = redis.from_url(settings.redis_url, decode_responses=True)
-        log.info("Using REAL Redis at %s", settings.redis_url)
-    else:
-        import fakeredis.aioredis
-
-        _client = fakeredis.aioredis.FakeRedis(decode_responses=True)
-        log.info("Using in-memory fakeredis (set REDIS_URL to use a real server).")
-
-    return _client
+async def get_redis(request: Request) -> redis.Redis:
+    return cast(redis.Redis, request.app.state.redis)
 
 
 def redis_backend_name() -> str:
-    return "real-redis" if settings.redis_url else "fakeredis (in-memory)"
+    return "real-redis" if get_settings().redis_url else "fakeredis (in-memory)"
 
 
-async def close_redis() -> None:
-    """Close the Redis connection pool."""
-    global _client
-    if _client is not None:
-        await _client.aclose()
-        _client = None
+async def close_redis(client: redis.Redis) -> None:
+    await client.aclose()
+
+
+async def hash_fields(client: redis.Redis, key: str) -> dict[str, str]:
+    """Adapt redis-py's shared sync/async annotation at the client boundary."""
+    return await cast(Awaitable[dict[str, str]], client.hgetall(key))
+
+
+async def set_members(client: redis.Redis, key: str) -> set[str]:
+    return await cast(Awaitable[set[str]], client.smembers(key))
+
+
+async def remove_member(client: redis.Redis, key: str, member: str) -> int:
+    return await cast(Awaitable[int], client.srem(key, member))

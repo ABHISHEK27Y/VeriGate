@@ -25,12 +25,15 @@ from __future__ import annotations
 import functools
 import logging
 import re
+import threading
+from collections import OrderedDict
 
 import numpy as np
-from sentence_transformers import CrossEncoder
 
-from ..config import settings
+from ..config import get_settings
 from ..embeddings import tokenize
+
+_MAX_NLI_PAIRS = 8192
 
 log = logging.getLogger("verigate.verifier")
 
@@ -73,7 +76,8 @@ def _numbers(text: str) -> set[str]:
 
 
 def _negation_flag(text: str) -> bool:
-    return bool(set(tokenize(text)) & _NEGATIONS)
+    normalized = text.lower().replace("\u2019", "'").replace("'", "")
+    return bool(set(tokenize(normalized)) & _NEGATIONS)
 
 
 def _entities(text: str) -> set[str]:
@@ -81,8 +85,8 @@ def _entities(text: str) -> set[str]:
     token and not common sentence-starters. (Phase-4: replace with spaCy NER.)"""
     words = _WORD_RE.findall(text)
     ents = set()
-    for i, w in enumerate(words):
-        if w[0].isupper() and i > 0 and w.lower() not in _NON_ENTITY_CAPS:
+    for w in words:
+        if w[0].isupper() and w.lower() not in _NON_ENTITY_CAPS:
             ents.add(w.lower())
     return ents
 
@@ -97,49 +101,70 @@ def _entities(text: str) -> set[str]:
 # already passed Tier-1, and results are cached per pair (independent of threshold), so the
 # overhead is paid at most once per distinct pair.
 # ---------------------------------------------------------------------------
-_nli_model: CrossEncoder | None = None
-_nli_unavailable = False
+class NliVerifier:
+    """Application-owned lazy model with a bounded pair cache."""
+
+    def __init__(self):
+        self.model = None
+        self.unavailable = False
+        self.lock = threading.Lock()
+        self.cache: OrderedDict[tuple[str, str], float | None] = OrderedDict()
+
+    def entail_prob(self, premise: str, hypothesis: str) -> float | None:
+        key = (premise, hypothesis)
+        with self.lock:
+            if key in self.cache:
+                self.cache.move_to_end(key)
+                return self.cache[key]
+            if self.unavailable:
+                return None
+            try:
+                if self.model is None:
+                    from sentence_transformers import (  # noqa: PLC0415 - lazy ML dependency
+                        CrossEncoder,  # noqa: PLC0415 - lazy ML dependency
+                    )
+
+                    self.model = CrossEncoder(
+                        get_settings().nli_model, revision=get_settings().nli_revision or None
+                    )
+                logits = np.asarray(self.model.predict([(premise, hypothesis)])).reshape(-1)
+                labels = self.model.model.config.id2label
+                entail = next(
+                    (int(i) for i, label in labels.items() if "entail" in label.lower()), None
+                )
+                if entail is None:
+                    raise ValueError("NLI model must identify its entailment label")  # noqa: TRY301 - fail closed
+                probs = np.exp(logits - logits.max())
+                result = float(probs[entail] / probs.sum())
+            except Exception:
+                log.exception("NLI unavailable; rejecting semantic reuse")
+                self.unavailable = True
+                return None
+            self.cache[key] = result
+            if len(self.cache) > _MAX_NLI_PAIRS:
+                self.cache.popitem(last=False)
+            return result
+
+    def equivalent(self, q1: str, q2: str) -> bool | None:
+        e1, e2 = self.entail_prob(q1, q2), self.entail_prob(q2, q1)
+        if e1 is None or e2 is None:
+            return None
+        return e1 >= get_settings().nli_threshold and e2 >= get_settings().nli_threshold
 
 
-def _load_nli() -> None:
-    global _nli_model, _nli_unavailable  # noqa: PLW0603
-    if _nli_model is not None or _nli_unavailable:
-        return
-    try:
-        log.info("Loading NLI model %s ...", settings.nli_model)
-        _nli_model = CrossEncoder(settings.nli_model)
-    except Exception as e:  # noqa: BLE001 - any failure -> disable Tier-2 (fail-open)
-        log.warning("NLI model unavailable (%s); Tier-2 disabled.", e)
-        _nli_unavailable = True
-
-
-def _softmax(x: np.ndarray) -> np.ndarray:
-    e = np.exp(x - x.max())
-    return e / e.sum()
-
-
-@functools.lru_cache(maxsize=8192)
-def _entail_prob(premise: str, hypothesis: str) -> float | None:
-    """P(premise entails hypothesis). None if NLI is unavailable."""
-    _load_nli()
-    if _nli_model is None:
-        return None
-    # cross-encoder/nli-* label order is [contradiction, entailment, neutral]
-    logits = np.array(_nli_model.predict([(premise, hypothesis)])).reshape(-1)
-    return float(_softmax(logits)[1])
+@functools.lru_cache(maxsize=1)
+def default_verifier() -> NliVerifier:
+    """Standalone tooling helper; application policies own a separate verifier."""
+    return NliVerifier()
 
 
 def nli_equivalent(q1: str, q2: str) -> bool | None:
-    """True/False if NLI is available (bidirectional entailment); None if unavailable."""
-    e1 = _entail_prob(q1, q2)
-    e2 = _entail_prob(q2, q1)
-    if e1 is None or e2 is None:
-        return None
-    thr = settings.nli_threshold
-    return e1 >= thr and e2 >= thr
+    return default_verifier().equivalent(q1, q2)
 
 
-def verify_equivalent(q_new: str, q_cached: str, use_nli: bool = False) -> tuple[bool, str]:
+def verify_equivalent(
+    q_new: str, q_cached: str, use_nli: bool = False, verifier: NliVerifier | None = None
+) -> tuple[bool, str]:
     """Return (is_equivalent, reason). Tier-1 always; Tier-2 (NLI) when use_nli=True."""
     # --- Tier 1: structural checks ---
     if _numbers(q_new) != _numbers(q_cached):
@@ -151,8 +176,10 @@ def verify_equivalent(q_new: str, q_cached: str, use_nli: bool = False) -> tuple
 
     # --- Tier 2: semantic equivalence (NLI) ---
     if use_nli:
-        eq = nli_equivalent(q_new, q_cached)
-        if eq is False:  # None => unavailable => fail-open (keep Tier-1 verdict)
+        eq = (verifier or default_verifier()).equivalent(q_new, q_cached)
+        if eq is None:
+            return False, "nli_unavailable"
+        if eq is False:
             return False, "nli_not_equivalent"
 
     return True, "ok"

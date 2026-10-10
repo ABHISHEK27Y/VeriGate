@@ -2,23 +2,33 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
+from typing import Literal
+
+from pydantic import BaseModel, Field, model_validator
+
+
+class UserMessage(BaseModel):
+    role: Literal["user"]
+    content: str = Field(min_length=1, max_length=16000)
 
 
 class ChatRequest(BaseModel):
-    # Accept either a plain prompt or a list of chat messages.
-    prompt: str | None = None
-    messages: list[dict] | None = None
+    """Stateless single-turn API; reject unsupported history instead of dropping it."""
+
+    prompt: str | None = Field(default=None, max_length=16000)
+    messages: list[UserMessage] | None = Field(default=None, min_length=1, max_length=1)
+
+    @model_validator(mode="after")
+    def one_input(self):
+        if self.prompt is not None and self.messages is not None:
+            raise ValueError("Supply prompt or one user message, not both")
+        return self
 
     def as_prompt(self) -> str:
-        if self.prompt:
+        if self.prompt is not None:
             return self.prompt.strip()
         if self.messages:
-            # Use the last user message as the cache key text.
-            for m in reversed(self.messages):
-                if m.get("role") == "user":
-                    return str(m.get("content", "")).strip()
-            return str(self.messages[-1].get("content", "")).strip()
+            return self.messages[0].content.strip()
         return ""
 
 

@@ -16,15 +16,24 @@ def test_complexity_easy_vs_hard():
 
 
 def test_cascade_routes_by_complexity():
-    registry.set_cascade(MockProvider(name_override="cheap"), MockProvider(name_override="strong"))
-    try:
-        easy, _ = asyncio.run(registry.route_stream("who wrote Hamlet"))
-        hard, _ = asyncio.run(
-            registry.route_stream(
+    async def run():
+        reg = registry.ProviderRegistry(
+            providers=(),
+            cascade={
+                "cheap": MockProvider(name_override="cheap"),
+                "strong": MockProvider(name_override="strong"),
+            },
+        )
+        try:
+            easy, stream = await reg.route_stream("who wrote Hamlet")
+            _ = [chunk async for chunk in stream]
+            hard, stream = await reg.route_stream(
                 "design a distributed rate limiter and analyze the tradeoffs step by step"
             )
-        )
-        assert easy == "cheap"
-        assert hard == "strong"
-    finally:
-        registry.set_cascade(None, None)  # reset global state
+            _ = [chunk async for chunk in stream]
+            assert easy == "cheap"
+            assert hard == "strong"
+        finally:
+            await reg.redis.aclose()
+
+    asyncio.run(run())

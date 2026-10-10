@@ -1,3 +1,5 @@
+> Current behavior and release requirements: [Production configuration](PRODUCTION_CONFIGURATION.md). Historical experiment/checklist claims below are not a deployment approval.
+
 # Results Log (living document)
 
 Phase-by-phase record of everything built and measured, kept so it drops straight into the
@@ -125,7 +127,7 @@ trade-off, and the money graph shows it dominates.
 | **VeriGate (full)** | 0/5 | 0/3 | 0/2 | 0/5 |
 
 **Reading:** the **verifier** eliminates entity/number/negation false hits; the **adaptive
-threshold** clears related-topic ones. Together → zero false hits. This table is the
+threshold** clears related-topic ones. Together → zero observed false hits on this test set; untested inputs can still fail. This table is the
 clearest evidence of *what each component contributes*.
 
 ### Result 3 — Staleness detector
@@ -186,7 +188,7 @@ per-pair caching so the threshold sweep pays the cost at most once per pair. Gat
   because NLI is conservative and also rejects some genuine paraphrases.
 
 **Key finding (a real research insight — put this in the report):**
-> Tier-2 NLI provides **maximal correctness (0 false hits at any threshold)** but at a
+> Tier-2 NLI provides **zero observed false hits on that small experiment, not a correctness guarantee** but at a
 > **recall cost**, and it is **largely redundant once the adaptive threshold is enabled**
 > (both target the same related-topic negatives). Hence the recommended default is
 > **adaptive + Tier-1** (0% false-hit at higher recall), with **Tier-2 as an opt-in
@@ -558,7 +560,7 @@ single clearest proof of the self-verifier.
 **Date:** 2026-09-19
 
 **Built:** three production features that close pre-deploy blockers.
-- **Per-key daily spend budget** (`app/budget.py`, `DAILY_REQUEST_BUDGET`): caps PROVIDER calls
+- **Per-key daily admission budget** (`app/budget.py`, `DAILY_REQUEST_BUDGET`): caps PROVIDER calls
   per key per day in Redis; over-budget → 429. **Cache hits are free**, so the cache extends the
   budget — a nice property to state in the report. Closes SECURITY #3 (bill-shock).
 - **Provider circuit breaker** (`app/providers/breaker.py`): after N failures in a window a

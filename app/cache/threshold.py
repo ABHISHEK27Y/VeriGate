@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import re
 
-from ..config import settings
+from ..config import get_settings
 from ..embeddings import tokenize
 
 _NUMBER_RE = re.compile(r"\b\d+([.,]\d+)?\b")
@@ -56,7 +56,7 @@ def adaptive_threshold(query: str, neighbourhood_density: float = 0.0) -> float:
     neighbourhood_density in [0,1]: how crowded the vector space is near this query
     (many near-but-distinct neighbours => be stricter).
     """
-    base = settings.cache_similarity_base
+    base = get_settings().cache_similarity_base
     t = (
         base
         + 0.10 * entity_density(query)  # w1: proper nouns -> stricter

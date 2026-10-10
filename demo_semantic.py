@@ -8,14 +8,17 @@ hashing embedder could NOT do:
   1. A paraphrase with DIFFERENT WORDS still HITs the cache (true semantic match).
   2. The "Austria" vs "Australia" trap is caught (semantic false-hit prevention).
 """
+
 import logging
 import os
 
 from fastapi.testclient import TestClient
 
-from app.main import app
+os.environ.setdefault("LLM_PROVIDER", "mock")
+os.environ.setdefault("CACHE_MATCH_MODE", "semantic")
+os.environ["EMBEDDING_BACKEND"] = "minilm"  # set before Settings is imported
 
-os.environ["EMBEDDING_BACKEND"] = "minilm"  # force the real model for this demo
+from app.main import app  # noqa: E402
 
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("verigate.redis").setLevel(logging.WARNING)
@@ -34,7 +37,6 @@ def ask(text: str, client: TestClient) -> None:
 
 # Use TestClient as context manager to properly initialize lifespan
 with TestClient(app, raise_server_exceptions=True) as client:
-
     print("\nLoading model + warming up (first run downloads ~90MB)...")
     ask("warm up the model", client)
 
