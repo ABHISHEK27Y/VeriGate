@@ -12,6 +12,7 @@ dependencies = [
     "fastapi==0.143.0",
     "starlette==1.7.0",
     "transformers==5.19.0",
+    "torch==2.10.0",
     "uvicorn[standard]==0.34.0",
     "pydantic>=2.11,<3",
     "pydantic-settings>=2.14.1,<3",
