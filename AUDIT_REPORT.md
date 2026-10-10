@@ -52,15 +52,27 @@ The final suite reports **50 passed, 4 live Redis tests skipped**, with the prev
 recorded 81% coverage. Package inspection confirms the wheel includes the dashboard.
 
 Git metadata is restored for VeriGate at the original audited HEAD; remediation is
-committed on `codex/production-audit-remediation`. The parent Drecovery repository was
-not modified. Automatic approval review rejected uploading this branch to the public
-GitHub repository because the user has not explicitly authorized source upload to that
-destination. No push or pull request was created. Fresh CI is pending that authorization.
+committed and uploaded on `codex/production-audit-remediation`, with user authorization.
+[Draft PR #1](https://github.com/ABHISHEK27Y/VeriGate/pull/1) targets main.
+The earlier upload approval block has been resolved; no merge or deployment was performed.
 
-**Remaining release gates:** B01 fresh GitHub checks and B02 current Docker/live Redis Stack
-checks. The local Docker Linux engine is absent even outside the sandbox and after hidden
-Desktop startup; WSL Ubuntu is available but has no Redis server. No production deployment
-or paid provider calls have been performed.
+Fresh Linux CI exposed pip overriding the CPU wheel index while parsing the lockfile.
+Both official indexes are now recorded in the locks, and Torch is explicitly pinned to
+2.14.1, whose Linux CPU wheel was verified. A temporary 2.10 downgrade was rejected after
+its scan reported advisories; that intermediate revision is superseded.
+
+[CI run for 8933e30](https://github.com/ABHISHEK27Y/VeriGate/actions/runs/38061501598)
+passed Docker build/health smoke, standard tests/evaluation, lint/type checks and security
+scan. Redis Stack integration is still completing at the time of this documentation
+update. The previous index-corrected run passed all **54 Redis tests**, including
+independent-process exact/semantic lookup/clear, atomic Lua rate limits and schema
+mismatch rejection; its temporary old Torch security failure has since been fixed.
+
+**Release status:** implementation fixes are ready for review; require green checks on
+the final PR revision before merging, then configure production secrets, provider-side
+spending limits and validate intended load. The original B01/B02 entries below retain
+the historical pre-remediation evidence; they are not current claims that Docker or
+Redis Stack have never been tested.
 
 ---
 
