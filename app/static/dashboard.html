@@ -321,7 +321,7 @@ const EX=[
 $("chips").innerHTML="";EX.forEach(e=>{const c=document.createElement("div");c.className="chip";
   c.innerHTML=`${e.t}<small>${e.d}</small>`;c.onclick=()=>{$("query").value=e.t;ask();};$("chips").appendChild(c);});
 
-async function health(){try{const h=await(await fetch("/health")).json();
+async function health(){try{const r=await fetch("/health");if(!r.ok)throw new Error("Unavailable");const h=await r.json();
   $("cfg").innerHTML=[["redis",h.redis],["vector index",h.vector_backend],["embeddings",h.embedding_backend],
     ["provider",(h.providers||[]).join(", ")]].map(([k,v])=>`<div class="c"><div class="k">${k}</div><div class="v">${v}</div></div>`).join("");
   $("stat").textContent=h.vector_backend+" · "+(h.providers||[]).join(",");
@@ -335,6 +335,7 @@ async function ask(){const q=$("query").value.trim();if(!q)return;$("ask").disab
   try{const r=await fetch("/v1/chat",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":$("apikey").value},body:JSON.stringify({prompt:q})});
     if(r.status===429){$("err").textContent="Rate limited (429).";return;}
     if(r.status===401){$("err").textContent="Invalid API key (401).";return;}
+    if(!r.ok)throw new Error("Gateway returned HTTP "+r.status);
     const d=await r.json();const rej=d.note&&d.note.startsWith("verify_rejected");
     const b=$("rbadge");b.textContent=(rej?"BLOCKED · ":"")+d.cache;b.className="rbadge b-"+(rej?"REJECT":d.cache);
     $("ranswer").textContent=d.answer;$("rprov").textContent=d.provider;$("rlat").textContent=(d.latency_ms??0)+" ms";
@@ -345,11 +346,11 @@ async function ask(){const q=$("query").value.trim();if(!q)return;$("ask").disab
     const tr=document.createElement("tr");
     tr.innerHTML=`<td><span class="dot" style="background:${col}"></span>${rej?"BLOCK":d.cache}</td>
       <td>${q.replace(/</g,"&lt;")}</td><td class="c">${d.similarity!=null?d.similarity.toFixed(2):"—"}</td><td class="c">${d.latency_ms??"—"}</td>`;
-    $("log").prepend(tr);
+    $("log").prepend(tr);while($("log").children.length>100)$("log").lastElementChild.remove();
   }catch(e){$("err").textContent="Request failed: "+e.message;}finally{$("ask").disabled=false;}}
 
 $("ask").onclick=ask;
-$("clear").onclick=async()=>{try{await fetch("/admin/cache/clear",{method:"POST",headers:{"x-api-key":$("apikey").value}});$("err").textContent="Cache cleared.";}catch(e){$("err").textContent="Clear failed.";}};
+$("clear").onclick=async()=>{try{const r=await fetch("/admin/cache/clear",{method:"POST",headers:{"x-api-key":$("apikey").value}});if(!r.ok)throw new Error("HTTP "+r.status);$("err").textContent="Cache cleared.";}catch(e){$("err").textContent="Clear failed.";}};
 $("reset").onclick=()=>{s={total:0,hits:0,miss:0,bypass:0,block:0};$("log").innerHTML="";setS();};
 $("query").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();ask();}});
 

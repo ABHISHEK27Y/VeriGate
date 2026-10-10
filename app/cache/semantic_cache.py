@@ -15,17 +15,24 @@ shared RediSearch HNSW index filtered by a tenant TAG when VECTOR_BACKEND=redise
 
 from __future__ import annotations
 
+import asyncio
+import hashlib
+import logging
 import time
 import uuid
+from collections import OrderedDict
 from dataclasses import dataclass
 
 import numpy as np
 
-from ..config import settings
-from ..embeddings import embed
-from ..redis_client import get_redis
+from ..config import get_settings
+from ..embeddings import Embedder
+from ..redis_client import create_redis, hash_fields, remove_member, set_members
 from . import redisearch_store as rs
+from . import storage
+from .namespace import namespace
 from .policy import CachePolicy
+from .verifier import NliVerifier
 from .volatility import is_volatile
 
 # Constants
@@ -44,25 +51,31 @@ class LookupResult:
 class SemanticCache:
     """Async semantic cache with per-tenant isolation and LRU eviction."""
 
-    def __init__(self) -> None:
+    def __init__(self, redis_client=None, embedder=None) -> None:
+        self.embedder = embedder if embedder is not None else Embedder()
+        self.redis = redis_client if redis_client is not None else create_redis()
         # in-process vectorised index, keyed by tenant
-        self._index: dict[str, dict] = {}
+        self._index: dict[str, dict] = OrderedDict()
+        self._locks = [asyncio.Lock() for _ in range(64)]
+        self._inference_gate = asyncio.Semaphore(1)
+        self._versions: dict[str, str | None] = {}
         self._policy = CachePolicy(
-            static_threshold=settings.cache_similarity_base,
-            use_nli=settings.verifier_nli,
+            static_threshold=get_settings().cache_similarity_base,
+            use_nli=get_settings().verifier_nli,
+            verifier=NliVerifier(),
         )
 
     # ------------------------------------------------------------------ #
     # Internal helpers
     # ------------------------------------------------------------------ #
     def _ids_key(self, tenant: str) -> str:
-        return f"cache:ids:{tenant}"
+        return f"{namespace()}:ids:{tenant}"
 
     def _entry_key(self, tenant: str, eid: str) -> str:
-        return f"cache:entry:{tenant}:{eid}"
+        return f"{namespace()}:entry:{tenant}:{eid}"
 
     def _lru_key(self, tenant: str) -> str:
-        return f"cache:lru:{tenant}"
+        return f"{namespace()}:lru:{tenant}"
 
     def _vec_to_str(self, v: np.ndarray) -> str:
         return ",".join(f"{x:.6f}" for x in v.tolist())
@@ -71,34 +84,46 @@ class SemanticCache:
         return np.array([float(x) for x in s.split(",") if x], dtype=np.float32)
 
     def _t(self, tenant: str) -> dict:
+        if tenant not in self._index and len(self._index) >= get_settings().max_cached_tenants:
+            oldest = next(iter(self._index))
+            self._index.pop(oldest)
+            self._versions.pop(oldest, None)
         return self._index.setdefault(
             tenant, {"ids": [], "queries": [], "answers": [], "mat": None, "built": False}
         )
 
     async def _build_index(self, tenant: str) -> None:
-        t = self._t(tenant)
-        t["ids"].clear()
-        t["queries"].clear()
-        t["answers"].clear()
-        r = await get_redis()
+        # Build privately: another coroutine must never observe half-built parallel arrays.
+        t: dict = {"ids": [], "queries": [], "answers": [], "mat": None, "built": False}
+        r = self.redis
         rows = []
-        for eid in await r.smembers(self._ids_key(tenant)):
-            d = await r.hgetall(self._entry_key(tenant, eid))
-            if not d:
-                await r.srem(
-                    self._ids_key(tenant), eid
-                )  # entry expired (TTL): drop the dangling id
-                continue
-            t["ids"].append(eid)
-            t["queries"].append(d["query"])
-            t["answers"].append(d["answer"])
-            rows.append(self._str_to_vec(d["vec"]))
+        ids = list(await set_members(r, self._ids_key(tenant)))
+        batch_size = 64
+        for offset in range(0, len(ids), batch_size):
+            batch = ids[offset : offset + batch_size]
+            async with r.pipeline(transaction=False) as pipe:
+                for eid in batch:
+                    pipe.hgetall(self._entry_key(tenant, eid))
+                records = await pipe.execute()
+            for eid, record in zip(batch, records, strict=True):
+                if not record:
+                    await remove_member(r, self._ids_key(tenant), eid)
+                    await r.zrem(self._lru_key(tenant), eid)
+                    continue
+                t["ids"].append(eid)
+                t["queries"].append(record["query"])
+                t["answers"].append(record["answer"])
+                rows.append(self._str_to_vec(record["vec"]))
         t["mat"] = np.vstack(rows).astype(np.float32) if rows else None
         t["built"] = True
+        self._t(tenant)  # enforce the tenant bound even after concurrent rebuilds
+        self._index[tenant] = t
 
     async def _ensure(self, tenant: str) -> None:
-        if not self._t(tenant)["built"]:
+        version = await self.redis.get(f"{namespace()}:version:{tenant}")
+        if not self._t(tenant)["built"] or self._versions.get(tenant) != version:
             await self._build_index(tenant)
+            self._versions[tenant] = version
 
     def _append(self, tenant: str, eid: str, query: str, answer: str, vec: np.ndarray) -> None:
         t = self._t(tenant)
@@ -137,13 +162,18 @@ class SemanticCache:
             np.count_nonzero((sims < best_sim) & (best_sim - sims <= _SIMILARITY_DENSITY_WINDOW))
         )
         density = min(1.0, within / len(sims))
-        return {"query": t["queries"][idx], "answer": t["answers"][idx]}, best_sim, density
+        return (
+            {"id": t["ids"][idx], "query": t["queries"][idx], "answer": t["answers"][idx]},
+            best_sim,
+            density,
+        )
 
     async def _nearest_redisearch(self, qvec: np.ndarray, tenant: str):
         try:
             hits = await rs.knn(qvec, tenant, k=5)
         except Exception:
-            return None, -1.0, 0.0
+            logging.getLogger(__name__).exception("RediSearch lookup failed")
+            raise
         if not hits:
             return None, -1.0, 0.0
         best_q, best_a, best_sim = hits[0]
@@ -153,7 +183,7 @@ class SemanticCache:
         return {"query": best_q, "answer": best_a}, float(best_sim), density
 
     async def _nearest(self, qvec: np.ndarray, tenant: str):
-        if settings.vector_backend == "redisearch":
+        if get_settings().vector_backend == "redisearch":
             return await self._nearest_redisearch(qvec, tenant)
         return self._nearest_inproc(qvec, tenant)
 
@@ -161,82 +191,128 @@ class SemanticCache:
     # Public API
     # ------------------------------------------------------------------ #
     async def lookup(self, query: str, tenant: str) -> LookupResult:
-        if not settings.cache_enabled:
+        async with self._locks[hash(tenant) % len(self._locks)]:
+            return await self._lookup(query, tenant)
+
+    async def _infer(self, function, *args):
+        # Cancellation must not release capacity while the underlying thread still runs.
+        await self._inference_gate.acquire()
+        task = asyncio.create_task(asyncio.to_thread(function, *args))
+
+        def finished(completed):
+            self._inference_gate.release()
+            if not completed.cancelled():
+                completed.exception()  # retrieve abandoned exceptions after request cancellation
+
+        task.add_done_callback(finished)
+        return await asyncio.shield(task)
+
+    async def _lookup(self, query: str, tenant: str) -> LookupResult:  # noqa: PLR0911
+        if not get_settings().cache_enabled:
             return LookupResult(status="MISS", reason="cache_disabled")
 
         if is_volatile(query):  # Sub-contribution C
             return LookupResult(status="BYPASS", reason="volatile_query")
 
-        # Ensure index is built from Redis before searching
-        await self._ensure(tenant)
+        if get_settings().cache_match_mode == "exact":
+            eid = hashlib.sha256(query.encode("utf-8")).hexdigest()
+            row = await hash_fields(self.redis, self._entry_key(tenant, eid))
+            if row and row.get("query") == query:
+                await self.redis.zadd(self._lru_key(tenant), {eid: time.time()}, xx=True)
+                return LookupResult(status="HIT", answer=row["answer"], reason="exact_match")
+            return LookupResult(status="MISS", reason="exact_match_required")
 
-        qvec = embed(query)
+        # Ensure index is built from Redis before searching
+        if get_settings().vector_backend != "redisearch":
+            # Redis is authoritative, including writes/clears made by other workers.
+            await self._ensure(tenant)
+
+        qvec = await self._infer(self.embedder.embed, query)
         best, sim, density = await self._nearest(qvec, tenant)  # tenant-scoped
         if best is None:
             return LookupResult(status="MISS", similarity=None, reason="empty_cache")
 
-        hit, reason, threshold = self._policy.decide(query, best["query"], sim, density)
+        hit, reason, threshold = await self._infer(
+            self._policy.decide, query, best["query"], sim, density
+        )
         if not hit:
             return LookupResult(status="MISS", threshold=threshold, similarity=sim, reason=reason)
+        if get_settings().vector_backend != "redisearch":
+            row = await hash_fields(self.redis, self._entry_key(tenant, best["id"]))
+            if not row:
+                return LookupResult(status="MISS", reason="expired_or_evicted")
+            best["answer"] = row["answer"]
+            await self.redis.zadd(self._lru_key(tenant), {best["id"]: time.time()}, xx=True)
         return LookupResult(
             status="HIT", answer=best["answer"], threshold=threshold, similarity=sim, reason=reason
         )
 
     async def store(self, query: str, answer: str, tenant: str) -> None:
-        if not settings.cache_enabled or is_volatile(query):
-            return
-        vec = embed(query)
+        async with self._locks[hash(tenant) % len(self._locks)]:
+            await self._store(query, answer, tenant)
 
-        if settings.vector_backend == "redisearch":
+    async def _store(self, query: str, answer: str, tenant: str) -> None:
+        if not get_settings().cache_enabled or is_volatile(query):
+            return
+        if (
+            len(query.encode("utf-8")) + len(answer.encode("utf-8"))
+            > get_settings().max_cache_entry_bytes
+        ):
+            return
+        if get_settings().cache_match_mode == "exact":
+            await storage.put(
+                self.redis,
+                tenant,
+                hashlib.sha256(query.encode("utf-8")).hexdigest(),
+                {"query": query, "answer": answer, "vec": ""},
+            )
+            return
+        vec = await self._infer(self.embedder.embed, query)
+
+        if get_settings().vector_backend == "redisearch":
             await rs.ensure_index(len(vec))
             await rs.add(query, answer, vec, tenant)
             return
 
-        r = await get_redis()
         eid = uuid.uuid4().hex
-        ekey = self._entry_key(tenant, eid)
-        now = time.time()
-        await r.hset(
-            ekey,
-            mapping={
+        await storage.put(
+            self.redis,
+            tenant,
+            eid,
+            {
                 "query": query,
                 "answer": answer,
                 "vec": self._vec_to_str(vec),
-                "ts": str(now),
+                "ts": str(time.time()),
             },
         )
-        if settings.cache_ttl_sec > 0:  # optional TTL: bounds memory + self-heals staleness
-            await r.expire(ekey, settings.cache_ttl_sec)
-        await r.sadd(self._ids_key(tenant), eid)
-        # LRU tracking for eviction
-        await r.zadd(self._lru_key(tenant), {eid: now})
-
-        # LRU eviction if over limit
-        max_entries = settings.max_cache_entries_per_tenant
-        if max_entries > 0:
-            count = await r.zcard(self._lru_key(tenant))
-            if count > max_entries:
-                # Remove oldest entries
-                to_remove = count - max_entries
-                oldest = await r.zpopmin(self._lru_key(tenant), to_remove)
-                for old_eid, _ in oldest:
-                    await r.delete(self._entry_key(tenant, old_eid))
-                    await r.srem(self._ids_key(tenant), old_eid)
-                    self._evict_from_index(tenant, old_eid)
-
-        if self._t(tenant)["built"]:
-            self._append(tenant, eid, query, answer, vec)
+        self._index.pop(tenant, None)
+        self._versions.pop(tenant, None)
 
     async def clear(self, tenant: str | None = None) -> None:
+        if tenant is None:
+            for known in await self._all_tenants(self.redis):
+                await self.clear(known)
+            if get_settings().vector_backend == "redisearch":
+                await rs.clear()
+            return
+        async with self._locks[hash(tenant) % len(self._locks)]:
+            await self._clear(tenant)
+
+    async def _clear(self, tenant: str | None = None) -> None:
         """Clear one tenant's cache, or ALL tenants when tenant is None."""
-        r = await get_redis()
+        if (
+            get_settings().vector_backend == "redisearch"
+            and get_settings().cache_match_mode == "semantic"
+        ):
+            await rs.clear(tenant)
+            return
+        r = self.redis
         tenants = [tenant] if tenant is not None else list(await self._all_tenants(r))
         for t in tenants:
-            for eid in list(await r.smembers(self._ids_key(t))):
-                await r.delete(self._entry_key(t, eid))
-            await r.delete(self._ids_key(t))
-            await r.delete(self._lru_key(t))
+            await storage.clear(r, t)
             self._index.pop(t, None)
+            self._versions.pop(t, None)
         if tenant is None:
             self._index.clear()
 
@@ -249,12 +325,9 @@ class SemanticCache:
         """Tenants known from Redis keys + the in-process index."""
         seen = set(self._index.keys())
         try:
-            async for k in r.scan_iter(match="cache:ids:*"):
-                seen.add(k.split("cache:ids:", 1)[1])
+            async for k in r.scan_iter(match=f"{namespace()}:ids:*"):  # type: ignore[misc]
+                seen.add(k.split(f"{namespace()}:ids:", 1)[1])
         except Exception:
-            pass
+            logging.getLogger(__name__).exception("Cache tenant scan failed")
+            raise
         return list(seen)
-
-
-# Global instance for backward compatibility (will be replaced by app.state in main.py)
-semantic_cache = SemanticCache()

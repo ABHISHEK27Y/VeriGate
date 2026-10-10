@@ -10,3 +10,8 @@ docs/
 *.md
 .git/
 .gitignore
+
+audit/
+.coverage
+.mypy_cache/
+.ruff_cache/

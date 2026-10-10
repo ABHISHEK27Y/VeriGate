@@ -1,6 +1,6 @@
 # VeriGate gateway image.
 # Multi-purpose: run locally via docker-compose, or deploy to any container host.
-FROM python:3.11-slim
+FROM python:3.11-slim@sha256:e88e9763f943ec1834f992a4b51e0f24500486803e8bc534e5767af9ea65f6ce
 
 # Fast, quiet, no .pyc, unbuffered logs
 ENV PYTHONUNBUFFERED=1 \
@@ -11,16 +11,12 @@ WORKDIR /app
 
 # Build tools needed by some ML wheels; removed after install to keep the image slim.
 RUN apt-get update \
- && apt-get install -y --no-install-recommends build-essential curl \
+ && apt-get install -y --no-install-recommends curl \
  && rm -rf /var/lib/apt/lists/*
 
-# Install CPU-only PyTorch FIRST so sentence-transformers doesn't pull the multi-GB CUDA
-# build. This shrinks the image dramatically (~10 GB -> ~1.5 GB).
-RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
-
-# Install the rest (torch already satisfied by the CPU wheel above)
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install the pinned CPU runtime, checking every downloaded artifact hash.
+COPY requirements-runtime.lock .
+RUN pip install --require-hashes --extra-index-url https://download.pytorch.org/whl/cpu -r requirements-runtime.lock
 
 # App code
 COPY app ./app

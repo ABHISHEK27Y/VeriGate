@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
 from conftest import HEADERS
 
 from app import budget
@@ -15,16 +14,17 @@ HTTP_TOO_MANY_REQUESTS = 429
 
 
 # ---- spend budget ----
-@pytest.mark.asyncio
-async def test_budget_counter_blocks_over_limit(client):
+def test_budget_counter_blocks_over_limit(client):
     old = settings.daily_request_budget
     settings.daily_request_budget = 2
     try:
-        assert await budget.check_and_count("k1") is True  # 1
-        assert await budget.check_and_count("k1") is True  # 2
-        assert await budget.check_and_count("k1") is False  # 3 -> over budget
+        assert client.portal.call(budget.check_and_count, "k1", client.app.state.redis) is True  # 1
+        assert client.portal.call(budget.check_and_count, "k1", client.app.state.redis) is True  # 2
+        assert (
+            client.portal.call(budget.check_and_count, "k1", client.app.state.redis) is False
+        )  # 3 -> over budget
         # a different key has its own budget
-        assert await budget.check_and_count("k2") is True
+        assert client.portal.call(budget.check_and_count, "k2", client.app.state.redis) is True
     finally:
         settings.daily_request_budget = old
 
@@ -47,20 +47,26 @@ def test_budget_blocks_requests_but_hits_are_free(client):
 
 
 # ---- circuit breaker ----
-@pytest.mark.asyncio
-async def test_circuit_breaker_opens_after_failures(client):
+def test_circuit_breaker_opens_after_failures(client):
     old = settings.breaker_fail_threshold
     settings.breaker_fail_threshold = 3
     try:
         # Create a custom registry with flaky provider
         custom_registry = registry.ProviderRegistry(
-            providers=[FlakyProvider(fail=True), MockProvider()], cascade=None
+            providers=(FlakyProvider(fail=True), MockProvider()),
+            cascade=None,
+            redis=client.app.state.redis,
         )
         # each call: flaky fails -> breaker records a failure -> mock answers
         for _ in range(4):
-            name, _stream = await custom_registry.route_stream("hi")
+            name, _stream = client.portal.call(custom_registry.route_stream, "hi")
             assert name == "mock"  # failover always succeeds
-        assert await breaker.is_open("flaky")  # breaker tripped for the flaky provider
+        assert client.portal.call(
+            breaker.is_open, "flaky", client.app.state.redis
+        )  # breaker tripped for the flaky provider
     finally:
         settings.breaker_fail_threshold = old
-        await breaker.record_success("flaky")
+        client.portal.call(breaker.record_success, "flaky", client.app.state.redis)
+
+
+test_budget_blocks_requests_but_hits_are_free.config_overrides = {"daily_request_budget": 2}

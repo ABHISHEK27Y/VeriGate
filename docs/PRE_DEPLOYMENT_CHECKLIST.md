@@ -1,3 +1,5 @@
+> Current behavior and release requirements: [Production configuration](PRODUCTION_CONFIGURATION.md). Historical experiment/checklist claims below are not a deployment approval.
+
 # Pre-Deployment Checklist
 
 Everything worth doing before exposing VeriGate publicly, grouped and prioritized. Check items
@@ -9,7 +11,7 @@ the rest are hardening depth. Cross-references to [SECURITY.md](SECURITY.md) in 
 ## 1. Security (do these first)
 - [x] **[blocker]** ✅ Per-tenant cache isolation — cache/index namespaced by `tenant_id` from
       the API key; isolation tests pass on both backends (Phase 14). [#1, #2]
-- [x] **[blocker]** ✅ Per-key daily spend budget (Phase 18; cache hits are free). Global cap +
+- [x] **[blocker]** ✅ Per-key daily admission budget (Phase 18; cache hits are free). Global cap +
       spike alerting still to add. [#3]
 - [ ] **[blocker]** Protect `/metrics` (internal token or private network only). [#6]
 - [ ] **[blocker]** Move secrets to the host secret store; confirm `.env` is never in the image

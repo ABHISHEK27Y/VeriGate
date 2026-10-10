@@ -19,6 +19,11 @@ short_description: Adaptive self-verifying semantic cache for LLM gateways
 
 ---
 
+The gateway defaults to exact-prompt cache matching. Set `CACHE_MATCH_MODE=semantic` only
+for workloads where approximate reuse is acceptable; NLI does not guarantee correctness.
+See [production configuration](docs/PRODUCTION_CONFIGURATION.md) and the
+[audit report](AUDIT_REPORT.md) for validation status and release blockers.
+
 ## What is this project in one paragraph?
 
 Companies putting Large Language Models (LLMs) into production pay for every single
@@ -28,7 +33,7 @@ for a new LLM call. But existing semantic caches use a **single fixed similarity
 threshold**, which causes **false cache hits** (returning the *wrong* stored answer for
 a look-alike question, e.g. "capital of Austria" vs "capital of Australia").
 
-**VeriGate** is a production-grade **LLM Gateway** (a smart proxy in front of LLM
+**VeriGate** is an experimental **LLM Gateway** (a smart proxy in front of LLM
 providers) whose core novel contribution is an **adaptive, self-verifying semantic
 cache**: it decides *how strict* to be per query, *verifies* a cached answer actually
 fits before returning it, and *refuses to cache* time-sensitive queries. We evaluate it

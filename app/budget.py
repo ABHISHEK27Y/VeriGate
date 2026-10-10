@@ -1,36 +1,46 @@
-"""Per-key daily spend budget (protects against bill-shock / economic DoS).
+"""Daily admitted miss/bypass request limit, per key and UTC day.
 
-Counts PROVIDER calls per API key per UTC day in Redis. Cache hits are free and never counted,
-so a good cache hit-rate stretches the budget — a nice property to point out in the report.
-Disabled when daily_request_budget <= 0.
+Retries and cascade attempts may make multiple upstream calls per admission.
+This is not a token, provider-attempt, or monetary spending cap.
 """
 
 from __future__ import annotations
 
 import time
 
-from .config import settings
-from .redis_client import get_redis
+from redis.exceptions import WatchError
+
+from .config import get_settings
+from .identity import hash_api_key
 
 
 def _key(api_key: str) -> str:
     day = time.strftime("%Y%m%d", time.gmtime())
-    return f"budget:{api_key}:{day}"
+    return f"budget:{hash_api_key(api_key)}:{day}"
 
 
-async def check_and_count(api_key: str) -> bool:
-    """Increment today's provider-call count for this key; return False if over budget."""
-    if settings.daily_request_budget <= 0:
+async def check_and_count(api_key: str, r) -> bool:
+    """Increment today's admitted-request count for this key; return False if over budget."""
+    if get_settings().daily_request_budget <= 0:
         return True
-    r = await get_redis()
     k = _key(api_key)
-    n = int(await r.incr(k))
-    if n == 1:
-        await r.expire(k, 86400)  # expire the counter after a day
-    return n <= settings.daily_request_budget
+    for _ in range(100):
+        try:
+            async with r.pipeline(transaction=True) as pipe:
+                await pipe.watch(k)
+                n = int(await pipe.get(k) or 0)
+                if n >= get_settings().daily_request_budget:
+                    return False
+                pipe.multi()
+                pipe.incr(k)
+                pipe.expire(k, 86400)
+                await pipe.execute()
+                return True
+        except WatchError:
+            continue
+    return False  # fail closed under sustained contention
 
 
-async def used_today(api_key: str) -> int:
-    r = await get_redis()
+async def used_today(api_key: str, r) -> int:
     v = await r.get(_key(api_key))
     return int(v) if v else 0

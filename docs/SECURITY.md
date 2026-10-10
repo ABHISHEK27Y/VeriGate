@@ -1,3 +1,5 @@
+> Current behavior and release requirements: [Production configuration](PRODUCTION_CONFIGURATION.md). Historical experiment/checklist claims below are not a deployment approval.
+
 # Security & Threat Model
 
 A structured look at what can go wrong with VeriGate — now and in the future — and how to be
@@ -12,7 +14,7 @@ Legend for status: ✅ done · 🟡 partial · ⬜ planned (pre-deploy).
 - Secrets in `.env` only, git-ignored; keys never logged; provider keys read from env. ✅
 - Token-bucket rate limiting per API key (Redis, atomic). ✅
 - Input validation via Pydantic (rejects malformed bodies with 422). ✅
-- Graceful degradation: provider failover to mock; cache fails open if Redis/vector errors. ✅
+- Upstream outages return 502 without synthetic mock answers. Cache dependency errors fail closed.
 - Container runs as a non-root user; secrets not baked into the image. ✅
 
 ---
@@ -40,15 +42,15 @@ entry stays in the attacker's own partition); optional content validation; never
 untrusted/echo sources in production.
 **Status:** ⬜ (mostly solved by #1 isolation).
 
-### 3. Bill-shock / cost-exhaustion (economic DoS)  ✅ (fixed)
+### 3. Bill-shock / cost-exhaustion (economic DoS) — partially mitigated
 **What:** an attacker floods the gateway with **unique** queries → every one is a cache MISS →
 every one hits the paid LLM. Your bill and rate limits both explode.
 **Impact:** financial damage; provider quota exhaustion; outage.
-**Mitigation (IMPLEMENTED):** per-key **daily spend budget** — `daily_request_budget` caps
-PROVIDER calls per key per day in Redis (`app/budget.py`); over-budget requests get a 429.
+**Mitigation (IMPLEMENTED):** per-key **daily admission budget** — `daily_request_budget` caps
+admitted misses/bypasses per key per UTC day (not provider attempts or token spend) in Redis (`app/budget.py`); over-budget requests get a 429.
 **Cache hits are free and never counted, so the cache extends the budget.** Combined with the
 existing token-bucket rate limiter. (Still open: a global spend cap + anomaly alerting.)
-**Status:** ✅ per-key budget done + tested; global cap/alerting ⬜.
+**Status:** Request admission quota implemented. Retries, token costs and monetary spend are not bounded by this counter; configure spending limits with the upstream provider.
 
 ---
 

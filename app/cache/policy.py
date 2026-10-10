@@ -7,10 +7,10 @@ what produces the ablation study (baseline vs +adaptive vs +verifier vs full).
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .threshold import adaptive_threshold
-from .verifier import verify_equivalent
+from .verifier import NliVerifier, default_verifier, verify_equivalent
 
 
 @dataclass
@@ -19,6 +19,8 @@ class CachePolicy:
     use_verifier: bool = True  # Sub-contribution B (Tier-1 structural checks)
     use_nli: bool = False  # Sub-contribution B (Tier-2 NLI equivalence)
     static_threshold: float = 0.72  # used only when use_adaptive is False
+
+    verifier: NliVerifier = field(default_factory=default_verifier, repr=False)
 
     def threshold(self, query: str, density: float = 0.0) -> float:
         if self.use_adaptive:
@@ -33,7 +35,9 @@ class CachePolicy:
         if sim < t:
             return False, "below_threshold", t
         if self.use_verifier:
-            ok, reason = verify_equivalent(query, candidate_query, use_nli=self.use_nli)
+            ok, reason = verify_equivalent(
+                query, candidate_query, use_nli=self.use_nli, verifier=self.verifier
+            )
             if not ok:
                 return False, f"verify_rejected:{reason}", t
         return True, "verified_hit" if self.use_verifier else "threshold_hit", t

@@ -5,11 +5,17 @@
 No server, no Redis install needed. It shows: cache MISS -> HIT, a false-hit being
 REJECTED by the verifier, a volatile query BYPASSING the cache, and rate limiting.
 """
+
 import logging
+import os
 
-from fastapi.testclient import TestClient
+os.environ.setdefault("LLM_PROVIDER", "mock")
+os.environ.setdefault("CACHE_MATCH_MODE", "semantic")
+os.environ.setdefault("RATE_LIMIT_REFILL_PER_SEC", "0.1")
 
-from app.main import app
+from fastapi.testclient import TestClient  # noqa: E402
+
+from app.main import app  # noqa: E402
 
 # Keep the demo output readable (hide per-request HTTP/redis INFO logs).
 logging.getLogger("httpx").setLevel(logging.WARNING)
@@ -32,7 +38,6 @@ def ask(text: str, client: TestClient) -> None:
 
 # Use TestClient as context manager to properly initialize lifespan
 with TestClient(app, raise_server_exceptions=True) as client:
-
     print("\n=== 1) MISS then HIT (paraphrase) ===")
     ask("how do I reset my password", client)
     ask("how do I reset my password please", client)

@@ -1,3 +1,5 @@
+> Current behavior and release requirements: [Production configuration](PRODUCTION_CONFIGURATION.md). Historical experiment/checklist claims below are not a deployment approval.
+
 # Production Architecture (Target Design)
 
 Extends [ARCHITECTURE.md](ARCHITECTURE.md) (which covers the current implementation) with the
@@ -82,7 +84,7 @@ redacted or not cached (staleness/sensitivity classifier).
 
 1. **TLS/LB**: terminate TLS, apply edge rate limit + size cap, CORS.
 2. **Auth**: resolve API key → `tenant_id`; reject if invalid (401).
-3. **Rate limit + budget**: atomic token bucket; check per-key spend cap (429 if exceeded).
+3. **Rate limit + budget**: atomic token bucket; check per-key admission cap (429 if exceeded).
 4. **Staleness**: skip cache for volatile/sensitive queries.
 5. **Cache lookup** *(tenant-scoped)*: embed → KNN (in-process or RediSearch) → adaptive
    threshold → Tier-1 verify → optional Tier-2 NLI. HIT ⇒ return (metrics, done).

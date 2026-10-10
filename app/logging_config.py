@@ -5,12 +5,13 @@ Uses structlog for JSON output with contextvars (request_id, tenant, etc.).
 
 from __future__ import annotations
 
-import hashlib
 import logging
 import sys
 import uuid
 
 import structlog
+
+from .identity import tenant_id
 
 
 def configure_logging(
@@ -59,7 +60,8 @@ def configure_logging(
 
 def get_logger(name: str) -> structlog.BoundLogger:
     """Get a structlog logger with the given name."""
-    return structlog.get_logger(name)
+    logger = structlog.get_logger(name)
+    return structlog.BoundLogger(logger, (), {})
 
 
 class LoggingMiddleware:
@@ -73,23 +75,24 @@ class LoggingMiddleware:
             await self.app(scope, receive, send)
             return
 
-        request_id = str(uuid.uuid4())[:8]
+        request_id = uuid.uuid4().hex
 
         # Bind request_id to contextvars for this request
         structlog.contextvars.bind_contextvars(request_id=request_id)
 
         # Extract tenant from header if present
         headers = dict(scope.get("headers", []))
-        api_key = headers.get(b"x-api-key", b"").decode() if b"x-api-key" in headers else None
+        api_key = headers.get(b"x-api-key", b"").decode("latin-1")
         if api_key:
             # Use same tenant derivation as main.py
-            tenant = "t_" + hashlib.sha256(api_key.encode()).hexdigest()[:16]
+            tenant = tenant_id(api_key)
             structlog.contextvars.bind_contextvars(tenant=tenant)
 
         async def send_wrapper(message):
             if message["type"] == "http.response.start":
                 status = message.get("status", 0)
                 structlog.contextvars.bind_contextvars(status_code=status)
+                message.setdefault("headers", []).append((b"x-request-id", request_id.encode()))
             await send(message)
 
         try:

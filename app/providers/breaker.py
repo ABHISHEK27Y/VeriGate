@@ -1,45 +1,114 @@
-"""Provider circuit breaker (reliability).
-
-Tracks failures per provider in Redis. After `breaker_fail_threshold` failures within
-`breaker_window_sec`, the breaker OPENS and the router skips that provider for
-`breaker_cooldown_sec` (fail fast instead of hammering a dead upstream). A success resets the
-count. State lives in Redis so all gateway replicas agree.
-"""
+"""Generation-checked shared breaker with an owned half-open lease."""
 
 from __future__ import annotations
 
-from ..config import settings
-from ..redis_client import get_redis
+import math
+import time
+import uuid
+from dataclasses import dataclass
+from http import HTTPStatus
+
+import httpx
+from redis.exceptions import WatchError
+
+from ..cache.namespace import namespace
+from ..config import get_settings
 
 
-def _open_key(name: str) -> str:
-    return f"breaker:open:{name}"
+@dataclass(frozen=True)
+class Ticket:
+    generation: str | None
+    probe: str | None = None
 
 
-def _fail_key(name: str) -> str:
-    return f"breaker:fails:{name}"
+def _keys(name: str) -> tuple[str, str, str, str]:
+    return (
+        f"{namespace()}:breaker:open:{name}",
+        f"{namespace()}:breaker:fails:{name}",
+        f"{namespace()}:breaker:probe:{name}",
+        f"{namespace()}:breaker:generation:{name}",
+    )
 
 
-async def is_open(name: str) -> bool:
-    try:
-        r = await get_redis()
-        return bool(await r.exists(_open_key(name)))
-    except Exception:
-        return False
+async def acquire(name: str, r) -> Ticket | None:
+    opened, _, probe, generation = _keys(name)
+    for _ in range(100):
+        try:
+            async with r.pipeline(transaction=True) as pipe:
+                await pipe.watch(opened, probe, generation)
+                until = await pipe.get(opened)
+                version = await pipe.get(generation)
+                if until is None:
+                    return Ticket(version)
+                if float(until) > time.time() or await pipe.get(probe):
+                    return None
+                owner = uuid.uuid4().hex
+                pipe.multi()
+                # Covers prefetch and streaming deadlines, with a scheduling margin.
+                pipe.set(probe, owner, ex=math.ceil(get_settings().provider_timeout * 2) + 5)
+                await pipe.execute()
+                return Ticket(version, owner)
+        except WatchError:
+            continue
+    return None
 
 
-async def record_failure(name: str) -> None:
-    r = await get_redis()
-    k = _fail_key(name)
-    n = int(await r.incr(k))
-    if n == 1:
-        await r.expire(k, settings.breaker_window_sec)
-    if n >= settings.breaker_fail_threshold:
-        await r.set(_open_key(name), "1", ex=settings.breaker_cooldown_sec)
-        await r.delete(k)
+async def is_open(name: str, r) -> bool:
+    return await acquire(name, r) is None
 
 
-async def record_success(name: str) -> None:
-    r = await get_redis()
-    await r.delete(_fail_key(name))
-    await r.delete(_open_key(name))
+def transient(error: Exception) -> bool:
+    if isinstance(error, httpx.HTTPStatusError):
+        return (
+            error.response.status_code == HTTPStatus.TOO_MANY_REQUESTS
+            or error.response.status_code >= HTTPStatus.INTERNAL_SERVER_ERROR
+        )
+    return isinstance(error, httpx.TransportError | TimeoutError | RuntimeError | OSError)
+
+
+async def record_failure(name: str, r, ticket: Ticket | None = None) -> None:
+    opened, fails, probe, generation = _keys(name)
+    config = get_settings()
+    for _ in range(100):
+        try:
+            async with r.pipeline(transaction=True) as pipe:
+                await pipe.watch(opened, fails, probe, generation)
+                if ticket and ticket.probe and await pipe.get(probe) != ticket.probe:
+                    return  # expired/replaced probes do not own the breaker anymore
+                count = int(await pipe.get(fails) or 0) + 1
+                pipe.multi()
+                lifetime = config.breaker_cooldown_sec + math.ceil(config.provider_timeout * 2) + 60
+                pipe.set(generation, uuid.uuid4().hex, ex=lifetime)
+                pipe.set(fails, count, ex=config.breaker_window_sec)
+                if count >= config.breaker_fail_threshold or (ticket and ticket.probe):
+                    pipe.set(opened, str(time.time() + config.breaker_cooldown_sec), ex=lifetime)
+                if ticket and ticket.probe:
+                    pipe.delete(probe)
+                await pipe.execute()
+                return
+        except WatchError:
+            continue
+    raise RuntimeError("Breaker update contention")
+
+
+async def record_success(name: str, r, ticket: Ticket | None = None) -> None:
+    opened, fails, probe, generation = _keys(name)
+    # No ticket is reserved for explicit administrative reset / standalone tests.
+    for _ in range(100):
+        try:
+            async with r.pipeline(transaction=True) as pipe:
+                await pipe.watch(opened, fails, probe, generation)
+                if ticket is not None:
+                    if await pipe.get(generation) != ticket.generation:
+                        return
+                    if ticket.probe and await pipe.get(probe) != ticket.probe:
+                        return
+                    if not ticket.probe and await pipe.get(opened):
+                        return
+                pipe.multi()
+                pipe.delete(opened, fails, probe, generation)
+                await pipe.execute()
+                return
+        except WatchError:
+            continue
+    raise RuntimeError("Breaker update contention")

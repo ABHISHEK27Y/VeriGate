@@ -86,3 +86,7 @@ def test_metrics_endpoint_requires_auth(client):
     _chat(client, "hello there")
     r = client.get("/metrics")
     assert r.status_code == HTTP_UNAUTHORIZED
+
+
+test_cache_miss_then_hit.config_overrides = {"cache_match_mode": "semantic"}
+test_verifier_rejects_number_mismatch.config_overrides = {"cache_match_mode": "semantic"}

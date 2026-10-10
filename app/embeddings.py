@@ -10,26 +10,25 @@
   Used in tests (instant, deterministic, no model download) and as a safe fallback if
   sentence-transformers is unavailable.
 
-Selected via settings.embedding_backend. The rest of the system is unchanged — it only
+Selected via get_settings().embedding_backend. The rest of the system is unchanged — it only
 calls embed()/cosine().
 """
 
 from __future__ import annotations
 
+import functools
 import logging
 import re
+import threading
 import zlib
 
 import numpy as np
-from sentence_transformers import SentenceTransformer
 
-from .config import settings
+from .config import get_settings
 
 log = logging.getLogger("verigate.embeddings")
 
 _TOKEN_RE = re.compile(r"[a-z0-9]+")
-_model: SentenceTransformer | None = None  # lazily-loaded SentenceTransformer
-_active_backend: str | None = None  # resolved on first use
 
 
 def tokenize(text: str) -> list[str]:
@@ -42,7 +41,7 @@ def _stable_hash(tok: str) -> int:
 
 
 def _hash_embed(text: str) -> np.ndarray:
-    dim = settings.embedding_dim
+    dim = get_settings().embedding_dim
     vec = np.zeros(dim, dtype=np.float32)
     for tok in tokenize(text):
         vec[_stable_hash(tok) % dim] += 1.0
@@ -52,41 +51,45 @@ def _hash_embed(text: str) -> np.ndarray:
     return vec
 
 
-def _load_minilm() -> None:
-    """Load the model once; fall back to the hash backend if unavailable."""
-    global _model, _active_backend  # noqa: PLW0603
-    try:
-        log.info("Loading embedding model %s ...", settings.embedding_model)
-        _model = SentenceTransformer(settings.embedding_model)
-        _active_backend = "minilm"
-    except Exception as e:  # noqa: BLE001 - any import/download failure -> fallback
-        log.warning(
-            "Could not load '%s' (%s); falling back to hash embedder.", settings.embedding_model, e
-        )
-        _active_backend = "hash"
+class Embedder:
+    """One model per app; loading and inference are serialized off the event loop."""
+
+    def __init__(self):
+        self.model = None
+        self.backend = get_settings().embedding_backend
+        self._lock = threading.Lock()
+
+    def embed(self, text: str) -> np.ndarray:
+        if self.backend == "hash":
+            return _hash_embed(text)
+        with self._lock:
+            if self.model is None:
+                from sentence_transformers import (  # noqa: PLC0415 - lazy optional model
+                    SentenceTransformer,  # noqa: PLC0415 - optional heavy dependency
+                )
+
+                self.model = SentenceTransformer(
+                    get_settings().embedding_model,
+                    revision=get_settings().embedding_revision or None,
+                )
+            return np.asarray(
+                self.model.encode([text], normalize_embeddings=True)[0], dtype=np.float32
+            )
 
 
-def _resolve_backend() -> str:
-    global _active_backend  # noqa: PLW0603
-    if _active_backend is not None:
-        return _active_backend
-    if settings.embedding_backend == "minilm":
-        _load_minilm()
-    else:
-        _active_backend = "hash"
-    return _active_backend
+@functools.lru_cache(maxsize=1)
+def default_embedder() -> Embedder:
+    """Standalone evaluation helper. The gateway explicitly creates its own Embedder."""
+    return Embedder()
 
 
 def embed(text: str) -> np.ndarray:
-    if _resolve_backend() == "minilm":
-        return _model.encode([text], normalize_embeddings=True)[0].astype(np.float32)
-    return _hash_embed(text)
+    return default_embedder().embed(text)
 
 
 def cosine(a: np.ndarray, b: np.ndarray) -> float:
-    # both backends return L2-normalized vectors, so dot == cosine similarity
     return float(np.dot(a, b))
 
 
 def active_backend() -> str:
-    return _resolve_backend()
+    return default_embedder().backend

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import csv
 import os
+from dataclasses import dataclass
 from pathlib import Path
 
 os.environ["EMBEDDING_BACKEND"] = "minilm"  # real semantic embeddings for evaluation
@@ -48,10 +49,10 @@ def pair_is_hit(policy: CachePolicy, stored_q: str, new_q: str) -> bool:
 def evaluate(policy: CachePolicy) -> dict:
     tp = sum(pair_is_hit(policy, a, b) for a, b in benchmark.POSITIVES)
     fp = sum(pair_is_hit(policy, a, b) for a, b in benchmark.NEGATIVES)
-    P, N = len(benchmark.POSITIVES), len(benchmark.NEGATIVES)
-    fn = P - tp
-    hit_rate = tp / P
-    false_hit_rate = fp / N
+    p_count, n_count = len(benchmark.POSITIVES), len(benchmark.NEGATIVES)
+    fn = p_count - tp
+    hit_rate = tp / p_count
+    false_hit_rate = fp / n_count
     precision = tp / (tp + fp) if (tp + fp) else 1.0
     f1 = 2 * tp / (2 * tp + fp + fn) if (2 * tp + fp + fn) else 0.0
     return {
@@ -95,14 +96,8 @@ SYSTEMS = {
 }
 
 
-def main() -> None:
-    print(
-        f"\nBenchmark: {len(benchmark.POSITIVES)} positive pairs, "
-        f"{len(benchmark.NEGATIVES)} hard-negative pairs, "
-        f"{len(benchmark.VOLATILE)} volatile queries.\n"
-    )
-
-    # 1) Ablation table
+def _print_ablation_table() -> list[dict]:
+    """Print ablation table and return rows for CSV."""
     rows = []
     print(f"{'System':<26}{'hit-rate':>10}{'false-hit':>11}{'precision':>11}{'F1':>7}")
     print("-" * 65)
@@ -114,8 +109,11 @@ def main() -> None:
             f"{m['precision'] * 100:>10.1f}%{m['f1']:>7.2f}"
         )
     print()
+    return rows
 
-    # false hits by failure mode (shows which component catches what)
+
+def _print_false_hits_by_group() -> None:
+    """Print false hits by negative type."""
     print("False hits by negative type (lower is better):")
     header = "  ".join(f"{g:>13}" for g in benchmark.NEGATIVE_GROUPS)
     print(f"{'System':<26}{header}")
@@ -125,13 +123,18 @@ def main() -> None:
         print(f"{name:<26}{cells}")
     print()
 
+
+def _print_volatility_results() -> None:
+    """Print volatility detector results."""
     v = evaluate_volatility()
     print(
         f"Staleness detector: recall {v['recall']} on volatile queries, "
         f"false positives {v['false_positives']} on stable controls.\n"
     )
 
-    # 2) write CSV
+
+def _write_metrics_csv(rows: list[dict]) -> None:
+    """Write metrics to CSV."""
     with (RESULTS / "metrics.csv").open("w", newline="") as f:
         w = csv.DictWriter(
             f,
@@ -148,8 +151,22 @@ def main() -> None:
         w.writeheader()
         w.writerows(rows)
 
-    # 3) the money graph: sweep the threshold for BOTH systems (verifier off vs on)
-    #    so the two trade-off curves can be compared directly.
+
+@dataclass(slots=True)
+class _TradeoffData:
+    """Container for tradeoff plot data."""
+
+    base_fx: list
+    base_hy: list
+    veri_fx: list
+    veri_hy: list
+    nli_fx: list
+    nli_hy: list
+    full: dict
+
+
+def _compute_sweep_curves() -> _TradeoffData:
+    """Compute sweep curves for tradeoff plot."""
     sweep_t = [round(0.45 + 0.025 * i, 3) for i in range(21)]  # 0.45 .. 0.95
 
     def sweep(use_verifier: bool, use_nli: bool = False):
@@ -170,25 +187,47 @@ def main() -> None:
     veri_fx, veri_hy = sweep(True)
     nli_fx, nli_hy = sweep(True, use_nli=True)
     full = evaluate(SYSTEMS["VeriGate (Tier-1)"])  # recommended default config
+    return _TradeoffData(
+        base_fx=base_fx,
+        base_hy=base_hy,
+        veri_fx=veri_fx,
+        veri_hy=veri_hy,
+        nli_fx=nli_fx,
+        nli_hy=nli_hy,
+        full=full,
+    )
 
+
+def _plot_tradeoff(data: _TradeoffData) -> None:
+    """Generate tradeoff plot."""
     plt.figure(figsize=(7.5, 5.5))
     plt.plot(
-        base_fx,
-        base_hy,
+        data.base_fx,
+        data.base_hy,
         "o-",
         color="#d62728",
         alpha=0.8,
         label="Static-threshold baseline (T swept)",
     )
     plt.plot(
-        veri_fx, veri_hy, "s-", color="#1f77b4", alpha=0.8, label="+ Tier-1 verifier (T swept)"
+        data.veri_fx,
+        data.veri_hy,
+        "s-",
+        color="#1f77b4",
+        alpha=0.8,
+        label="+ Tier-1 verifier (T swept)",
     )
     plt.plot(
-        nli_fx, nli_hy, "^-", color="#9467bd", alpha=0.8, label="+ Tier-1 & Tier-2 NLI (T swept)"
+        data.nli_fx,
+        data.nli_hy,
+        "^-",
+        color="#9467bd",
+        alpha=0.8,
+        label="+ Tier-1 & Tier-2 NLI (T swept)",
     )
     plt.scatter(
-        full["false_hit_rate"],
-        full["hit_rate"],
+        data.full["false_hit_rate"],
+        data.full["hit_rate"],
         marker="*",
         s=320,
         color="#2ca02c",
@@ -210,7 +249,9 @@ def main() -> None:
     plt.savefig(RESULTS / "tradeoff.png", dpi=150)
     plt.close()
 
-    # 4) ablation bar chart
+
+def _plot_ablation() -> None:
+    """Generate ablation bar chart."""
     names = list(SYSTEMS)
     hits = [evaluate(SYSTEMS[n])["hit_rate"] * 100 for n in names]
     falses = [evaluate(SYSTEMS[n])["false_hit_rate"] * 100 for n in names]
@@ -225,6 +266,34 @@ def main() -> None:
     plt.tight_layout()
     plt.savefig(RESULTS / "ablation.png", dpi=150)
     plt.close()
+
+
+def main() -> None:
+    print(
+        f"\nBenchmark: {len(benchmark.POSITIVES)} positive pairs, "
+        f"{len(benchmark.NEGATIVES)} hard-negative pairs, "
+        f"{len(benchmark.VOLATILE)} volatile queries.\n"
+    )
+
+    # 1) Ablation table
+    rows = _print_ablation_table()
+
+    # false hits by failure mode (shows which component catches what)
+    _print_false_hits_by_group()
+
+    # volatility results
+    _print_volatility_results()
+
+    # 2) write CSV
+    _write_metrics_csv(rows)
+
+    # 3) the money graph: sweep the threshold for BOTH systems (verifier off vs on)
+    #    so the two trade-off curves can be compared directly.
+    tradeoff_data = _compute_sweep_curves()
+    _plot_tradeoff(tradeoff_data)
+
+    # 4) ablation bar chart
+    _plot_ablation()
 
     print(f"Saved: {RESULTS / 'metrics.csv'}")
     print(f"Saved: {RESULTS / 'tradeoff.png'}   (the money graph)")

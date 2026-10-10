@@ -17,7 +17,7 @@ from collections.abc import AsyncIterator
 
 import httpx
 
-from ..config import settings
+from ..config import get_settings
 from .base import Provider
 
 
@@ -30,7 +30,14 @@ class OpenAICompatibleProvider(Provider):
         self._base = base_url.rstrip("/")
         self._model = model
         # Use settings timeout if not explicitly provided
-        self._timeout = timeout if timeout is not None else settings.provider_timeout
+        self._timeout = timeout if timeout is not None else get_settings().provider_timeout
+        self._client = httpx.AsyncClient(
+            timeout=httpx.Timeout(self._timeout, connect=min(5.0, self._timeout)),
+            limits=httpx.Limits(max_connections=64, max_keepalive_connections=16),
+        )
+
+    async def aclose(self) -> None:
+        await self._client.aclose()
 
     async def stream(self, prompt: str) -> AsyncIterator[str]:
         url = f"{self._base}/chat/completions"
@@ -40,25 +47,26 @@ class OpenAICompatibleProvider(Provider):
             "messages": [{"role": "user", "content": prompt}],
             "stream": True,
         }
-        # Use separate connect/read timeouts
-        timeout = httpx.Timeout(connect=5.0, read=self._timeout)
-        async with httpx.AsyncClient(timeout=timeout) as client:
-            async with client.stream("POST", url, json=payload, headers=headers) as resp:
-                resp.raise_for_status()
-                async for line in resp.aiter_lines():
-                    if not line or not line.startswith("data:"):
-                        continue
-                    data = line[len("data:") :].strip()
-                    if data == "[DONE]":
-                        break
-                    try:
-                        obj = json.loads(data)
-                        delta = obj["choices"][0]["delta"].get("content")
-                    except (json.JSONDecodeError, KeyError, IndexError):
-                        continue
-                    if delta:
-                        yield delta
+        async with self._client.stream("POST", url, json=payload, headers=headers) as resp:
+            resp.raise_for_status()
+            finished = False
+            async for line in resp.aiter_lines():
+                if not line or not line.startswith("data:"):
+                    continue
+                data = line[len("data:") :].strip()
+                if data == "[DONE]":
+                    finished = True
+                    break
+                try:
+                    obj = json.loads(data)
+                    delta = obj["choices"][0]["delta"].get("content")
+                except (json.JSONDecodeError, KeyError, IndexError):
+                    continue
+                if delta:
+                    yield delta
+            if not finished:
+                raise RuntimeError("Upstream stream ended without completion marker")
 
     async def health(self) -> str:
         # Optimistic: real failures surface at call time and trigger failover.
-        return "healthy"
+        return "configured; upstream not probed"
