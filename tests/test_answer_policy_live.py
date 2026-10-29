@@ -155,6 +155,7 @@ def test_changed_inproc_answer_after_policy_decision_calls_provider(client) -> N
 test_changed_inproc_answer_after_policy_decision_calls_provider.config_overrides = {
     "cache_match_mode": "semantic",
     "answer_policy_artifact": str(ARTIFACT),
+    "vector_backend": "inproc",
 }
 
 
