@@ -67,7 +67,8 @@ jobs:
           python scripts/export_report_tables.py
           python -m scripts.verify_evidence_bundle evidence-20261029-hash-v3
           python -m scripts.export_directional_report evidence-20261029-hash-v3
-          git diff --exit-code -- evaluation/results/checks.json report/generated/ docs/RESULTS_DIRECTIONAL.md
+          python -m scripts.export_answer_policy_report answer_aware_20261029_v6
+          git diff --exit-code -- evaluation/results/checks.json report/generated/ docs/RESULTS_DIRECTIONAL.md docs/RESULTS_ANSWER_AWARE.md
 
       - name: Upload evaluation results
         uses: actions/upload-artifact@v4

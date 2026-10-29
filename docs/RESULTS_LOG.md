@@ -13,6 +13,7 @@ label rules or report an old development-fixture figure as a production error ra
 | Risk selection | [`gold_risk.csv`](../evaluation/results/gold_risk.csv) | Reject-all at 1%, 2%, 5% on correlated proxy data; no deployed guarantee. |
 | Replay | [`gold_stream.csv`](../evaluation/results/gold_stream.csv) | Historical symmetric-alias replay; answer text was not represented. |
 | Current directional replay | [validated bundle report](RESULTS_DIRECTIONAL.md) | Concrete reference-string simulation with lexical hash vectors; still no generated-answer truth. |
+| Opt-in answer-aware policy | [controlled run report](RESULTS_ANSWER_AWARE.md) | 60 authored binary cases plus 2 ambiguous cases, warm local decision latency; no production guarantee. |
 | Tests | [`checks.json`](../evaluation/results/checks.json) | Generated counts for its associated test run only. |
 
 The chronological build history and its original figures are preserved in the

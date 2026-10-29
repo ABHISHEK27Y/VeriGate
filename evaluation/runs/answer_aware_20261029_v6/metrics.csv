@@ -1,0 +1,6 @@
+system,split,known,ambiguous,accepted,incorrect_accepted,coverage,incorrect_accept_rate,verify,ambiguous_accepted,decision_p50_ms,decision_p95_ms,label_type
+exact,heldout_controlled,60,2,0,0,0.0,,0,0,0.0007,0.0009949999999999996,authored_controlled_answer
+static_0.72,heldout_controlled,60,2,36,33,0.6,0.9166666666666666,0,2,0.00545,0.007849999999999996,authored_controlled_answer
+static_tuned_dev,heldout_controlled,60,2,59,40,0.9833333333333333,0.6779661016949152,0,2,0.0017,0.0022949999999999997,authored_controlled_answer
+adaptive_tier1,heldout_controlled,60,2,0,0,0.0,,0,0,0.02535,0.11951999999999999,authored_controlled_answer
+answer_aware_v1,heldout_controlled,60,2,16,0,0.26666666666666666,0.0,3,0,48.90605,62.54250499999999,authored_controlled_answer

@@ -8,10 +8,10 @@ exists; it does not imply a validated research result or production readiness.
 | 0 — checkpoint and claims | Complete | README, demo page, proposal, novelty and results index corrected. At commit `a5536ef`, [CI run 40899654141](https://github.com/ABHISHEK27Y/VeriGate/actions/runs/40899654141) passed tests, Redis Stack tests, lint/typecheck, security audit, Docker build, and generated-report verification. Deploy Check was correctly skipped on the PR branch. |
 | 1 — actual-answer labels | Partial | Historical 11,586 NQ rows audited: 124 of 6,000 old positives have concrete cached text absent from incoming references. Two pinned local judges now annotate the 350-row queue as `model_judged` only; [controlled validation](AUTOMATED_JUDGE_RESULTS.md) shows that FLAN fails to identify positive cases. Independent answer-quality validation is absent. |
 | 2 — frozen protocol | Open | Existing grouped five-seed partitions are exploratory and their corpus was inspected during development. A fresh, independently reviewed lockbox has not been reserved or opened. |
-| 3 — selective policy | Open | The runtime has a heuristic threshold, token-diff and optional always-after-gates NLI. It has no measured ACCEPT/REJECT/VERIFY uncertainty routing. No model should be trained against unreviewed proxy labels as final truth. |
-| 4 — live/replay agreement | Partial | Replay now stores a concrete simulated answer and exact mode uses an exact string key; tests cover vector ties. Live semantic policy remains query-only and does not consume the stored answer or a trained artifact. |
-| 5 — immutable evidence | Partial | [One hash-vector replay bundle](RESULTS_DIRECTIONAL.md) has input/source hashes, run ID and a validator. Broad workload and provider latency profiles remain. No cloud monetary saving is measured. |
-| 6 — demo/report/learning | Partial | [Demo and viva guide](DEMO_AND_VIVA.md) includes ten slides, a timed script and learning exercises. A supported final selective-policy contribution and reviewed result remain. |
+| 3 — selective policy | Implemented, experimental | The optional [answer-aware artifact](../app/cache/artifacts/answer_policy_v1.json) routes candidates to ACCEPT, VERIFY, or REJECT. On 60 authored binary cases it accepted 16 with zero observed wrong accepts; broad answer quality is unvalidated. |
+| 4 — live/replay agreement | Implemented on controlled trace | The live cache passes actual cached text to the same `AnswerPolicy.decide` used by chronological replay. A gateway/replay regression tests matching decisions. A broad Redis and real-provider trace remains. |
+| 5 — immutable evidence | Partial | [Controlled run](RESULTS_ANSWER_AWARE.md) and [directional replay bundle](RESULTS_DIRECTIONAL.md) have manifests and source hashes. Latency in the controlled run excludes retrieval, embedding, network and provider time. |
+| 6 — demo/report/learning | Partial | [Demo and viva guide](DEMO_AND_VIVA.md) now covers the opt-in policy and negative results. Independent transfer validation remains. |
 
 ## Capability matrix
 
@@ -25,6 +25,7 @@ exists; it does not imply a validated research result or production readiness.
 | Risk selector at 1%, 2%, 5% | Failed useful-coverage experiment | Reject-all in every reported expanded-corpus split; no deployed guarantee. |
 | Local FLAN-T5 judge | Failed validation | The new controlled run also found zero positive predictions; do not use as truth. |
 | Local answer-aware NLI judge | Offline exploratory | 13/15 controlled binary decisions correct; two valid cases rejected and the ambiguous case received a high YES score. Not sufficient for deployment. |
+| Opt-in answer-aware policy | Implemented and controlled-tested | 16/60 accepted, 0 observed incorrect accepts, 3 VERIFY decisions among 62 cases. Authored local benchmark only; exact remains default. |
 | Human-reviewed answer correctness | Planned | Queue is blank; no evidence yet. |
 | Production monetary savings, global novelty | Unsubstantiated | Do not claim. |
 
@@ -36,6 +37,7 @@ exists; it does not imply a validated research result or production readiness.
 | Specific-answer proxy mismatch exists | [`answer_label_audit.json`](../evaluation/results/answer_label_audit.json), local discrepancy TSV | String absence needs review; not an observed production error rate. |
 | Token-diff trades coverage for lower proxy mismatch | [`gold_verifier_policies.csv`](../evaluation/results/gold_verifier_policies.csv) | Historical symmetric NQ labels and overlapping seeds. |
 | Risk selection is reject-all | [`gold_risk.csv`](../evaluation/results/gold_risk.csv) | IID formal guarantee does not apply to correlated mined pairs. |
+| Answer-aware policy trade-off | [immutable run](../evaluation/runs/answer_aware_20261029_v6/manifest.json), [generated report](RESULTS_ANSWER_AWARE.md) | Local authored facts, lexical hash retrieval, warm decision latency only; no production error guarantee. |
 | Test suite status | [`checks.json`](../evaluation/results/checks.json), [CI run 40899654141](https://github.com/ABHISHEK27Y/VeriGate/actions/runs/40899654141) | 104 tests passed and 4 live-integration tests skipped at `a5536ef`; this verifies code checks, not answer quality. |
 
 The old broad roadmap and [archived results](archive/RESULTS_LOG_HISTORICAL.md)

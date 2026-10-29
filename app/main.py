@@ -227,6 +227,11 @@ async def health(request: Request):
         "cache_enabled": get_settings().cache_enabled,
         "cache_match_mode": get_settings().cache_match_mode,
         "cache_policy_version": POLICY_VERSION,
+        "answer_policy_version": (
+            request.app.state.semantic_cache._answer_policy.version[:12]
+            if request.app.state.semantic_cache._answer_policy
+            else None
+        ),
         "verifier_nli_enabled": get_settings().verifier_nli,
         "provider_health": "configuration_only",
         "providers": [p.name for p in request.app.state.provider_registry.providers],

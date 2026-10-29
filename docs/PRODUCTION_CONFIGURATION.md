@@ -11,6 +11,14 @@ statistical safeguards, not proof of equivalence. Calibrate on domain-specific n
 examples before enabling this mode. Historical evaluation results apply only to their
 small recorded dataset. Semantic demos must explicitly select this mode.
 
+For an **experimental local** answer-aware policy, also set
+`ANSWER_POLICY_ARTIFACT=app/cache/artifacts/answer_policy_v1.json`. The gateway
+loads the pinned, hash-checked artifact at startup, passes the actual cached
+answer to it, and sends VERIFY and REJECT decisions to the provider. The current
+controlled result is in [RESULTS_ANSWER_AWARE.md](RESULTS_ANSWER_AWARE.md).
+Its authored cases do not establish a production safety threshold. Keep exact
+matching for production until a representative independent evaluation exists.
+
 ## Installation and reproducibility
 
 Use Python 3.11 and the checked-in hashed lock:

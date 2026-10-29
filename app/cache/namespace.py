@@ -2,10 +2,11 @@
 
 import hashlib
 import json
+from pathlib import Path
 
 from ..config import get_settings
 
-POLICY_VERSION = "token-diff-v2"
+POLICY_VERSION = "answer-aware-v1"
 
 
 def namespace() -> str:
@@ -27,6 +28,7 @@ def namespace() -> str:
         "cascade_enabled",
         "cascade_threshold",
         "cache_match_mode",
+        "answer_policy_artifact",
         "cache_similarity_base",
         "verifier_nli",
         "nli_model",
@@ -34,7 +36,10 @@ def namespace() -> str:
         "nli_threshold",
         "cache_epoch",
     )
-    payload = json.dumps({key: config[key] for key in fields}, sort_keys=True)
+    selected = {key: config[key] for key in fields}
+    if artifact := config["answer_policy_artifact"]:
+        selected["answer_policy_sha256"] = hashlib.sha256(Path(artifact).read_bytes()).hexdigest()
+    payload = json.dumps(selected, sort_keys=True)
     digest = hashlib.sha256(("schema-v3:" + POLICY_VERSION + ":" + payload).encode()).hexdigest()[
         :24
     ]

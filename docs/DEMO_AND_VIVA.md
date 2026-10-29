@@ -12,17 +12,18 @@ is the correct opening configuration.
 2. **Contract:** one request, one stored response, one tenant and model/context version.
 3. **Architecture:** client → FastAPI → tenant-scoped cache → selected provider.
 4. **Exact path:** identical prompt reuses a response; explain TTL and cache namespace.
-5. **Semantic path:** embedding retrieval, threshold and query-only verifier; opt-in.
+5. **Semantic path:** query-only baseline, then the separately opted-in answer-aware policy.
 6. **Failure cases:** Austria/Australia, role swap, tense change and a valid password
    paraphrase that the conservative verifier rejects.
 7. **Data:** QQP/PAWS pair proxies, NQ reference strings, the 124 discrepancy audit,
    and the 350-row model-judged queue. Show the separate diagnostic and random splits.
-8. **Results:** coverage versus reference mismatch, reject-all risk selection,
-   simulated replay; show denominators and policy version.
+8. **Results:** [controlled comparison](RESULTS_ANSWER_AWARE.md): accepted 16/60,
+   no observed incorrect accepts, and roughly 45 ms warm decision p50; show
+   the 60-case denominator, two ambiguous cases, and the baseline failures.
 9. **Related work:** GPTCache, vCache and Krites already use retrieval and forms of
    verification; define VeriGate's proposed bounded contribution.
-10. **Limits and next gate:** independent answer review, frozen final split,
-    selective policy comparison, live/offline trace and measured latency.
+10. **Limits and next gate:** authored cases, lexical hash retrieval, model
+    opinion, limited latency scope, and independent transfer validation.
 
 For the judge slide, open [the controlled diagnostic](AUTOMATED_JUDGE_RESULTS.md).
 Explain why FLAN's zero positive predictions disqualify it as an acceptance
@@ -45,22 +46,25 @@ the cache; the same request becomes a MISS. A different API key must not read
 the first tenant's cached answer. Use the tests or a prepared trace if the UI
 does not expose tenant identity.
 
-**2:15–3:10:** Restart in an explicitly marked `semantic` local configuration.
-Try a look-alike pair, then a valid paraphrase. Read the actual reason shown,
-including a rejection or failure. Do not promise a particular HIT unless the
-recorded config and embeddings reproduce it. Mention that optional NLI checks
-questions, not the stored answer.
+**2:15–3:10:** Show `ANSWER_POLICY_ARTIFACT=app/cache/artifacts/answer_policy_v1.json`
+alongside `CACHE_MATCH_MODE=semantic` as an optional local configuration.
+Open [`AnswerPolicy.decide`](../app/cache/answer_policy.py) and trace the
+stored question, exact cached answer, incoming question, and ACCEPT/VERIFY/REJECT
+reason. Point to the live gateway and replay calls of this same method.
 
-**3:10–4:00:** Open the [audit](../evaluation/results/answer_label_audit.json) and
-the [directional replay](../evaluation/results/directional_stream_hash.csv).
-Explain why a whole answer list can overlap while the exact stored answer is
-unsuitable, and why the replay is a local simulation with lexical hash vectors.
+**3:10–4:00:** Open the [generated comparison](RESULTS_ANSWER_AWARE.md) and its
+[saved decisions](../evaluation/runs/answer_aware_20261029_v6/decisions.csv).
+Show one valid acceptance, one changed-fact rejection, one conflicting-answer
+rejection, and an ambiguous VERIFY. Say that REJECT and VERIFY both ask the
+provider in the gateway. Show 16/60 coverage and zero *observed* incorrect
+accepts; never call that a zero-risk guarantee.
 
-**4:00–5:00:** Explain the negative result: the risk selector rejected all at
-the tested targets, and the local judge failed validation. End with the planned
-reviewed dataset and fair comparison. The practical contribution today is a
-working gateway plus a reproducible finding about answer-label validity; the
-selective verification research claim remains open.
+**4:00–5:00:** Show the cost: warm answer-aware decision p50 is about 45 ms
+versus sub-millisecond query-only rules in this local run, with model loading
+measured separately. State the negatives: FLAN failed validation, historical
+risk control rejected all, and the new cases are authored rather than
+representative traffic. The contribution is an opt-in answer-aware decision
+path shared by live lookup and replay, plus a reproducible controlled comparison.
 
 ## Learn the code in this order
 
@@ -71,6 +75,7 @@ selective verification research claim remains open.
 | 3. Cache store | [`app/cache/semantic_cache.py`](../app/cache/semantic_cache.py) `lookup`/`store` | Change a tenant key and compare outcomes. | Why isolate tenants? |
 | 4. Versioning | [`app/cache/namespace.py`](../app/cache/namespace.py) `namespace` | Change `CACHE_EPOCH` and observe a MISS. | What invalidates old entries? |
 | 5. Decision | [`app/cache/policy.py`](../app/cache/policy.py) `decide` | Compare the same pair with/without the verifier. | What does a threshold actually prove? |
+| 5b. Answer policy | [`app/cache/answer_policy.py`](../app/cache/answer_policy.py) `decide` | Follow a conflicting-answer case to REJECT. | Why does NLI not prove factual truth? |
 | 6. Structural check | [`app/cache/verifier.py`](../app/cache/verifier.py) `verify_equivalent` | Try present versus past tense. | Why can a strict rule reject a valid paraphrase? |
 | 7. Labels | [`evaluation/gold_answers.py`](../evaluation/gold_answers.py) `cached_answer_reference_match` | Recreate the cast-list counterexample. | Why is the label directional? |
 | 8. Replay | [`evaluation/stream.py`](../evaluation/stream.py) `replay` | Make two different queries share a vector. | Why must exact lookup ignore embeddings? |

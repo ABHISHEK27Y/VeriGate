@@ -21,6 +21,10 @@ short_description: LLM gateway with an experimental semantic answer cache
 
 The gateway defaults to exact-prompt cache matching. Set `CACHE_MATCH_MODE=semantic` only
 for workloads where approximate reuse is acceptable; NLI does not guarantee correctness.
+An additional opt-in `ANSWER_POLICY_ARTIFACT=app/cache/artifacts/answer_policy_v1.json`
+routes semantic candidates through an answer-aware ACCEPT / VERIFY / REJECT policy.
+VERIFY and REJECT both call the upstream provider. The [controlled comparison](docs/RESULTS_ANSWER_AWARE.md)
+reports what that policy did on authored factoid cases, including its latency and limits.
 See [production configuration](docs/PRODUCTION_CONFIGURATION.md) and the
 [audit report](docs/audit/AUDIT_REPORT.md) for historical findings and release blockers.
 New to the stack? Start with the chapter-by-chapter
@@ -46,8 +50,8 @@ false pair acceptance; see [generated results](docs/RESULTS_V2.md). Neither
 experiment measures real-world answer reuse or cost savings. The mined NQ-Open
 factoid study compares reference-answer strings, but some positive labels do not
 match the concrete stored answer; see [the label audit](evaluation/results/answer_label_audit.json).
-The research goal remains independently reviewed answer-aware, cost-aware
-selective verification.
+The answer-aware policy is now implemented as an experimental option. Independently
+validated answer quality and production operating points remain research goals.
 An [experimental learned-policy and replay study](docs/RESULTS_EXPERIMENTAL.md)
 also finds weak transfer and has not been enabled in the gateway.
 The [current directional replay report](docs/RESULTS_DIRECTIONAL.md) is a local

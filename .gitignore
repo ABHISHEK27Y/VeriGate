@@ -24,6 +24,12 @@ dist/
 *.safetensors
 models/
 data/
+evaluation/runs/answer_aware_20261029_v1/
+evaluation/runs/answer_aware_20261029_v2/
+evaluation/runs/answer_aware_20261029_v3/
+evaluation/runs/answer_aware_20261029_v4/
+evaluation/runs/answer_aware_20261029_v5/
+.tmp/
 
 # --- OS / editor cruft ---
 .DS_Store

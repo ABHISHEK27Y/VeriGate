@@ -17,7 +17,9 @@ import numpy as np
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
+from app.cache.answer_policy import AnswerPolicy  # noqa: E402
 from app.cache.policy import CachePolicy  # noqa: E402
+from app.cache.verifier import NliVerifier  # noqa: E402
 from evaluation.datasets import Pair, qqp  # noqa: E402
 from evaluation.reproduce import ROOT, _vector_cache  # noqa: E402
 
@@ -62,6 +64,8 @@ def replay(  # noqa: PLR0912, PLR0913, PLR0915 - chronological replay owns event
     exact: bool = False,
     answer_aliases: dict[str, frozenset[str]] | None = None,
     answers_by_query: dict[str, str] | None = None,
+    answer_policy: AnswerPolicy | None = None,
+    answer_verifier: NliVerifier | None = None,
 ) -> ReplayResult:
     """Replay Zipf-popular intents, filling the cache only after each miss."""
     if not pairs or requests <= 0 or capacity <= 0 or ttl_steps <= 0 or tenants <= 0:
@@ -117,7 +121,16 @@ def replay(  # noqa: PLR0912, PLR0913, PLR0915 - chronological replay owns event
                 successes += candidate.pair_index == index
         if candidate is not None:
             hit = exact
-            if not exact:
+            if answer_policy is not None and not exact:
+                if answer_verifier is None:
+                    raise ValueError("Answer-aware replay requires a verifier")
+                hit = (
+                    answer_policy.decide(
+                        query, candidate.query, candidate.answer or "", best_sim, answer_verifier
+                    ).action
+                    == "ACCEPT"
+                )
+            elif not exact:
                 hit, _, _ = policy.decide(query, candidate.query, best_sim, density)
             if hit:
                 candidate.last_used = step

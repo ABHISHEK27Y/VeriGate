@@ -318,7 +318,7 @@ $("chips").innerHTML="";EX.forEach(e=>{const c=document.createElement("div");c.c
   c.innerHTML=`${e.t}<small>${e.d}</small>`;c.onclick=()=>{$("query").value=e.t;ask();};$("chips").appendChild(c);});
 
 async function health(){try{const r=await fetch("/health");if(!r.ok)throw new Error("Unavailable");const h=await r.json();
-  $("cfg").innerHTML=[["matching",h.cache_match_mode],["policy",h.cache_policy_version],
+  $("cfg").innerHTML=[["matching",h.cache_match_mode],["policy",h.answer_policy_version||h.cache_policy_version],
     ["NLI enabled",String(h.verifier_nli_enabled)],["redis",h.redis],["vector index",h.vector_backend],["embeddings",h.embedding_backend],
     ["provider",(h.providers||[]).join(", ")]].map(([k,v])=>`<div class="c"><div class="k">${k}</div><div class="v">${v}</div></div>`).join("");
   $("stat").textContent=h.vector_backend+" · "+(h.providers||[]).join(",");

@@ -1,0 +1,22 @@
+[
+ {"family":"france","stored":"What is the capital of France?","answer":"Paris","valid":"Name France's capital city.","invalid":"What is the capital of Germany?","invalid_answer":"Berlin"},
+ {"family":"germany","stored":"What is the capital of Germany?","answer":"Berlin","valid":"Name Germany's capital city.","invalid":"What is the capital of France?","invalid_answer":"Paris"},
+ {"family":"japan","stored":"What is the capital of Japan?","answer":"Tokyo","valid":"Name Japan's capital city.","invalid":"What is the capital of South Korea?","invalid_answer":"Seoul"},
+ {"family":"canada","stored":"What is the capital of Canada?","answer":"Ottawa","valid":"Name Canada's capital city.","invalid":"What is the capital of Australia?","invalid_answer":"Canberra"},
+ {"family":"australia","stored":"What is the capital of Australia?","answer":"Canberra","valid":"Name Australia's capital city.","invalid":"What is the capital of Canada?","invalid_answer":"Ottawa"},
+ {"family":"venus","stored":"Which planet is second from the Sun?","answer":"Venus","valid":"Name the second planet from the Sun.","invalid":"Which planet is third from the Sun?","invalid_answer":"Earth"},
+ {"family":"mars","stored":"Which planet is fourth from the Sun?","answer":"Mars","valid":"Name the fourth planet from the Sun.","invalid":"Which planet is fifth from the Sun?","invalid_answer":"Jupiter"},
+ {"family":"oxygen","stored":"What is the chemical symbol for oxygen?","answer":"O","valid":"Give the chemical symbol of oxygen.","invalid":"What is the chemical symbol for nitrogen?","invalid_answer":"N"},
+ {"family":"gold","stored":"What is the chemical symbol for gold?","answer":"Au","valid":"Give the chemical symbol of gold.","invalid":"What is the chemical symbol for silver?","invalid_answer":"Ag"},
+ {"family":"water","stored":"What is the chemical formula for water?","answer":"H2O","valid":"Give water's chemical formula.","invalid":"What is the chemical formula for carbon dioxide?","invalid_answer":"CO2"},
+ {"family":"everest","stored":"What is the highest mountain above sea level?","answer":"Mount Everest","valid":"Name the world's highest mountain above sea level.","invalid":"What is the highest mountain in Africa?","invalid_answer":"Mount Kilimanjaro"},
+ {"family":"kilimanjaro","stored":"What is the highest mountain in Africa?","answer":"Mount Kilimanjaro","valid":"Name Africa's highest mountain.","invalid":"What is the highest mountain in Japan?","invalid_answer":"Mount Fuji"},
+ {"family":"pacific","stored":"What is the largest ocean on Earth?","answer":"Pacific Ocean","valid":"Name Earth's largest ocean.","invalid":"What is the smallest ocean on Earth?","invalid_answer":"Arctic Ocean"},
+ {"family":"arctic","stored":"What is the smallest ocean on Earth?","answer":"Arctic Ocean","valid":"Name Earth's smallest ocean.","invalid":"What is the largest ocean on Earth?","invalid_answer":"Pacific Ocean"},
+ {"family":"mona_lisa","stored":"Who painted the Mona Lisa?","answer":"Leonardo da Vinci","valid":"Name the painter of the Mona Lisa.","invalid":"Who painted The Starry Night?","invalid_answer":"Vincent van Gogh"},
+ {"family":"starry_night","stored":"Who painted The Starry Night?","answer":"Vincent van Gogh","valid":"Name the painter of The Starry Night.","invalid":"Who painted the Mona Lisa?","invalid_answer":"Leonardo da Vinci"},
+ {"family":"penicillin","stored":"Who discovered penicillin?","answer":"Alexander Fleming","valid":"Name the discoverer of penicillin.","invalid":"Who discovered radium?","invalid_answer":"Marie Curie and Pierre Curie"},
+ {"family":"gravity","stored":"Who formulated the law of universal gravitation?","answer":"Isaac Newton","valid":"Name the scientist who formulated universal gravitation.","invalid":"Who formulated the theory of relativity?","invalid_answer":"Albert Einstein"},
+ {"family":"wwii_end","stored":"In what year did World War II end?","answer":"1945","valid":"What year marked the end of World War II?","invalid":"In what year did World War I end?","invalid_answer":"1918"},
+ {"family":"berlin_wall","stored":"In what year did the Berlin Wall fall?","answer":"1989","valid":"What year was the fall of the Berlin Wall?","invalid":"In what year was the Berlin Wall built?","invalid_answer":"1961"}
+]

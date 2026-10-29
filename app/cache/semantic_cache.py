@@ -22,6 +22,7 @@ import time
 import uuid
 from collections import OrderedDict
 from dataclasses import dataclass
+from pathlib import Path
 
 import numpy as np
 
@@ -30,6 +31,7 @@ from ..embeddings import Embedder
 from ..redis_client import create_redis, hash_fields, remove_member, set_members
 from . import redisearch_store as rs
 from . import storage
+from .answer_policy import AnswerPolicy
 from .namespace import namespace
 from .policy import CachePolicy
 from .verifier import NliVerifier
@@ -65,6 +67,13 @@ class SemanticCache:
             use_nli=get_settings().verifier_nli,
             verifier=NliVerifier(),
         )
+        artifact = get_settings().answer_policy_artifact
+        self._answer_policy = AnswerPolicy.load(Path(artifact)) if artifact else None
+        if self._answer_policy and (
+            self._answer_policy.model != get_settings().nli_model
+            or self._answer_policy.revision != get_settings().nli_revision
+        ):
+            raise ValueError("Answer policy artifact and runtime NLI model differ")
 
     # ------------------------------------------------------------------ #
     # Internal helpers
@@ -238,9 +247,22 @@ class SemanticCache:
         if best is None:
             return LookupResult(status="MISS", similarity=None, reason="empty_cache")
 
-        hit, reason, threshold = await self._infer(
-            self._policy.decide, query, best["query"], sim, density
-        )
+        if self._answer_policy is not None:
+            decision = await self._infer(
+                self._answer_policy.decide,
+                query,
+                best["query"],
+                best["answer"],
+                sim,
+                self._policy.verifier,
+            )
+            hit = decision.action == "ACCEPT"
+            reason = f"answer_{decision.action.lower()}:{decision.reason}"
+            threshold = self._answer_policy.min_similarity
+        else:
+            hit, reason, threshold = await self._infer(
+                self._policy.decide, query, best["query"], sim, density
+            )
         if not hit:
             return LookupResult(status="MISS", threshold=threshold, similarity=sim, reason=reason)
         if get_settings().vector_backend != "redisearch":
