@@ -9,6 +9,8 @@ current release status.
 
 The [evaluation harness](../evaluation/README.md) describes the smoke fixture and the
 [generated pair-label results](RESULTS_V2.md) show the newer held-out proxy evaluation.
+The [experimental model, replay and risk study](RESULTS_EXPERIMENTAL.md) records
+further work without presenting it as answer-cache correctness.
 The [results log](RESULTS_LOG.md), [older evaluation plan](EVALUATION_PLAN.md), and
 [earlier novelty proposal](NOVEL_CONTRIBUTION.md) contain historical hypotheses and
 illustrative measurements. They are retained for provenance, not final evidence.

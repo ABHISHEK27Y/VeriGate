@@ -14,9 +14,14 @@ make reproduce
 
 `make reproduce-fast` uses only the historical smoke fixture and overwrites the
 same generated outputs; do not confuse that output with the public-source run.
-The new pipeline still evaluates **given query pairs**, with density set to zero.
-It does not evaluate candidate retrieval or a filling cache, and none of the
-source labels establishes that a particular cached answer is reusable. See
+The pair-level pipeline evaluates **given query pairs**, with density set to zero.
+The separate `python -m evaluation.stream` replay fills a cache, measures real
+neighbourhood density, and reports retrieval opportunities and unknown cross-pair
+outcomes. `python -m evaluation.train_accept` trains proxy models and transfer
+baselines; `python -m evaluation.risk_guarantee` exercises the bound on synthetic
+IID data and a public pair-proxy shift. See the
+[generated experimental results](../docs/RESULTS_EXPERIMENTAL.md). None of the
+public source labels establishes that a particular cached answer is reusable. See
 [`docs/DATASHEET.md`](../docs/DATASHEET.md) and
 [`docs/PHASE_STATUS.md`](../docs/PHASE_STATUS.md) for the remaining work.
 

@@ -38,3 +38,10 @@ the model features. No independent human review has been completed in this repos
 The review queue should be a local TSV under `data/answer_review.tsv` with those fields.
 Do not publish private prompts or answers. Public pair labels must remain
 `source_pair_label`, with `answer_reusable` unset until a real answer is reviewed.
+
+Run `python -m scripts.build_answer_review_queue` after downloading QQP and PAWS.
+The command creates a balanced local queue and refuses to overwrite existing review
+work. It leaves cached answers, reviewer IDs, answer labels, reasons, tenant IDs,
+context versions, and answer versions blank. `reviewed_answers()` ignores unfinished
+rows and rejects a purportedly resolved row without two distinct reviewers and
+those required fields. A freshly generated queue is **entirely unreviewed**.

@@ -45,6 +45,8 @@ PAWS, and STS-B measures held-out **pair-label proxies** and finds substantial
 false pair acceptance; see [generated results](docs/RESULTS_V2.md). Neither
 experiment measures real-world answer reuse or cost savings. The research goal
 remains answer-aware, cost-aware selective verification.
+An [experimental learned-policy and replay study](docs/RESULTS_EXPERIMENTAL.md)
+also finds weak transfer and has not been enabled in the gateway.
 
 The gateway also provides supporting system features — token-bucket rate
 limiting, multi-provider routing with failover, streaming, and full cost/latency

@@ -27,6 +27,9 @@ class Pair:
     cached_answer: str | None = None
     answer_reusable: bool | None = None
     annotation_status: str = "source_pair_label"
+    tenant_id: str = ""
+    context_version: str = ""
+    answer_version: str = ""
 
     def __post_init__(self) -> None:
         if not self.stored_query.strip() or not self.incoming_query.strip():
@@ -106,6 +109,65 @@ def stsb(path: Path, *, threshold: float = 4.0) -> list[Pair]:
         label="score",
         threshold=threshold,
     )
+
+
+def reviewed_answers(path: Path) -> list[Pair]:
+    """Load independently resolved answer-reuse labels; leave incomplete rows out."""
+    required = {
+        "source",
+        "source_id",
+        "family",
+        "stored_query",
+        "cached_answer",
+        "incoming_query",
+        "pair_label",
+        "answer_reusable",
+        "reason",
+        "reviewer_1",
+        "reviewer_2",
+        "review_status",
+        "tenant_id",
+        "context_version",
+        "answer_version",
+    }
+    if not path.is_file():
+        raise FileNotFoundError(path)
+    result: list[Pair] = []
+    with path.open(newline="", encoding="utf-8") as stream:
+        reader = csv.DictReader(stream, delimiter="\t")
+        if not required.issubset(reader.fieldnames or []):
+            raise ValueError(f"Answer review file lacks columns: {sorted(required)}")
+        for row in reader:
+            if row["review_status"] != "resolved_two_reviewers":
+                continue
+            first, second = row["reviewer_1"].strip(), row["reviewer_2"].strip()
+            if not first or not second or first == second:
+                raise ValueError("Resolved rows require two distinct reviewers")
+            if row["pair_label"] not in {"0", "1"} or row["answer_reusable"] not in {"0", "1"}:
+                raise ValueError("Resolved rows require binary pair and answer labels")
+            if not row["cached_answer"].strip() or not row["reason"].strip():
+                raise ValueError("Resolved rows require the answer and review reason")
+            if not all(
+                row[key].strip() for key in ("tenant_id", "context_version", "answer_version")
+            ):
+                raise ValueError("Resolved rows require tenant and context/version metadata")
+            result.append(
+                Pair(
+                    stored_query=row["stored_query"],
+                    incoming_query=row["incoming_query"],
+                    equivalent=row["pair_label"] == "1",
+                    source=row["source"],
+                    source_id=row["source_id"],
+                    family=row["family"],
+                    cached_answer=row["cached_answer"],
+                    answer_reusable=row["answer_reusable"] == "1",
+                    annotation_status="resolved_two_reviewers",
+                    tenant_id=row["tenant_id"],
+                    context_version=row["context_version"],
+                    answer_version=row["answer_version"],
+                )
+            )
+    return result
 
 
 def _normalise(query: str) -> str:
