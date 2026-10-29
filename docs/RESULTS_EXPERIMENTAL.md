@@ -116,11 +116,32 @@ NQ gold-answer-match results.
 | learned_with_nli | 96.7% | 56.2% |
 | learned_without_nli | 98.6% | 56.7% |
 
+### Expanded-corpus gold-label risk selection
+
+The 10-threshold grid was fixed before inspecting calibration labels.
+Each threshold uses a one-sided exact binomial upper bound with
+Bonferroni-adjusted alpha 0.005. The selected threshold is checked on
+the disjoint test partition. Candidate diagnostics are in
+`gold_risk_candidates.csv`; selected decisions are in `gold_risk.csv`.
+
+| Error target | Nonempty selected seeds | Mean test coverage | Test mismatches / accepts | Zero-error minimum accepted calibration pairs |
+|---:|---:|---:|---:|---:|
+| 1% | 0/5 | 0.0% | undefined (0 accepts) | 528 |
+| 2% | 0/5 | 0.0% | undefined (0 accepts) | 263 |
+| 5% | 0/5 | 0.0% | undefined (0 accepts) | 104 |
+
+The smallest nonempty candidate upper bound was 7.9% (seed 53, threshold 0.9, 14/334 calibration mismatches/accepts).
+The minimum-sample column assumes **zero errors**; errors require more
+accepted pairs and may make certification impossible on this corpus.
+The five seeds overlap in underlying questions, so their pooled
+test counts are descriptive rather than an independent CI.
+These reference-answer alias labels are correlated within question
+groups and cannot certify generated-answer risk in deployment.
+
 ### Prior small-corpus gold-label risk selection
 
 The table below is from the previous small corpus in
 `gold_risk_small.csv`. It is not a risk result on the expanded corpus.
-The larger calibration partition is reserved for item 2.
 
 | Error target | Reject-all seeds | Mean held-out coverage |
 |---:|---:|---:|

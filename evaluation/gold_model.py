@@ -10,6 +10,7 @@ import argparse
 import csv
 import hashlib
 import json
+import math
 import random
 from pathlib import Path
 from typing import Any, cast
@@ -21,7 +22,7 @@ from sklearn.preprocessing import StandardScaler
 
 from app.cache.accept_model import FEATURE_NAMES, features
 from app.cache.policy import CachePolicy
-from app.cache.risk import select_threshold
+from app.cache.risk import binomial_upper, select_threshold
 from app.config import get_settings
 from app.embeddings import active_backend, cosine, tokenize
 from evaluation.datasets import Pair, group_split, paws
@@ -214,7 +215,7 @@ def _predict(  # noqa: PLR0913 - trained components stay separate for the ablati
     return np.asarray(calibrator.predict(raw), dtype=np.float64)
 
 
-def run(*, include_risk: bool = False) -> None:  # noqa: PLR0915 - aligned split state
+def run(*, include_risk: bool = False) -> None:  # noqa: PLR0912, PLR0915 - aligned split state
     if active_backend() != "minilm":
         raise ValueError("Gold model experiment requires pinned MiniLM embeddings")
     gold, _ = load_pairs(GOLD)
@@ -227,6 +228,7 @@ def run(*, include_risk: bool = False) -> None:  # noqa: PLR0915 - aligned split
     records: list[dict[str, Any]] = []
     transfer: list[dict[str, Any]] = []
     risk: list[dict[str, Any]] = []
+    risk_candidates: list[dict[str, Any]] = []
     split_rows: list[dict[str, Any]] = []
     for seed in SEEDS:
         splits = group_split(gold, seed, fractions=GOLD_SPLIT_FRACTIONS)
@@ -307,10 +309,30 @@ def run(*, include_risk: bool = False) -> None:  # noqa: PLR0915 - aligned split
                 continue
             calibration_scores = _predict(x_cal, columns, scaler, model, calibrator)
             test_scores = _predict(x_test, columns, scaler, model, calibrator)
+            calibration_labels = _labels(cal, gold=True)
+            alpha = 0.05 / len(RISK_GRID)
+            for cutoff in RISK_GRID:
+                chosen = calibration_scores >= cutoff
+                accepted = int(chosen.sum())
+                errors = int((chosen & (calibration_labels == 0)).sum())
+                risk_candidates.append(
+                    {
+                        "seed": seed,
+                        "threshold": cutoff,
+                        "calibration_n": len(cal),
+                        "calibration_accepted": accepted,
+                        "calibration_errors": errors,
+                        "upper_bound": binomial_upper(errors, accepted, alpha)
+                        if accepted
+                        else None,
+                        "test_coverage_at_threshold": float((test_scores >= cutoff).mean()),
+                        "label_type": "gold_answer_match",
+                    }
+                )
             for epsilon in TARGETS:
                 selection = select_threshold(
                     cast(list[float], calibration_scores.tolist()),
-                    [bool(value) for value in _labels(cal, gold=True)],
+                    [bool(value) for value in calibration_labels],
                     list(RISK_GRID),
                     epsilon=epsilon,
                     delta=0.05,
@@ -342,6 +364,24 @@ def run(*, include_risk: bool = False) -> None:  # noqa: PLR0915 - aligned split
     _write(RESULTS / "gold_split_sizes.csv", split_rows)
     if include_risk:
         _write(RESULTS / "gold_risk.csv", risk)
+        _write(RESULTS / "gold_risk_candidates.csv", risk_candidates)
+        minimum_rows = []
+        for epsilon in TARGETS:
+            minimum = math.ceil(math.log(alpha) / math.log1p(-epsilon))
+            while binomial_upper(0, minimum, alpha) > epsilon:
+                minimum += 1
+            while minimum > 1 and binomial_upper(0, minimum - 1, alpha) <= epsilon:
+                minimum -= 1
+            minimum_rows.append(
+                {
+                    "epsilon": epsilon,
+                    "delta": 0.05,
+                    "grid_size": len(RISK_GRID),
+                    "per_threshold_alpha": alpha,
+                    "minimum_accepted_if_zero_errors": minimum,
+                }
+            )
+        _write(RESULTS / "gold_risk_min_samples.csv", minimum_rows)
     (RESULTS / "gold_model_manifest.json").write_text(
         json.dumps(
             {

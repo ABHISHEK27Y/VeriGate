@@ -39,14 +39,17 @@ def _integer_range(rows: list[dict[str, str]], key: str) -> str:
     return f"{low:,}" if low == high else f"{low:,}–{high:,}"
 
 
-def main() -> None:
+def main() -> None:  # noqa: PLR0915 - one report assembled from source CSVs
     learned = _rows("learned_transfer.csv")
     stream = _rows("stream_proxy.csv")
     risk = _rows("risk_synthetic.csv")
     shifted = _rows("risk_shift_proxy.csv")
     gold = _rows("gold_model.csv")
     gold_paws = _rows("gold_paws_transfer.csv")
-    gold_risk = _rows("gold_risk_small.csv")
+    gold_risk_small = _rows("gold_risk_small.csv")
+    gold_risk = _rows("gold_risk.csv")
+    gold_risk_candidates = _rows("gold_risk_candidates.csv")
+    gold_risk_minimum = _rows("gold_risk_min_samples.csv")
     gold_stream = _rows("gold_stream.csv")
     mining = _rows("gold_mining.csv")[0]
     split_sizes = _rows("gold_split_sizes.csv")
@@ -229,18 +232,63 @@ def main() -> None:
     lines.extend(
         [
             "",
+            "### Expanded-corpus gold-label risk selection",
+            "",
+            "The 10-threshold grid was fixed before inspecting calibration labels.",
+            "Each threshold uses a one-sided exact binomial upper bound with",
+            "Bonferroni-adjusted alpha 0.005. The selected threshold is checked on",
+            "the disjoint test partition. Candidate diagnostics are in",
+            "`gold_risk_candidates.csv`; selected decisions are in `gold_risk.csv`.",
+            "",
+            (
+                "| Error target | Nonempty selected seeds | Mean test coverage | "
+                "Test mismatches / accepts | Zero-error minimum accepted calibration pairs |"
+            ),
+            "|---:|---:|---:|---:|---:|",
+        ]
+    )
+    for minimum in gold_risk_minimum:
+        target = minimum["epsilon"]
+        rows = [row for row in gold_risk if row["epsilon"] == target]
+        nonempty = sum(int(row["calibration_accepted"]) > 0 for row in rows)
+        errors = sum(int(row["test_errors"]) for row in rows)
+        accepts = sum(int(row["test_accepted"]) for row in rows)
+        mismatch_count = f"{errors}/{accepts}" if accepts else "undefined (0 accepts)"
+        lines.append(
+            f"| {float(target):.0%} | {nonempty}/{len(rows)} | "
+            f"{_mean(rows, 'test_coverage')} | {mismatch_count} | "
+            f"{int(minimum['minimum_accepted_if_zero_errors']):,} |"
+        )
+    nonempty_candidates = [
+        row for row in gold_risk_candidates if int(row["calibration_accepted"]) > 0
+    ]
+    best_bound = min(float(row["upper_bound"]) for row in nonempty_candidates)
+    best = min(nonempty_candidates, key=lambda row: float(row["upper_bound"]))
+    lines.extend(
+        [
+            "",
+            f"The smallest nonempty candidate upper bound was {best_bound:.1%} "
+            f"(seed {best['seed']}, threshold {best['threshold']}, "
+            f"{best['calibration_errors']}/{best['calibration_accepted']} "
+            "calibration mismatches/accepts).",
+            "The minimum-sample column assumes **zero errors**; errors require more",
+            "accepted pairs and may make certification impossible on this corpus.",
+            "The five seeds overlap in underlying questions, so their pooled",
+            "test counts are descriptive rather than an independent CI.",
+            "These reference-answer alias labels are correlated within question",
+            "groups and cannot certify generated-answer risk in deployment.",
+            "",
             "### Prior small-corpus gold-label risk selection",
             "",
             "The table below is from the previous small corpus in",
             "`gold_risk_small.csv`. It is not a risk result on the expanded corpus.",
-            "The larger calibration partition is reserved for item 2.",
             "",
             "| Error target | Reject-all seeds | Mean held-out coverage |",
             "|---:|---:|---:|",
         ]
     )
-    for target in sorted({row["epsilon"] for row in gold_risk}, key=float):
-        rows = [row for row in gold_risk if row["epsilon"] == target]
+    for target in sorted({row["epsilon"] for row in gold_risk_small}, key=float):
+        rows = [row for row in gold_risk_small if row["epsilon"] == target]
         rejected = sum(int(row["test_accepted"]) == 0 for row in rows)
         lines.append(
             f"| {float(target):.0%} | {rejected}/{len(rows)} | {_mean(rows, 'test_coverage')} |"
