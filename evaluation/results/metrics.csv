@@ -1,5 +1,5 @@
 system,positive_recall,negative_false_accept_rate,acceptance_rate,false_reuse_fraction,precision,f1,true_accepts,false_accepts,accepted,positive_count,negative_count,model_status
 Baseline (static T=0.72),0.4,0.4666666666666667,0.43333333333333335,0.5384615384615384,0.46153846153846156,0.42857142857142855,6,7,13,15,15,available
 + Adaptive T,0.3333333333333333,0.3333333333333333,0.3333333333333333,0.5,0.5,0.4,5,5,10,15,15,available
-+ Verifier (Tier-1),0.4,0.13333333333333333,0.26666666666666666,0.25,0.75,0.5217391304347826,6,2,8,15,15,available
-VeriGate (Tier-1),0.3333333333333333,0.0,0.16666666666666666,0.0,1.0,0.5,5,0,5,15,15,available
++ Verifier (Tier-1),0.0,0.0,0.0,,,0.0,0,0,0,15,15,available
+VeriGate (Tier-1),0.0,0.0,0.0,,,0.0,0,0,0,15,15,available

@@ -151,6 +151,12 @@ All per-seed estimates, denominators and CIs are in
 | learned_with_nli | 60.6% | [51.5%, 67.1%] | 13.0% | [6.9%, 18.7%] |
 | learned_without_nli | 63.1% | [55.7%, 70.0%] | 15.1% | [10.9%, 20.8%] |
 
+On the older hand-authored smoke fixture, the default Tier-1
+verifier accepted 0 of 30 pairs after the token-diff change (`metrics.csv`). This indicates
+that the new rule is too restrictive for those paraphrases; zero
+acceptance is not a useful correctness result. That fixture is not
+an independent gold-answer evaluation.
+
 ### False-accept sample (diagnostic, not a rate estimate)
 
 `false_accepts.csv` contains 100 distinct held-out source pairs per

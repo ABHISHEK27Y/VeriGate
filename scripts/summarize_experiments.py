@@ -59,6 +59,7 @@ def main() -> None:  # noqa: PLR0912, PLR0915 - one report from source CSVs
     false_accepts = _rows("false_accepts.csv")
     verifier_rows = _rows("gold_verifier_policies.csv")
     label_rule_rows = _rows("gold_label_rules.csv")
+    smoke_metrics = _rows("metrics.csv")
     gold_stream = _rows("gold_stream.csv")
     mining = _rows("gold_mining.csv")[0]
     split_sizes = _rows("gold_split_sizes.csv")
@@ -287,8 +288,17 @@ def main() -> None:  # noqa: PLR0912, PLR0915 - one report from source CSVs
                 f"{_mean(rows, 'false_hit_among_served')} | "
                 f"{_ci_envelope(rows, 'risk_ci_low', 'risk_ci_high')} |"
             )
+    smoke_tier1 = next(row for row in smoke_metrics if row["system"] == "VeriGate (Tier-1)")
     lines.extend(
         [
+            "",
+            "On the older hand-authored smoke fixture, the default Tier-1",
+            f"verifier accepted {smoke_tier1['accepted']} of "
+            f"{int(smoke_tier1['positive_count']) + int(smoke_tier1['negative_count'])} "
+            "pairs after the token-diff change (`metrics.csv`). This indicates",
+            "that the new rule is too restrictive for those paraphrases; zero",
+            "acceptance is not a useful correctness result. That fixture is not",
+            "an independent gold-answer evaluation.",
             "",
             "### False-accept sample (diagnostic, not a rate estimate)",
             "",
