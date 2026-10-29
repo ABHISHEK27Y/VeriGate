@@ -16,13 +16,18 @@ is the correct opening configuration.
 6. **Failure cases:** Austria/Australia, role swap, tense change and a valid password
    paraphrase that the conservative verifier rejects.
 7. **Data:** QQP/PAWS pair proxies, NQ reference strings, the 124 discrepancy audit,
-   and the still-unreviewed queue.
+   and the 350-row model-judged queue. Show the separate diagnostic and random splits.
 8. **Results:** coverage versus reference mismatch, reject-all risk selection,
    simulated replay; show denominators and policy version.
 9. **Related work:** GPTCache, vCache and Krites already use retrieval and forms of
    verification; define VeriGate's proposed bounded contribution.
 10. **Limits and next gate:** independent answer review, frozen final split,
     selective policy comparison, live/offline trace and measured latency.
+
+For the judge slide, open [the controlled diagnostic](AUTOMATED_JUDGE_RESULTS.md).
+Explain why FLAN's zero positive predictions disqualify it as an acceptance
+oracle, why NLI's 13/15 result is only preliminary, and why the two judges'
+queue disagreements remain unresolved rather than converted into truth.
 
 ## Five-minute script
 

@@ -52,6 +52,10 @@ An [experimental learned-policy and replay study](docs/RESULTS_EXPERIMENTAL.md)
 also finds weak transfer and has not been enabled in the gateway.
 The [current directional replay report](docs/RESULTS_DIRECTIONAL.md) is a local
 hash-vector simulation with a validated run manifest, not a provider benchmark.
+The [automated judge diagnostic](docs/AUTOMATED_JUDGE_RESULTS.md) runs two pinned
+local models on controlled cases and a 350-row queue. FLAN failed to identify any
+positive controlled case; the NLI judge made two errors among 15 known cases.
+Queue labels are `model_judged` and are not human-reviewed accuracy evidence.
 
 The gateway also provides supporting system features — token-bucket rate
 limiting, multi-provider routing with failover, streaming, request-latency metrics,
