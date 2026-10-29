@@ -333,7 +333,10 @@ def run(*, include_risk: bool = False) -> None:  # noqa: PLR0912, PLR0915 - alig
         )
         val_labels = _labels(val, gold=True)
         static_threshold = _choose_f1(x_val[:, 0], val_labels, THRESHOLDS)
-        heuristic = CachePolicy(use_adaptive=True, use_verifier=True)
+        # Preserve the historical capitalization baseline for reproducible prior CSVs.
+        heuristic = CachePolicy(
+            use_adaptive=True, use_verifier=True, verifier_mode="capitalization"
+        )
         for source, rows, matrix, destination in (
             ("nq_open", test, x_test, records),
             ("paws", paws_rows, paws_matrix, transfer),

@@ -16,6 +16,24 @@ from evaluation.datasets import Pair
 _ARTICLES = re.compile(r"\b(a|an|the)\b")
 _SPACES = re.compile(r"\s+")
 _PUNCTUATION = str.maketrans("", "", string.punctuation)
+_YEAR = re.compile(r"\b(?:1[0-9]{3}|20[0-9]{2})\b")
+_MONTHS = {
+    "january",
+    "february",
+    "march",
+    "april",
+    "may",
+    "june",
+    "july",
+    "august",
+    "september",
+    "october",
+    "november",
+    "december",
+}
+_NAME_EXCLUDE = _MONTHS | {"the", "and", "of", "in", "at", "on", "a", "an"}
+_MAX_DAY = 31
+_MIN_NAME_PARTS = 2
 
 
 def normalize_answer(answer: str) -> str:
@@ -30,6 +48,55 @@ def normalized_aliases(answers: list[str]) -> frozenset[str]:
 def reuse_ok(first: list[str], second: list[str]) -> bool:
     left, right = normalized_aliases(first), normalized_aliases(second)
     return bool(left and right and left.intersection(right))
+
+
+def _name_parts(answer: str) -> set[str]:
+    parts = re.findall(r"\b[A-Z][a-z]{2,}\b", answer)
+    return {part.casefold() for part in parts if part.casefold() not in _NAME_EXCLUDE}
+
+
+def _date_parts(answer: str) -> tuple[set[str], set[str], set[str]]:
+    normalized = answer.casefold()
+    words = set(re.findall(r"[a-z]+", normalized))
+    days = {
+        number for number in re.findall(r"\b\d{1,2}\b", normalized) if 1 <= int(number) <= _MAX_DAY
+    }
+    return set(_YEAR.findall(normalized)), words & _MONTHS, days
+
+
+def lenient_reuse_ok(first: list[str], second: list[str]) -> bool:
+    """Broad alias-overlap proxy; intentionally separate from strict matching."""
+    if reuse_ok(first, second):
+        return True
+    for left in first:
+        left_tokens = set(normalize_answer(left).split())
+        left_years, left_months, left_days = _date_parts(left)
+        left_names = _name_parts(left)
+        for right in second:
+            right_tokens = set(normalize_answer(right).split())
+            if (
+                left_tokens
+                and right_tokens
+                and (left_tokens <= right_tokens or right_tokens <= left_tokens)
+            ):
+                return True
+            right_years, right_months, right_days = _date_parts(right)
+            if left_years & right_years:
+                return True
+            if (
+                left_months & right_months
+                and left_days & right_days
+                and not (left_years and right_years and not left_years & right_years)
+            ):
+                return True
+            right_names = _name_parts(right)
+            if (
+                len(left_names) >= _MIN_NAME_PARTS
+                and len(right_names) >= _MIN_NAME_PARTS
+                and left_names & right_names
+            ):
+                return True
+    return False
 
 
 def load_pairs(path: Path) -> tuple[list[Pair], dict[str, frozenset[str]]]:

@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 
 from evaluation.datasets import Pair, group_split
-from evaluation.gold_answers import load_pairs, normalize_answer, reuse_ok
+from evaluation.gold_answers import lenient_reuse_ok, load_pairs, normalize_answer, reuse_ok
 from evaluation.gold_model import _antonym_mismatch, _question_component_ids
 from scripts.build_answer_pairs import (
     Question,
@@ -26,6 +26,14 @@ def test_alias_normalization_and_mismatch():
     assert normalize_answer("The U.S.A.") == "usa"
     assert reuse_ok(["The United States", "USA"], ["usa"])
     assert not reuse_ok(["12"], ["13"])
+
+
+def test_lenient_label_is_separate_and_can_overmatch() -> None:
+    assert not reuse_ok(["1969"], ["July 1969"])
+    assert lenient_reuse_ok(["1969"], ["July 1969"])
+    assert lenient_reuse_ok(["Wilt Chamberlain"], ["Chamberlain, Wilt"])
+    assert lenient_reuse_ok(["John Smith"], ["James Smith"])
+    assert not lenient_reuse_ok(["1969"], ["1970"])
     assert not reuse_ok([], ["Paris"])
     assert _antonym_mismatch("before 2020", "after 2020") == 1.0
     assert _antonym_mismatch("Paris in France", "France includes Paris") == 0.0

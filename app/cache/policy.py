@@ -11,7 +11,7 @@ import math
 from dataclasses import dataclass, field
 
 from .threshold import adaptive_threshold
-from .verifier import NliVerifier, default_verifier, verify_equivalent
+from .verifier import NliVerifier, VerifierMode, default_verifier, verify_equivalent
 
 _COSINE_ROUNDING_TOLERANCE = 0.0001
 
@@ -22,6 +22,7 @@ class CachePolicy:
     use_verifier: bool = True  # Sub-contribution B (Tier-1 structural checks)
     use_nli: bool = False  # Sub-contribution B (Tier-2 NLI equivalence)
     static_threshold: float = 0.72  # used only when use_adaptive is False
+    verifier_mode: VerifierMode = "token_diff"
 
     verifier: NliVerifier = field(default_factory=default_verifier, repr=False)
 
@@ -47,7 +48,11 @@ class CachePolicy:
             return False, "below_threshold", t
         if self.use_verifier:
             ok, reason = verify_equivalent(
-                query, candidate_query, use_nli=self.use_nli, verifier=self.verifier
+                query,
+                candidate_query,
+                use_nli=self.use_nli,
+                verifier=self.verifier,
+                mode=self.verifier_mode,
             )
             if not ok:
                 return False, f"verify_rejected:{reason}", t

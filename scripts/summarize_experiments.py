@@ -39,7 +39,13 @@ def _integer_range(rows: list[dict[str, str]], key: str) -> str:
     return f"{low:,}" if low == high else f"{low:,}–{high:,}"
 
 
-def main() -> None:  # noqa: PLR0915 - one report assembled from source CSVs
+def _ci_envelope(rows: list[dict[str, str]], low_key: str, high_key: str) -> str:
+    lows = [float(row[low_key]) for row in rows if row[low_key]]
+    highs = [float(row[high_key]) for row in rows if row[high_key]]
+    return f"[{min(lows):.1%}, {max(highs):.1%}]" if lows and highs else "undefined"
+
+
+def main() -> None:  # noqa: PLR0912, PLR0915 - one report from source CSVs
     learned = _rows("learned_transfer.csv")
     stream = _rows("stream_proxy.csv")
     risk = _rows("risk_synthetic.csv")
@@ -51,6 +57,8 @@ def main() -> None:  # noqa: PLR0915 - one report assembled from source CSVs
     gold_risk_candidates = _rows("gold_risk_candidates.csv")
     gold_risk_minimum = _rows("gold_risk_min_samples.csv")
     false_accepts = _rows("false_accepts.csv")
+    verifier_rows = _rows("gold_verifier_policies.csv")
+    label_rule_rows = _rows("gold_label_rules.csv")
     gold_stream = _rows("gold_stream.csv")
     mining = _rows("gold_mining.csv")[0]
     split_sizes = _rows("gold_split_sizes.csv")
@@ -183,6 +191,9 @@ def main() -> None:  # noqa: PLR0915 - one report assembled from source CSVs
             f"held-out test size: {_integer_range(split_sizes, 'test_n')}.",
             "Seeds reuse the same mined corpus, so their means are not",
             "independent-sample confidence intervals.",
+            "The table immediately below preserves the historical",
+            "capitalization-based adaptive verifier. The strict/lenient rerun",
+            "with the new token-diff verifier appears later in this section.",
             "",
             "| Policy | Mean coverage | Mean gold-answer mismatch among served |",
             "|---|---:|---:|",
@@ -212,6 +223,72 @@ def main() -> None:  # noqa: PLR0915 - one report assembled from source CSVs
                     else "does not survive the larger mined set."
                 )
             ),
+            "",
+            "### Lowercase-safe verifier and two gold-label rules",
+            "",
+            "The strict rule requires normalized alias equality. The lenient rule",
+            "also accepts token-subset answers, overlapping years or month/day",
+            "parts, and overlapping capitalized name parts. Both are deterministic",
+            "NQ reference-answer proxies, and the lenient rule may mark two",
+            "different people or events as matching. Each rule separately trains",
+            "and tunes its learned/static policies on grouped train/validation",
+            "splits; the held-out test questions are unchanged.",
+            "",
+            "| Rule | Corpus pairs | Positive labels |",
+            "|---|---:|---:|",
+        ]
+    )
+    for rule in ("strict", "lenient"):
+        row = next(row for row in label_rule_rows if row["label_rule"] == rule)
+        lines.append(f"| {rule} | {int(row['corpus_n']):,} | {int(row['corpus_positive']):,} |")
+    lines.extend(
+        [
+            "",
+            "The new verifier aligns lowercase question tokens, checks inferred",
+            "answer type and role words, and rejects changed content tokens.",
+            "`adaptive_capitalization` retains the old entity heuristic as the",
+            "ablation. It can miss lowercase entity changes. The new check may",
+            "reject valid paraphrases, so coverage matters alongside mismatch.",
+            "",
+            "The following intervals are **envelopes of five separate 95%",
+            "question-group bootstrap CIs**, not CIs for the five-seed means.",
+            "All per-seed estimates, denominators and CIs are in",
+            "`gold_verifier_policies.csv`; rules are never pooled.",
+        ]
+    )
+    for rule in ("strict", "lenient"):
+        lines.extend(
+            [
+                "",
+                f"#### {rule.capitalize()} gold-answer match",
+                "",
+                (
+                    "| Policy | Mean coverage | Coverage CI envelope | "
+                    "Mean mismatch among served | Mismatch CI envelope |"
+                ),
+                "|---|---:|---:|---:|---:|",
+            ]
+        )
+        for system in (
+            "static_val_f1",
+            "adaptive_capitalization",
+            "adaptive_token_diff",
+            "learned_with_nli",
+            "learned_without_nli",
+        ):
+            rows = [
+                row
+                for row in verifier_rows
+                if row["label_rule"] == rule and row["system"] == system
+            ]
+            lines.append(
+                f"| {system} | {_mean(rows, 'coverage')} | "
+                f"{_ci_envelope(rows, 'coverage_ci_low', 'coverage_ci_high')} | "
+                f"{_mean(rows, 'false_hit_among_served')} | "
+                f"{_ci_envelope(rows, 'risk_ci_low', 'risk_ci_high')} |"
+            )
+    lines.extend(
+        [
             "",
             "### False-accept sample (diagnostic, not a rate estimate)",
             "",

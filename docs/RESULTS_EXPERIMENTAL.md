@@ -90,6 +90,9 @@ Calibration size per seed: 2,896;
 held-out test size: 1,738–1,739.
 Seeds reuse the same mined corpus, so their means are not
 independent-sample confidence intervals.
+The table immediately below preserves the historical
+capitalization-based adaptive verifier. The strict/lenient rerun
+with the new token-diff verifier appears later in this section.
 
 | Policy | Mean coverage | Mean gold-answer mismatch among served |
 |---|---:|---:|
@@ -101,6 +104,52 @@ independent-sample confidence intervals.
 The learned model uses lexical, entity/number, polarity, and bidirectional
 local NLI entailment features. No model is deployed from this study.
 The earlier near-zero mismatch does not survive the larger mined set.
+
+### Lowercase-safe verifier and two gold-label rules
+
+The strict rule requires normalized alias equality. The lenient rule
+also accepts token-subset answers, overlapping years or month/day
+parts, and overlapping capitalized name parts. Both are deterministic
+NQ reference-answer proxies, and the lenient rule may mark two
+different people or events as matching. Each rule separately trains
+and tunes its learned/static policies on grouped train/validation
+splits; the held-out test questions are unchanged.
+
+| Rule | Corpus pairs | Positive labels |
+|---|---:|---:|
+| strict | 11,586 | 6,000 |
+| lenient | 11,586 | 6,535 |
+
+The new verifier aligns lowercase question tokens, checks inferred
+answer type and role words, and rejects changed content tokens.
+`adaptive_capitalization` retains the old entity heuristic as the
+ablation. It can miss lowercase entity changes. The new check may
+reject valid paraphrases, so coverage matters alongside mismatch.
+
+The following intervals are **envelopes of five separate 95%
+question-group bootstrap CIs**, not CIs for the five-seed means.
+All per-seed estimates, denominators and CIs are in
+`gold_verifier_policies.csv`; rules are never pooled.
+
+#### Strict gold-answer match
+
+| Policy | Mean coverage | Coverage CI envelope | Mean mismatch among served | Mismatch CI envelope |
+|---|---:|---:|---:|---:|
+| static_val_f1 | 62.6% | [56.0%, 69.6%] | 18.2% | [14.1%, 24.3%] |
+| adaptive_capitalization | 68.8% | [64.1%, 72.7%] | 28.3% | [23.4%, 33.9%] |
+| adaptive_token_diff | 6.4% | [5.0%, 8.4%] | 3.6% | [0.0%, 9.3%] |
+| learned_with_nli | 58.5% | [49.9%, 66.1%] | 15.3% | [11.2%, 20.6%] |
+| learned_without_nli | 62.7% | [56.6%, 68.2%] | 18.1% | [13.3%, 22.4%] |
+
+#### Lenient gold-answer match
+
+| Policy | Mean coverage | Coverage CI envelope | Mean mismatch among served | Mismatch CI envelope |
+|---|---:|---:|---:|---:|
+| static_val_f1 | 63.5% | [56.0%, 70.5%] | 15.3% | [11.0%, 21.3%] |
+| adaptive_capitalization | 68.8% | [64.1%, 72.7%] | 25.0% | [20.7%, 29.9%] |
+| adaptive_token_diff | 6.4% | [5.0%, 8.4%] | 2.3% | [0.0%, 7.5%] |
+| learned_with_nli | 60.6% | [51.5%, 67.1%] | 13.0% | [6.9%, 18.7%] |
+| learned_without_nli | 63.1% | [55.7%, 70.0%] | 15.1% | [10.9%, 20.8%] |
 
 ### False-accept sample (diagnostic, not a rate estimate)
 

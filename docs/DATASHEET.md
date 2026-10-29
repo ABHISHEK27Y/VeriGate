@@ -81,6 +81,14 @@ be reported separately from QQP/PAWS
 query-pair labels and from any model-judged labels. It supports a stronger
 *factoid proxy* than query paraphrase, not a production answer-error claim.
 
+The verifier study adds a second, **lenient** answer rule without changing the
+mined strict labels. It counts a pair as matching when any alias has a token
+subset, shared four-digit year, shared month/day, or shared capitalized name
+part. This can recover formatting and granularity variants, but can also call
+different people with the same surname or events in the same year equivalent.
+The strict and lenient results are stored under different `label_type` values
+and never pooled. Neither is a human judgment of serving a generated answer.
+
 TriviaQA was assessed but is not included in this pass. Its
 [official release](https://nlp.cs.washington.edu/triviaqa/) bundles questions
 with a large evidence corpus and a different answer schema; it needs a

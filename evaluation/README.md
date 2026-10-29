@@ -32,6 +32,7 @@ With the pinned local MiniLM and NLI models available, run:
 ```powershell
 python -m scripts.build_answer_pairs --download
 python -m evaluation.gold_model
+python -m evaluation.gold_verifier_study
 python scripts/summarize_experiments.py
 ```
 
@@ -53,6 +54,14 @@ policy. The file contains both questions, both gold answer sets, negative type,
 score, threshold and a heuristic answer-granularity flag. It is an error sample,
 not a prevalence estimate; alias mismatches may include genuinely equivalent
 answers written differently.
+`gold_verifier_study` writes `gold_label_rules.csv` and
+`gold_verifier_policies.csv` with separate strict and lenient oracle-label
+evaluations over five grouped splits. It compares the original capitalization
+check, the lowercase-safe answer-type/token-diff verifier, static threshold,
+and both learned logistic policies. Each seed has question-group bootstrap
+intervals for coverage and mismatch. The lenient rule can overmatch shared
+years or name parts, while token-diff can reject valid paraphrases; neither
+provides reviewed generated-answer correctness.
 The old small-corpus risk, replay, and judge results remain labelled as
 historical in the report. `python -m evaluation.gold_model --risk` regenerates
 the expanded-corpus risk and false-accept files; the judge rerun and volatility
