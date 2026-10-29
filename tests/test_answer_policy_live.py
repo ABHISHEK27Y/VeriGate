@@ -6,6 +6,7 @@ import pytest
 
 from app.cache.answer_policy import AnswerPolicy
 from app.cache.policy import CachePolicy
+from app.config import _runtime
 from app.embeddings import Embedder
 from app.identity import tenant_id
 from evaluation.datasets import Pair
@@ -70,11 +71,18 @@ def test_live_gateway_and_replay_accept_same_valid_answer(client) -> None:
     cache = client.app.state.semantic_cache
     cache._policy.verifier = ControlledVerifier()
     tenant = tenant_id("demo-key-123")
-    client.portal.call(cache.store, stored, answer, tenant)
+    async def seed() -> None:
+        token = _runtime.set(client.app.state.config)
+        try:
+            await cache.store(stored, answer, tenant)
+        finally:
+            _runtime.reset(token)
+
+    client.portal.call(seed)
     live = client.post(
         "/v1/chat", json={"prompt": incoming}, headers={"x-api-key": "demo-key-123"}
     ).json()
-    assert live["cache"] == "HIT"
+    assert live["cache"] == "HIT", live
     assert live["answer"] == answer
     assert live["note"].startswith("answer_accept:")
 

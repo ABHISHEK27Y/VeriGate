@@ -38,7 +38,7 @@ exists; it does not imply a validated research result or production readiness.
 | Token-diff trades coverage for lower proxy mismatch | [`gold_verifier_policies.csv`](../evaluation/results/gold_verifier_policies.csv) | Historical symmetric NQ labels and overlapping seeds. |
 | Risk selection is reject-all | [`gold_risk.csv`](../evaluation/results/gold_risk.csv) | IID formal guarantee does not apply to correlated mined pairs. |
 | Answer-aware policy trade-off | [immutable run](../evaluation/runs/answer_aware_20261029_v6/manifest.json), [generated report](RESULTS_ANSWER_AWARE.md) | Local authored facts, lexical hash retrieval, warm decision latency only; no production error guarantee. |
-| Test suite status | [`checks.json`](../evaluation/results/checks.json), [CI run 40899654141](https://github.com/ABHISHEK27Y/VeriGate/actions/runs/40899654141) | 104 tests passed and 4 live-integration tests skipped at `a5536ef`; this verifies code checks, not answer quality. |
+| Test suite status | [`checks.json`](../evaluation/results/checks.json) | Local full suite after answer-policy integration: 103 passed and 4 skipped (107 collected). Exact-revision CI must confirm the final commit; tests do not establish answer quality. |
 
 The old broad roadmap and [archived results](archive/RESULTS_LOG_HISTORICAL.md)
 are historical context. Keep `CACHE_MATCH_MODE=exact` and the shadow sampler off by default.
