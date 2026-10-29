@@ -8,11 +8,11 @@ colorTo: gray
 sdk: docker
 app_port: 8000
 pinned: false
-short_description: Adaptive self-verifying semantic cache for LLM gateways
+short_description: LLM gateway with an experimental semantic answer cache
 ---
 
 # VeriGate
-### An Adaptive, Self-Verifying Semantic Cache for Scalable LLM Gateways
+### An LLM gateway with a measured, experimental semantic answer cache
 
 > Major Project — B.Tech CSE (AI/DS), IIIT Manipur
 > Author: Abhishek Yadav
@@ -39,14 +39,16 @@ verification; VeriGate needs a careful comparison before claiming a research adv
 **VeriGate** is an LLM gateway (a proxy in front of LLM providers) with an experimental
 semantic answer cache. It computes a query-dependent threshold, applies structural
 checks to a retrieved question, and bypasses queries detected as time-sensitive.
-These checks **do not verify the cached answer itself**. The current hand-curated
-query-pair experiment is a smoke test, not a measurement of real-world answer reuse,
-cost savings, or a novel algorithm. The research goal is to evaluate answer-aware,
-cost-aware selective verification on held-out data.
+These checks **do not verify the cached answer itself**. The hand-curated
+query-pair experiment is a smoke test. A newer five-seed evaluation on QQP,
+PAWS, and STS-B measures held-out **pair-label proxies** and finds substantial
+false pair acceptance; see [generated results](docs/RESULTS_V2.md). Neither
+experiment measures real-world answer reuse or cost savings. The research goal
+remains answer-aware, cost-aware selective verification.
 
 The gateway also provides supporting system features — token-bucket rate
 limiting, multi-provider routing with failover, streaming, and full cost/latency
-observability — so the novel cache is demonstrated inside a real, deployable system.
+observability — so the experimental cache is demonstrated inside a real gateway.
 
 ---
 
@@ -64,7 +66,7 @@ observability — so the novel cache is demonstrated inside a real, deployable s
 | **Problem** | How much valid answer reuse is possible while controlling incorrect reuse and verification cost? |
 | **Already built** | An exact default, opt-in heuristic semantic policy, query-only verifier, volatility rules, and gateway infrastructure. |
 | **Research direction** | Test answer-aware selective verification against fairly tuned baselines. Adaptive thresholds and verification already exist in prior work; see [related work](docs/RESEARCH_BASELINE.md). |
-| **Current evidence** | A small, hand-curated candidate-pair smoke fixture. It has no answer labels, held-out split, or workload replay. See [evaluation](evaluation/README.md). |
+| **Current evidence** | A small smoke fixture plus five-seed, held-out public pair-label proxy results. There are no cached-answer labels or workload replay yet. See [evaluation](evaluation/README.md). |
 
 ---
 

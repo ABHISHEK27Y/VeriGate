@@ -7,7 +7,8 @@ and [architecture](ARCHITECTURE_PRODUCTION.md). The [audit](audit/AUDIT_REPORT.m
 records historical findings and their remediation; its old open counts are not the
 current release status.
 
-The [evaluation harness](../evaluation/README.md) describes the current smoke fixture.
+The [evaluation harness](../evaluation/README.md) describes the smoke fixture and the
+[generated pair-label results](RESULTS_V2.md) show the newer held-out proxy evaluation.
 The [results log](RESULTS_LOG.md), [older evaluation plan](EVALUATION_PLAN.md), and
 [earlier novelty proposal](NOVEL_CONTRIBUTION.md) contain historical hypotheses and
 illustrative measurements. They are retained for provenance, not final evidence.

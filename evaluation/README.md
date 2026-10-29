@@ -1,4 +1,26 @@
-# Evaluation: current smoke fixture
+# Evaluation: pair-level evidence and its limits
+
+The newer pipeline loads QQP, PAWS-Wiki labeled-final, and STS-B into gitignored
+`data/`, then makes query-group-separated train/validation/calibration/test splits.
+`make reproduce` runs five fixed seeds, tunes the static baseline on validation
+only, writes per-split metrics and grouped-bootstrap intervals to
+`evaluation/results/v2_pair_metrics.csv`, and generates
+[`docs/RESULTS_V2.md`](../docs/RESULTS_V2.md). First run:
+
+```powershell
+python scripts/download_evaluation_data.py qqp stsb paws
+make reproduce
+```
+
+`make reproduce-fast` uses only the historical smoke fixture and overwrites the
+same generated outputs; do not confuse that output with the public-source run.
+The new pipeline still evaluates **given query pairs**, with density set to zero.
+It does not evaluate candidate retrieval or a filling cache, and none of the
+source labels establishes that a particular cached answer is reusable. See
+[`docs/DATASHEET.md`](../docs/DATASHEET.md) and
+[`docs/PHASE_STATUS.md`](../docs/PHASE_STATUS.md) for the remaining work.
+
+## Historical smoke evaluator
 
 From the repository root, using the locked development environment:
 

@@ -1,3 +1,8 @@
+> **Current evidence:** The historical figures below are not the held-out evaluation.
+> Read the [generated public pair-label results](RESULTS_V2.md) and
+> [phase status](PHASE_STATUS.md) before citing VeriGate. The pair labels still
+> do not establish cached-answer correctness.
+
 > Current behavior and release requirements: [Production configuration](PRODUCTION_CONFIGURATION.md). Historical experiment/checklist claims below are not a deployment approval.
 
 > **Research revalidation in progress:** the historical tables below used a query-pair
