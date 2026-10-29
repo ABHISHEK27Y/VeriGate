@@ -1,7 +1,7 @@
 # VeriGate, zero se system samajhne tak
 
 > **Aapka learning notebook · Beginner → builder → reviewer**
-> Is guide ko pehle padhiye; phir [production audit report](../AUDIT_REPORT.md) padhiye. Yahaan goal commands yaad karna nahi, har request aur har design decision ka *reason* samajhna hai.
+> Is guide ko pehle padhiye; phir [production audit report](audit/AUDIT_REPORT.md) padhiye. Yahaan goal commands yaad karna nahi, har request aur har design decision ka *reason* samajhna hai.
 
 **Project ka ek-sentence version:** VeriGate ek **LLM gateway** hai. Aapki app ka question pehle VeriGate ke paas aata hai; VeriGate authentication, traffic control, cache decision, provider routing aur monitoring sambhal kar answer deta hai.
 
@@ -225,7 +225,7 @@ similarity(q, cached) = normalized_vector(q) · normalized_vector(cached)
 
 **Tier-2 NLI** optional hai (`VERIFIER_NLI=false` default). Pair ko *dono directions* mein entailment check karta hai. Model unavailable ho toh semantic reuse reject hota hai. NLI bhi statistical model hai, guarantee nahi. False HIT ka practical impact samajhiye: wrong cached answer confident-looking hota hai aur provider ko call bhi nahi jaati, isliye bug silently repeat ho sakta hai.
 
-> **Small benchmark, limited conclusion:** Recorded local evaluation mein Tier-1 ne 15 positive pairs mein 5 hits aur 15 negative pairs mein 0 observed hits diye; NLI ne 15 positive pairs mein 3 hits aur 15 negative pairs mein 0 observed hits diye. “0/15” ka matlab universal zero false hits nahi. Dataset expand, domain-specific edge cases aur confidence intervals chahiye. [Audit evidence](../AUDIT_REPORT.md), [evaluation harness](../evaluation/run.py).
+> **Small benchmark, limited conclusion:** Recorded local evaluation mein Tier-1 ne 15 positive pairs mein 5 hits aur 15 negative pairs mein 0 observed hits diye; NLI ne 15 positive pairs mein 3 hits aur 15 negative pairs mein 0 observed hits diye. “0/15” ka matlab universal zero false hits nahi. Dataset expand, domain-specific edge cases aur confidence intervals chahiye. [Audit evidence](audit/AUDIT_REPORT.md), [evaluation harness](../evaluation/run.py).
 
 ---
 
@@ -285,7 +285,7 @@ Production validation [config.py](../app/config.py) mein checks lagata hai: shar
 
 ## Chapter 11 — “Pehle kya tha?” se “ab kya hai?” tak
 
-Project **audit se pehle already bana hua tha**: gateway, semantic research idea, FastAPI endpoints, Redis/fakeredis, embeddings, verifier, provider integrations, demos, evaluation aur documentation maujood the. Audit ne *poora product zero se nahi banaya*. Usne existing behavior ko adversarially check kiya, specific defects reproduce kiye, aur release-oriented hardening ki. [Proposal](PROJECT_PROPOSAL.md) intent batata hai; [audit report](../AUDIT_REPORT.md) evidence/changes batata hai.
+Project **audit se pehle already bana hua tha**: gateway, semantic research idea, FastAPI endpoints, Redis/fakeredis, embeddings, verifier, provider integrations, demos, evaluation aur documentation maujood the. Audit ne *poora product zero se nahi banaya*. Usne existing behavior ko adversarially check kiya, specific defects reproduce kiye, aur release-oriented hardening ki. [Proposal](PROJECT_PROPOSAL.md) intent batata hai; [audit report](audit/AUDIT_REPORT.md) evidence/changes batata hai.
 
 | Area | Audit se pehle problem/assumption | Ab code mein kya badla, aur kyon |
 |---|---|---|
@@ -419,6 +419,6 @@ Har lab ka rule: pehle **prediction** likhiye, phir source kholiye, phir local r
 9. Green CI aur production-ready deployment mein kya gap hai?
 10. Audit report ke original FAIL section aur later remediation update ko saath kaise padhoge?
 
-**Next reading order:** is guide ke labs → [current architecture](ARCHITECTURE_PRODUCTION.md) → [production configuration](PRODUCTION_CONFIGURATION.md) → [audit report](../AUDIT_REPORT.md). Audit par aap ek-ek finding ko source, test aur remaining deployment requirement se map kar paayenge. Uske baad hum exact main revision se step-by-step staging aur production plan banayenge.
+**Next reading order:** is guide ke labs → [current architecture](ARCHITECTURE_PRODUCTION.md) → [production configuration](PRODUCTION_CONFIGURATION.md) → [audit report](audit/AUDIT_REPORT.md). Audit par aap ek-ek finding ko source, test aur remaining deployment requirement se map kar paayenge. Uske baad hum exact main revision se step-by-step staging aur production plan banayenge.
 
 > **Final habit:** Har change ke liye teen sawaal likhiye—“Behavior kya badla?”, “Evidence kya hai?”, “Kaunsi limitation abhi bhi hai?” Yehi engineering understanding hai.

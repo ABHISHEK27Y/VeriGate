@@ -1,5 +1,9 @@
 # Novel Contribution — Deep Dive
 
+> Historical design proposal, not a validated novelty claim. Adaptive thresholds and
+> verification predate VeriGate; see [verified related work](RESEARCH_BASELINE.md).
+> The current query-only verifier does not verify stored-answer correctness.
+
 ## The Adaptive, Self-Verifying Semantic Cache
 
 This is the heart of the major project — the part that is genuinely *yours* and that you

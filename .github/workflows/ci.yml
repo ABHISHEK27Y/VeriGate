@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, 'codex/**']
   pull_request:
     branches: [main, master]
 
@@ -30,11 +30,11 @@ jobs:
 
       - name: Run Ruff (format check)
         run: |
-          ruff format --check app/ tests/ evaluation/
+          ruff format --check app/ tests/ evaluation/ scripts/
 
       - name: Run MyPy (type check)
         run: |
-          mypy app/
+          mypy app/ evaluation/ scripts/
 
   test:
     name: Tests
@@ -55,11 +55,17 @@ jobs:
 
       - name: Run tests
         run: |
-          python -m pytest tests/ -v --tb=short
+          python -m pytest tests/ -v --tb=short --junitxml=evaluation/results/tests.xml
+          python scripts/record_test_summary.py
 
       - name: Run evaluation (accuracy)
         run: |
           python -m evaluation.run
+
+      - name: Verify generated report tables
+        run: |
+          python scripts/export_report_tables.py
+          git diff --exit-code -- evaluation/results/checks.json report/generated/
 
       - name: Upload evaluation results
         uses: actions/upload-artifact@v4

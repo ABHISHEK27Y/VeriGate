@@ -5,10 +5,12 @@
 
 # --- Python ---
 .venv/
+.venv*/
 venv/
 __pycache__/
 *.pyc
 .pytest_cache/
+evaluation/results/tests.xml
 audit/tmp/
 .coverage
 build/
@@ -20,6 +22,7 @@ dist/
 *.bin
 *.safetensors
 models/
+data/
 
 # --- OS / editor cruft ---
 .DS_Store

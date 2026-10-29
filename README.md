@@ -22,7 +22,7 @@ short_description: Adaptive self-verifying semantic cache for LLM gateways
 The gateway defaults to exact-prompt cache matching. Set `CACHE_MATCH_MODE=semantic` only
 for workloads where approximate reuse is acceptable; NLI does not guarantee correctness.
 See [production configuration](docs/PRODUCTION_CONFIGURATION.md) and the
-[audit report](AUDIT_REPORT.md) for validation status and release blockers.
+[audit report](docs/audit/AUDIT_REPORT.md) for historical findings and release blockers.
 New to the stack? Start with the chapter-by-chapter
 [VeriGate learning guide](docs/VERIGATE_LEARNING_GUIDE.md) before reading the audit.
 
@@ -31,31 +31,40 @@ New to the stack? Start with the chapter-by-chapter
 Companies putting Large Language Models (LLMs) into production pay for every single
 API call and suffer from high latency. A common fix is a **semantic cache** — if a new
 question is "close enough" to a past one, return the stored answer instead of paying
-for a new LLM call. But existing semantic caches use a **single fixed similarity
-threshold**, which causes **false cache hits** (returning the *wrong* stored answer for
-a look-alike question, e.g. "capital of Austria" vs "capital of Australia").
+for a new LLM call. A similarity score alone can cause **false cache hits** (returning
+the *wrong* stored answer for a look-alike question, e.g. "capital of Austria" vs
+"capital of Australia"). Published systems already explore adaptive thresholds and
+verification; VeriGate needs a careful comparison before claiming a research advance.
 
-**VeriGate** is an experimental **LLM Gateway** (a smart proxy in front of LLM
-providers) whose core novel contribution is an **adaptive, self-verifying semantic
-cache**: it decides *how strict* to be per query, *verifies* a cached answer actually
-fits before returning it, and *refuses to cache* time-sensitive queries. We evaluate it
-against a fixed-threshold baseline and show it reduces wrong answers while keeping most
-of the cost savings.
+**VeriGate** is an LLM gateway (a proxy in front of LLM providers) with an experimental
+semantic answer cache. It computes a query-dependent threshold, applies structural
+checks to a retrieved question, and bypasses queries detected as time-sensitive.
+These checks **do not verify the cached answer itself**. The current hand-curated
+query-pair experiment is a smoke test, not a measurement of real-world answer reuse,
+cost savings, or a novel algorithm. The research goal is to evaluate answer-aware,
+cost-aware selective verification on held-out data.
 
-The gateway also provides the surrounding production features — token-bucket rate
+The gateway also provides supporting system features — token-bucket rate
 limiting, multi-provider routing with failover, streaming, and full cost/latency
 observability — so the novel cache is demonstrated inside a real, deployable system.
 
 ---
 
-## The academic story (gap → method → proof)
+## Matching modes
+
+| Mode | Behaviour | What it establishes | Main limitation |
+|---|---|---|---|
+| `exact` (default) | Reuses only an identical prompt within a compatible tenant/model/policy namespace | No approximate-match error | A cached upstream answer can still be stale or wrong |
+| `semantic` (opt-in) | Retrieves a nearby question, applies a threshold and optional structural/NLI checks | Can reuse paraphrases in demonstrations | Similar questions and cached answers may still be incompatible; no formal correctness guarantee |
+
+## The academic question
 
 | | |
 |---|---|
-| **Existing systems** | GPTCache, Portkey, LiteLLM, Cloudflare AI Gateway use semantic caching with a *static* similarity threshold. |
-| **The gap** | A static threshold trades savings against correctness badly: loose → false hits (wrong answers); strict → low savings. It also blindly caches time-sensitive queries. |
-| **Our contribution** | (1) **Adaptive thresholding** per query, (2) a lightweight **verification** step that rejects false hits, (3) **staleness detection** to skip un-cacheable queries. |
-| **The proof** | On a purpose-built benchmark of query pairs, VeriGate achieves a better **hit-rate vs. false-hit-rate** trade-off than the static baseline, at comparable cost savings and latency. |
+| **Problem** | How much valid answer reuse is possible while controlling incorrect reuse and verification cost? |
+| **Already built** | An exact default, opt-in heuristic semantic policy, query-only verifier, volatility rules, and gateway infrastructure. |
+| **Research direction** | Test answer-aware selective verification against fairly tuned baselines. Adaptive thresholds and verification already exist in prior work; see [related work](docs/RESEARCH_BASELINE.md). |
+| **Current evidence** | A small, hand-curated candidate-pair smoke fixture. It has no answer labels, held-out split, or workload replay. See [evaluation](evaluation/README.md). |
 
 ---
 
@@ -90,12 +99,14 @@ observability (Prometheus/Grafana) · Docker · cloud deployment · applied LLM 
 
 ## Status
 
-🚧 Working system + first results. Built: streaming gateway, Redis rate limiting, the
-adaptive/self-verifying/staleness-aware semantic cache (real MiniLM embeddings), metrics,
-tests (12 passing), and an **evaluation harness** with the trade-off + ablation figures
+🚧 Working prototype + smoke results. Built: streaming gateway, Redis rate limiting, the
+opt-in adaptive/structural/staleness-aware semantic cache (real MiniLM embeddings), metrics,
+an automated test suite ([generated local counts](evaluation/results/checks.json):
+60 passed, 4 skipped), and an **evaluation harness** with candidate-pair figures
 (`evaluation/`). See [`QUICKSTART.md`](QUICKSTART.md) to run it and
 [`docs/IMPLEMENTATION_ROADMAP.md`](docs/IMPLEMENTATION_ROADMAP.md) for what's next.
 
-**Headline result:** VeriGate served **0 wrong answers (100% precision)** vs. the
-baseline's 46.7% false-hit rate on the benchmark; its trade-off curve dominates the
-baseline's. Run `python -m evaluation.run` to reproduce.
+**Evidence limit:** The current CSV reports positive-pair recall and negative-pair
+acceptance on a small development fixture. Those numbers are not workload hit rate,
+monetary savings, or a general error bound. Run `python -m evaluation.run` to reproduce
+the fixture, then `python scripts/export_report_tables.py` to regenerate the report table.

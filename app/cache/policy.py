@@ -7,10 +7,13 @@ what produces the ablation study (baseline vs +adaptive vs +verifier vs full).
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 
 from .threshold import adaptive_threshold
 from .verifier import NliVerifier, default_verifier, verify_equivalent
+
+_COSINE_ROUNDING_TOLERANCE = 0.0001
 
 
 @dataclass
@@ -31,7 +34,15 @@ class CachePolicy:
         self, query: str, candidate_query: str, sim: float, density: float = 0.0
     ) -> tuple[bool, str, float]:
         """Return (is_hit, reason, threshold_used) for a candidate nearest match."""
+        # A malformed vector score must never turn into a cache hit. In particular,
+        # NaN < threshold is False, so the old comparison accepted NaN candidates.
+        if not math.isfinite(sim) or abs(sim) > 1.0 + _COSINE_ROUNDING_TOLERANCE:
+            return False, "invalid_similarity", self.threshold(query)
+        if not math.isfinite(density) or not 0.0 <= density <= 1.0:
+            return False, "invalid_density", self.threshold(query)
         t = self.threshold(query, density)
+        if not math.isfinite(t) or not 0.0 <= t <= 1.0:
+            return False, "invalid_threshold", t
         if sim < t:
             return False, "below_threshold", t
         if self.use_verifier:

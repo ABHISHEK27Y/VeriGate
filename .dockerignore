@@ -1,5 +1,10 @@
 .venv/
+.venv*/
 venv/
+.cache/
+models/
+data/
+report/
 .env
 __pycache__/
 *.pyc

@@ -8,6 +8,7 @@ evaluation/results/ :  metrics.csv, tradeoff.png (the money graph), ablation.png
 
 from __future__ import annotations
 
+import argparse
 import csv
 import os
 from dataclasses import dataclass
@@ -46,23 +47,37 @@ def pair_is_hit(policy: CachePolicy, stored_q: str, new_q: str) -> bool:
     return hit
 
 
+def pair_metrics(tp: int, fp: int, positive_count: int, negative_count: int) -> dict:
+    """Describe candidate-pair decisions; these are not workload hit or savings rates."""
+    if positive_count <= 0 or negative_count <= 0:
+        raise ValueError("Both classes must contain examples")
+    if not 0 <= tp <= positive_count or not 0 <= fp <= negative_count:
+        raise ValueError("Accepted counts must lie within their class sizes")
+    accepted = tp + fp
+    fn = positive_count - tp
+    return {
+        "positive_recall": tp / positive_count,
+        "negative_false_accept_rate": fp / negative_count,
+        "acceptance_rate": accepted / (positive_count + negative_count),
+        "false_reuse_fraction": fp / accepted if accepted else None,
+        "precision": tp / accepted if accepted else None,
+        "f1": 2 * tp / (2 * tp + fp + fn) if (2 * tp + fp + fn) else 0.0,
+        "true_accepts": tp,
+        "false_accepts": fp,
+        "accepted": accepted,
+        "positive_count": positive_count,
+        "negative_count": negative_count,
+    }
+
+
 def evaluate(policy: CachePolicy) -> dict:
     tp = sum(pair_is_hit(policy, a, b) for a, b in benchmark.POSITIVES)
     fp = sum(pair_is_hit(policy, a, b) for a, b in benchmark.NEGATIVES)
-    p_count, n_count = len(benchmark.POSITIVES), len(benchmark.NEGATIVES)
-    fn = p_count - tp
-    hit_rate = tp / p_count
-    false_hit_rate = fp / n_count
-    precision = tp / (tp + fp) if (tp + fp) else 1.0
-    f1 = 2 * tp / (2 * tp + fp + fn) if (2 * tp + fp + fn) else 0.0
-    return {
-        "hit_rate": hit_rate,
-        "false_hit_rate": false_hit_rate,
-        "precision": precision,
-        "f1": f1,
-        "true_hits": tp,
-        "false_hits": fp,
-    }
+    metrics = pair_metrics(tp, fp, len(benchmark.POSITIVES), len(benchmark.NEGATIVES))
+    metrics["model_status"] = (
+        "unavailable" if policy.use_nli and policy.verifier.unavailable else "available"
+    )
+    return metrics
 
 
 def false_hits_by_group(policy: CachePolicy) -> dict[str, str]:
@@ -92,23 +107,29 @@ SYSTEMS = {
         use_adaptive=False, use_verifier=True, static_threshold=0.72
     ),
     "VeriGate (Tier-1)": CachePolicy(use_adaptive=True, use_verifier=True),
-    "VeriGate (Tier-1+2 NLI)": CachePolicy(use_adaptive=True, use_verifier=True, use_nli=True),
 }
 
 
 def _print_ablation_table() -> list[dict]:
     """Print ablation table and return rows for CSV."""
     rows = []
-    print(f"{'System':<26}{'hit-rate':>10}{'false-hit':>11}{'precision':>11}{'F1':>7}")
+    print(f"{'System':<26}{'pos recall':>11}{'neg accept':>12}{'precision':>11}{'F1':>7}")
     print("-" * 65)
     for name, pol in SYSTEMS.items():
         m = evaluate(pol)
         rows.append({"system": name, **m})
+        precision_text = f"{m['precision'] * 100:.1f}%" if m["precision"] is not None else "N/A"
+        if m["model_status"] == "unavailable":
+            precision_text = "N/A"
         print(
-            f"{name:<26}{m['hit_rate'] * 100:>9.1f}%{m['false_hit_rate'] * 100:>10.1f}%"
-            f"{m['precision'] * 100:>10.1f}%{m['f1']:>7.2f}"
+            f"{name:<26}{m['positive_recall'] * 100:>10.1f}%"
+            f"{m['negative_false_accept_rate'] * 100:>11.1f}%"
+            f"{precision_text:>11}"
+            f"{m['f1']:>7.2f}"
         )
     print()
+    if any(row["model_status"] == "unavailable" for row in rows):
+        print("NLI model unavailable: that row is a fail-closed run, not an NLI quality result.\n")
     return rows
 
 
@@ -140,13 +161,20 @@ def _write_metrics_csv(rows: list[dict]) -> None:
             f,
             fieldnames=[
                 "system",
-                "hit_rate",
-                "false_hit_rate",
+                "positive_recall",
+                "negative_false_accept_rate",
+                "acceptance_rate",
+                "false_reuse_fraction",
                 "precision",
                 "f1",
-                "true_hits",
-                "false_hits",
+                "true_accepts",
+                "false_accepts",
+                "accepted",
+                "positive_count",
+                "negative_count",
+                "model_status",
             ],
+            lineterminator="\n",
         )
         w.writeheader()
         w.writerows(rows)
@@ -165,7 +193,7 @@ class _TradeoffData:
     full: dict
 
 
-def _compute_sweep_curves() -> _TradeoffData:
+def _compute_sweep_curves(*, with_nli: bool = False) -> _TradeoffData:
     """Compute sweep curves for tradeoff plot."""
     sweep_t = [round(0.45 + 0.025 * i, 3) for i in range(21)]  # 0.45 .. 0.95
 
@@ -181,11 +209,12 @@ def _compute_sweep_curves() -> _TradeoffData:
             )
             for t in sweep_t
         ]
-        return [p["false_hit_rate"] for p in pts], [p["hit_rate"] for p in pts]
+        return [p["negative_false_accept_rate"] for p in pts], [p["positive_recall"] for p in pts]
 
     base_fx, base_hy = sweep(False)
     veri_fx, veri_hy = sweep(True)
-    nli_fx, nli_hy = sweep(True, use_nli=True)
+    nli_ready = with_nli and not SYSTEMS["VeriGate (Tier-1+2 NLI)"].verifier.unavailable
+    nli_fx, nli_hy = sweep(True, use_nli=True) if nli_ready else ([], [])
     full = evaluate(SYSTEMS["VeriGate (Tier-1)"])  # recommended default config
     return _TradeoffData(
         base_fx=base_fx,
@@ -217,17 +246,18 @@ def _plot_tradeoff(data: _TradeoffData) -> None:
         alpha=0.8,
         label="+ Tier-1 verifier (T swept)",
     )
-    plt.plot(
-        data.nli_fx,
-        data.nli_hy,
-        "^-",
-        color="#9467bd",
-        alpha=0.8,
-        label="+ Tier-1 & Tier-2 NLI (T swept)",
-    )
+    if data.nli_fx:
+        plt.plot(
+            data.nli_fx,
+            data.nli_hy,
+            "^-",
+            color="#9467bd",
+            alpha=0.8,
+            label="+ Tier-1 & Tier-2 NLI (T swept)",
+        )
     plt.scatter(
-        data.full["false_hit_rate"],
-        data.full["hit_rate"],
+        data.full["negative_false_accept_rate"],
+        data.full["positive_recall"],
         marker="*",
         s=320,
         color="#2ca02c",
@@ -236,12 +266,9 @@ def _plot_tradeoff(data: _TradeoffData) -> None:
         linewidths=0.6,
         label="VeriGate default (adaptive + Tier-1)",
     )
-    plt.xlabel("False-hit rate  (wrong answers served)   ← lower is better")
-    plt.ylabel("Hit rate  (cost savings)   ↑ higher is better")
-    plt.title(
-        "A correctness–savings spectrum\n"
-        "each verifier tier pushes the curve left (fewer wrong answers)"
-    )
+    plt.xlabel("False acceptance among negative pairs   ← lower is better")
+    plt.ylabel("Recall among positive pairs   ↑ higher is better")
+    plt.title("Candidate-pair acceptance on the small smoke fixture")
     plt.legend(fontsize=8, loc="lower right")
     plt.grid(True, alpha=0.3)
     plt.xlim(left=-0.02)
@@ -253,12 +280,12 @@ def _plot_tradeoff(data: _TradeoffData) -> None:
 def _plot_ablation() -> None:
     """Generate ablation bar chart."""
     names = list(SYSTEMS)
-    hits = [evaluate(SYSTEMS[n])["hit_rate"] * 100 for n in names]
-    falses = [evaluate(SYSTEMS[n])["false_hit_rate"] * 100 for n in names]
+    hits = [evaluate(SYSTEMS[n])["positive_recall"] * 100 for n in names]
+    falses = [evaluate(SYSTEMS[n])["negative_false_accept_rate"] * 100 for n in names]
     x = range(len(names))
     plt.figure(figsize=(8, 5))
-    plt.bar([i - 0.2 for i in x], hits, width=0.4, label="hit-rate %", color="#2ca02c")
-    plt.bar([i + 0.2 for i in x], falses, width=0.4, label="false-hit %", color="#d62728")
+    plt.bar([i - 0.2 for i in x], hits, width=0.4, label="positive recall %", color="#2ca02c")
+    plt.bar([i + 0.2 for i in x], falses, width=0.4, label="negative acceptance %", color="#d62728")
     plt.xticks(list(x), names, rotation=15, ha="right", fontsize=8)
     plt.ylabel("percent")
     plt.title("Ablation: contribution of each component")
@@ -269,6 +296,13 @@ def _plot_ablation() -> None:
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--with-nli", action="store_true", help="run optional local NLI model")
+    args = parser.parse_args()
+    if args.with_nli:
+        SYSTEMS["VeriGate (Tier-1+2 NLI)"] = CachePolicy(
+            use_adaptive=True, use_verifier=True, use_nli=True
+        )
     print(
         f"\nBenchmark: {len(benchmark.POSITIVES)} positive pairs, "
         f"{len(benchmark.NEGATIVES)} hard-negative pairs, "
@@ -289,7 +323,7 @@ def main() -> None:
 
     # 3) the money graph: sweep the threshold for BOTH systems (verifier off vs on)
     #    so the two trade-off curves can be compared directly.
-    tradeoff_data = _compute_sweep_curves()
+    tradeoff_data = _compute_sweep_curves(with_nli=args.with_nli)
     _plot_tradeoff(tradeoff_data)
 
     # 4) ablation bar chart

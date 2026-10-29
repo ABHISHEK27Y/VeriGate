@@ -85,4 +85,5 @@ A local unit-test pass is not production approval. Require a fresh green CI run 
 reviewed revision, a current Docker build, Redis Stack tests including schema validation,
 and independent-worker cache/rate/breaker checks. Run load tests at the intended tenant
 count, cache size and provider latency; the research benchmark does not establish an SLO.
-The current evidence and any unresolved checks are listed in `AUDIT_REPORT.md`.
+Historical findings and unresolved release checks are listed in the
+[audit report](audit/AUDIT_REPORT.md); verify the current revision separately.

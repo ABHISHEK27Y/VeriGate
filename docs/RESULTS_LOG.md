@@ -1,5 +1,13 @@
 > Current behavior and release requirements: [Production configuration](PRODUCTION_CONFIGURATION.md). Historical experiment/checklist claims below are not a deployment approval.
 
+> **Research revalidation in progress:** the historical tables below used a query-pair
+> development fixture, not answer-aware held-out labels. Its “hit rate” was positive-pair
+> recall; its “false-hit rate” was acceptance among negative pairs. The current generated
+> source is [`evaluation/results/metrics.csv`](../evaluation/results/metrics.csv), with
+> explicit denominators. Do not quote the historical headline as a production error rate,
+> monetary saving, statistical guarantee, or novel result. The LaTeX report now imports
+> tables generated from CSV rather than copying these old figures.
+
 # Results Log (living document)
 
 Phase-by-phase record of everything built and measured, kept so it drops straight into the

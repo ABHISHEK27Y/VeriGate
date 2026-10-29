@@ -10,7 +10,7 @@ The motivation for this project is the observation that the quality of a semanti
 
 Existing systems treat this as a configuration value the operator must guess, and they trust the similarity score alone to decide a hit. There is therefore a clear gap between the \emph{detection} of a nearby cached answer and the \emph{verification} that the answer is actually correct for the new question. Bridging that gap --- making the cache adapt its strictness per query and \emph{verify} a candidate hit before serving it --- is the intellectual core of this work. A cache that can decline to answer when it is not sure, rather than confidently serving a look-alike, represents a safer and more deployable design.
 
-A second, complementary motivation is cost. Even with a perfect cache, the queries that \emph{do} reach the LLM need not all go to the most expensive model. Many are trivial and can be answered correctly by a small, cheap model; only the genuinely hard queries warrant an expensive one. A gateway that routes by query difficulty can cut spend substantially without sacrificing quality on the queries that matter.
+A second motivation is cost. Queries that reach an LLM may be routed to different providers, but a complexity heuristic alone does not establish answer quality or measured monetary savings. Those claims require provider-answer evaluation and real pricing data.
 
 \section{Problem Definition}
 The core problem addressed in this project is that contemporary semantic caches for LLMs are \textbf{fixed-threshold and unverified}, which makes them unsafe: they trade correctness for savings in a way the operator cannot tune away. Specifically, the problem decomposes into the following sub-challenges:
@@ -25,15 +25,15 @@ The core problem addressed in this project is that contemporary semantic caches 
 \end{enumerate}
 
 \section{Project Objectives}
-To address the above, this project designs, implements, and evaluates \textbf{VeriGate}, a production-grade LLM Gateway. The main objectives are:
+To address the above, this project implements \textbf{VeriGate}, an LLM gateway prototype, and begins evaluating its cache decisions. The main objectives are:
 
 \begin{itemize}
     \item \textbf{Adaptive similarity threshold.} To raise or lower the effective threshold \emph{per query} based on the density of the query's neighbourhood in embedding space, so that ambiguous regions are treated more strictly than isolated ones (Section~\ref{sec:adaptive}).
-    \item \textbf{A self-verifying cache (the central contribution).} To interpose a two-tier verifier between a candidate hit and the served answer: a near-free Tier-1 structural check on numbers, negation, and named entities, and an optional Tier-2 Natural Language Inference (NLI) check for bidirectional entailment, so that a look-alike whose similarity is \emph{above} the threshold is still rejected (Section~\ref{sec:verifier}).
+    \item \textbf{A query-checking semantic cache.} To interpose structural checks and optional bidirectional question NLI between a candidate hit and the served answer. This checks question compatibility, not the correctness of the cached answer (Section~\ref{sec:verifier}).
     \item \textbf{Volatility detection.} To classify time-sensitive queries and bypass the cache for them, preventing stale answers (Section~\ref{sec:volatility}).
     \item \textbf{A sub-linear cache-hit path.} To replace the naive linear scan with a vectorised in-process index (and an optional distributed RediSearch/HNSW backend \cite{malkov2018hnsw, redis_stack}) so that the hit path stays an order of magnitude faster than an LLM call as the cache scales (Section~\ref{sec:index}).
     \item \textbf{A cost-aware model cascade (second contribution).} To score query complexity and route easy queries to a cheap model, escalating only hard ones to a strong model, cutting cost while preserving quality on hard queries \cite{chen2023frugalgpt} (Section~\ref{sec:cascade}).
-    \item \textbf{Production hardening.} To make the gateway safe to deploy: per-tenant cache isolation, per-key daily spend budgets, a provider circuit breaker, Prometheus/Grafana observability, and Docker packaging (Chapter~5).
+    \item \textbf{Operational safeguards.} Add per-tenant cache isolation, per-key daily request admission limits, a provider circuit breaker, Prometheus/Grafana observability, and Docker packaging (Chapter~5). Public deployment still needs separate validation.
 \end{itemize}
 
 \section{Scope of the Project}
@@ -42,7 +42,7 @@ VeriGate is scoped as a self-hostable HTTP gateway that sits in front of one or 
 The evaluation is conducted on a controlled, hand-curated benchmark of positive (equivalent) pairs, hard negatives grouped by trap type (entity swap, number swap, negation, related topic), volatile queries, and stable controls. This design deliberately isolates the \emph{mechanism} being studied; the \emph{relative} improvement of VeriGate over the fixed-threshold baseline is the result, and the absolute numbers are acknowledged to be dataset-dependent (Chapter~6). Large-scale learned routing and threshold classifiers, and a direct empirical study on a million-scale corpus, are identified as future work (Chapter~7). The gateway is deployed as a containerised web service and exposes an operator dashboard for interactive testing.
 
 \section{Project Timeline}
-The development of VeriGate followed an iterative, phase-based approach spanning eighteen numbered phases, from the foundational streaming gateway through the two novel contributions, production hardening, and evaluation. Figure~\ref{fig:gantt} summarises the timeline; each phase concluded with a checkpoint at which the automated test suite was required to remain green and every quantitative result was recorded in a living results log so that it would drop directly into this report.
+Development followed an iterative approach from gateway plumbing through cache experiments and operational hardening. Figure~\ref{fig:gantt} summarises the historical plan; Chapter~6 now separates recorded smoke measurements from untested research claims.
 
 \begin{figure}[H]
     \centering
@@ -120,4 +120,4 @@ The development of VeriGate followed an iterative, phase-based approach spanning
     \label{fig:gantt}
 \end{figure}
 
-The phased approach ensured that each novel component --- the adaptive threshold, the verifier, and the cascade --- was validated in isolation on the evaluation harness before being integrated behind the gateway's runtime configuration flags, so that the measured behaviour of the evaluation is identical to the shipped behaviour of the deployed service.
+The gateway and the pair evaluator share a \texttt{CachePolicy} decision function, but the pair evaluator does not reproduce retrieval, changing cache contents, or provider answers. It is therefore a limited check rather than an end-to-end validation of the live semantic mode.
