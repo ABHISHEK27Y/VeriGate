@@ -30,7 +30,7 @@ from .logging_config import LoggingMiddleware, configure_logging, get_logger
 from .metrics import (
     BUDGET_EXCEEDED,
     CACHE,
-    FALSE_HIT_REJECTED,
+    CANDIDATE_VERIFIER_REJECTED,
     LATENCY,
     RATE_LIMITED,
     REQUESTS,
@@ -285,7 +285,7 @@ async def chat(req: ChatRequest, request: Request, x_api_key: str | None = Heade
 
     # Track verifier rejections separately (the novelty's key metric)
     if result.reason and result.reason.startswith("verify_rejected"):
-        FALSE_HIT_REJECTED.inc()
+        CANDIDATE_VERIFIER_REJECTED.inc()
 
     await _check_budget(api_key, request)  # only miss/bypass reach a provider — hits are free
     provider_name, answer = await _generate_answer(prompt, request)
@@ -344,7 +344,7 @@ async def chat_stream(  # noqa: PLR0915
             yield "data: [DONE]\n\n"
             return
         if result.reason and result.reason.startswith("verify_rejected"):
-            FALSE_HIT_REJECTED.inc()
+            CANDIDATE_VERIFIER_REJECTED.inc()
         buf = []
         length = 0
         try:

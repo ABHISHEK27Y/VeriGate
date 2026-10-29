@@ -1,4 +1,4 @@
-"""Chronological pair-proxy cache replay with real nearest-neighbour density.
+"""Chronological cache replay with explicit answer text and exact-key lookup.
 
 Cross-pair answer relationships are not labelled by QQP/PAWS. Accepted cross-pair
 candidates are counted as *unknown*, never as correct or incorrect.
@@ -27,6 +27,7 @@ _DENSITY_WINDOW = 0.1  # matches the live in-process retrieval window
 @dataclass(slots=True)
 class _Entry:
     query: str
+    answer: str | None
     pair_index: int
     variant: str
     vector: np.ndarray
@@ -60,6 +61,7 @@ def replay(  # noqa: PLR0912, PLR0913, PLR0915 - chronological replay owns event
     tenants: int = 3,
     exact: bool = False,
     answer_aliases: dict[str, frozenset[str]] | None = None,
+    answers_by_query: dict[str, str] | None = None,
 ) -> ReplayResult:
     """Replay Zipf-popular intents, filling the cache only after each miss."""
     if not pairs or requests <= 0 or capacity <= 0 or ttl_steps <= 0 or tenants <= 0:
@@ -70,6 +72,8 @@ def replay(  # noqa: PLR0912, PLR0913, PLR0915 - chronological replay owns event
         for query in (pair.stored_query, pair.incoming_query)
     ):
         raise ValueError("Gold replay requires an alias set for every question")
+    if answer_aliases is not None and answers_by_query is None:
+        raise ValueError("Answer-labelled replay requires the actual stored answer for each query")
     rng = random.Random(seed)
     weights = [1 / (rank + 1) ** 1.1 for rank in range(len(pairs))]
     order = rng.choices(range(len(pairs)), weights=weights, k=requests)
@@ -85,12 +89,19 @@ def replay(  # noqa: PLR0912, PLR0913, PLR0915 - chronological replay owns event
         variant = "incoming" if index in seen else "stored"
         seen.add(index)
         query = pair.incoming_query if variant == "incoming" else pair.stored_query
-        vec = vectors[query]
+        vec = vectors[query] if not exact else None
         entries = cache[tenant]
         entries[:] = [entry for entry in entries if step - entry.written_at < ttl_steps]
         candidate = None
         density = 0.0
-        if entries:
+        if entries and exact:
+            candidate = next((entry for entry in entries if entry.query == query), None)
+            best_sim = 1.0 if candidate is not None else -1.0
+            if variant == "incoming" and any(entry.pair_index == index for entry in entries):
+                opportunities += 1
+                successes += candidate is not None and candidate.pair_index == index
+        elif entries:
+            assert vec is not None
             matrix = np.stack([entry.vector for entry in entries])
             sims = matrix @ vec
             best_index = int(np.argmax(sims))
@@ -104,17 +115,21 @@ def replay(  # noqa: PLR0912, PLR0913, PLR0915 - chronological replay owns event
             if variant == "incoming" and any(entry.pair_index == index for entry in entries):
                 opportunities += 1
                 successes += candidate.pair_index == index
-            if exact:
-                hit = query == candidate.query
-            else:
+        if candidate is not None:
+            hit = exact
+            if not exact:
                 hit, _, _ = policy.decide(query, candidate.query, best_sim, density)
             if hit:
                 candidate.last_used = step
                 if answer_aliases is not None:
-                    accepted_known += 1
-                    accepted_known_false += not bool(
-                        answer_aliases[candidate.query] & answer_aliases[query]
-                    )
+                    from evaluation.gold_answers import normalize_answer  # noqa: PLC0415
+
+                    actual = normalize_answer(candidate.answer or "")
+                    if actual:
+                        accepted_known += 1
+                        accepted_known_false += actual not in answer_aliases[query]
+                    else:
+                        accepted_unknown += 1
                 elif candidate.pair_index != index:
                     accepted_unknown += 1
                 else:
@@ -127,7 +142,9 @@ def replay(  # noqa: PLR0912, PLR0913, PLR0915 - chronological replay owns event
                         accepted_known_false += 1
                 continue
         upstream += 1
-        entries.append(_Entry(query, index, variant, vec, step, step))
+        answer = answers_by_query.get(query) if answers_by_query else pair.cached_answer
+        stored_vec = vectors[query]
+        entries.append(_Entry(query, answer, index, variant, stored_vec, step, step))
         if len(entries) > capacity:
             oldest_index = min(
                 range(len(entries)), key=lambda position: entries[position].last_used

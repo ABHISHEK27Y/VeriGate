@@ -118,6 +118,35 @@ _FUNCTION_WORDS = {
     "list",
     *_QUESTION_WORDS,
 }
+_MEANINGFUL_FUNCTION_WORDS = {
+    "is",
+    "are",
+    "was",
+    "were",
+    "will",
+    "would",
+    "can",
+    "could",
+    "has",
+    "had",
+    "before",
+    "after",
+    "from",
+    "to",
+    "by",
+    "for",
+    "my",
+    "your",
+    "his",
+    "her",
+    "their",
+    "all",
+    "only",
+    "each",
+    "any",
+    "first",
+    "last",
+}
 _ROLE_WORDS = {
     "directed",
     "wrote",
@@ -202,7 +231,10 @@ def _token_diff_reason(first: str, second: str) -> str | None:
     for tag, i1, i2, j1, j2 in SequenceMatcher(None, left, right, autojunk=False).get_opcodes():
         if tag == "equal":
             continue
-        changed = set(left[i1:i2] + right[j1:j2]) - _FUNCTION_WORDS
+        changed_tokens = set(left[i1:i2] + right[j1:j2])
+        if changed_tokens & _MEANINGFUL_FUNCTION_WORDS:
+            return "scope_or_tense_mismatch"
+        changed = changed_tokens - _FUNCTION_WORDS
         if changed & _ROLE_WORDS:
             return "role_mismatch"
         if changed:

@@ -8,9 +8,9 @@ from prometheus_client import CollectorRegistry, Counter, Histogram, generate_la
 
 REQUESTS = Counter("verigate_requests_total", "Total chat requests", ["outcome"])
 CACHE = Counter("verigate_cache_total", "Cache outcomes", ["result"])  # hit/miss/bypass
-FALSE_HIT_REJECTED = Counter(
-    "verigate_false_hit_rejected_total",
-    "Candidate hits rejected by the verifier",
+CANDIDATE_VERIFIER_REJECTED = Counter(
+    "verigate_candidate_verifier_rejected_total",
+    "Candidate cache matches rejected by the verifier; correctness is unlabelled",
 )
 RATE_LIMITED = Counter("verigate_rate_limited_total", "Requests rejected by rate limiter")
 BUDGET_EXCEEDED = Counter("verigate_budget_exceeded_total", "Requests rejected by admission budget")

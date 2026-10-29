@@ -106,7 +106,7 @@ def _tune(val: list[Pair], vectors: dict[str, np.ndarray]) -> float:
     return winner
 
 
-def _row(  # noqa: PLR0913 - an output row records all experiment identifiers
+def _row(  # noqa: PLR0913, PLR0917 - an output row records all experiment identifiers
     dataset: str,
     seed: int,
     name: str,

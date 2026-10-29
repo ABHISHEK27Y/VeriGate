@@ -9,7 +9,13 @@ import numpy as np
 import pytest
 
 from evaluation.datasets import Pair, group_split
-from evaluation.gold_answers import lenient_reuse_ok, load_pairs, normalize_answer, reuse_ok
+from evaluation.gold_answers import (
+    cached_answer_reference_match,
+    lenient_reuse_ok,
+    load_pairs,
+    normalize_answer,
+    reuse_ok,
+)
 from evaluation.gold_model import _antonym_mismatch, _question_component_ids
 from scripts.build_answer_pairs import (
     Question,
@@ -26,6 +32,10 @@ def test_alias_normalization_and_mismatch():
     assert normalize_answer("The U.S.A.") == "usa"
     assert reuse_ok(["The United States", "USA"], ["usa"])
     assert not reuse_ok(["12"], ["13"])
+    assert reuse_ok(["John Megna", "Brock Peters"], ["Brock Peters"])
+    assert not cached_answer_reference_match("John Megna", ["Brock Peters"])
+    assert not cached_answer_reference_match("John Smith", ["John Jones"])
+    assert not cached_answer_reference_match("1 January 2000", ["31 December 2000"])
 
 
 def test_lenient_label_is_separate_and_can_overmatch() -> None:
@@ -140,3 +150,23 @@ def test_structural_negative_categories_without_embedding_nearest_neighbours():
     kinds = {kind for _, _, _, kind in _negative_candidates(questions, vectors)}
     assert {"entity_span_swap", "attribute_swap", "number_swap"} <= kinds
     assert _entity_span_swap(rows[0][0], rows[1][0])
+
+
+def test_directional_loader_rejects_cast_list_false_positive(tmp_path) -> None:
+    path = tmp_path / "directional.tsv"
+    row = {
+        "source_id": "cast",
+        "stored_query": "who starred in to kill a mockingbird",
+        "incoming_query": "who played tom in to kill a mockingbird",
+        "cached_answer": "John Megna",
+        "stored_aliases": json.dumps(["John Megna", "Brock Peters"]),
+        "incoming_aliases": json.dumps(["Brock Peters"]),
+        "reuse_ok": "1",
+        "label_type": "cached_answer_reference_match",
+    }
+    with path.open("w", newline="", encoding="utf-8") as stream:
+        writer = csv.DictWriter(stream, fieldnames=row, delimiter="\t")
+        writer.writeheader()
+        writer.writerow(row)
+    with pytest.raises(ValueError, match="disagrees"):
+        load_pairs(path)

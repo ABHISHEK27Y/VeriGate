@@ -65,7 +65,9 @@ jobs:
       - name: Verify generated report tables
         run: |
           python scripts/export_report_tables.py
-          git diff --exit-code -- evaluation/results/checks.json report/generated/
+          python -m scripts.verify_evidence_bundle evidence-20261029-hash-v3
+          python -m scripts.export_directional_report evidence-20261029-hash-v3
+          git diff --exit-code -- evaluation/results/checks.json report/generated/ docs/RESULTS_DIRECTIONAL.md
 
       - name: Upload evaluation results
         uses: actions/upload-artifact@v4

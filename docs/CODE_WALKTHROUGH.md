@@ -183,15 +183,18 @@ and provides the interactive playground.
 
 ## 5. Likely viva questions → short answers
 
-- **What's novel? Doesn't GPTCache exist?** The *system* isn't novel; the *caching method* is:
-  adaptive per-query thresholding + a self-verifier + staleness detection, which eliminate the
-  false-hits static-threshold caches suffer. Proven: 0% false-hit vs 46.7% baseline.
+- **What's novel? Doesn't GPTCache exist?** GPTCache and later systems already explore
+  semantic caching and verification. VeriGate's proposed contribution is a fair,
+  answer-aware selective-verification study; it is not yet demonstrated. The old
+  0%/46.7% figure came from a tiny development fixture, not production answers.
 - **Semantic vs exact cache?** Exact matches identical text; semantic matches *meaning* (via
   embeddings), so paraphrases hit — but "close" can be wrong, which the verifier guards.
-- **How do you avoid serving a wrong answer?** Adaptive threshold rejects low-similarity; the
-  verifier rejects number/negation/entity mismatches and (Tier-2) non-entailing look-alikes.
-- **How does it scale?** Stateless replicas + shared Redis; in-process vector index for one node
-  (sub-ms), RediSearch/HNSW for millions across replicas.
+- **How do you avoid serving a wrong answer?** Exact matching is the default. Opt-in
+  semantic mode uses threshold and question checks to reduce some mismatches, but can
+  still serve a wrong or stale answer. No answer-correctness guarantee exists.
+- **How does it scale?** Stateless replicas can share Redis. The in-process vector
+  index is bounded per tenant; RediSearch offers another retrieval backend. Million-entry
+  recall and latency are not yet measured.
 - **Biggest security risk and fix?** Cross-tenant cache leakage; fixed by partitioning the cache
   per tenant (key + index namespace), verified by isolation tests.
 - **How is it evaluated?** A labelled benchmark of paraphrase pairs + hard negatives; measure

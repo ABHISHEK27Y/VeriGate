@@ -70,7 +70,7 @@ def _coverage_cutoff(scores: np.ndarray, desired: int) -> float:
     return float(np.sort(scores)[-desired])
 
 
-def _record(  # noqa: PLR0913 - output records experiment identifiers
+def _record(  # noqa: PLR0913, PLR0917 - output records experiment identifiers
     name: str,
     source: str,
     seed: int,

@@ -40,7 +40,7 @@ def millisecond(value: str) -> str:
     return f"{float(value):.2f}"
 
 
-def table(  # noqa: PLR0913 - each argument maps to one LaTeX table field
+def table(  # noqa: PLR0913, PLR0917 - each argument maps to one LaTeX table field
     name: str, caption: str, label: str, columns: str, header: list[str], body: list[list[str]]
 ) -> None:
     lines = [

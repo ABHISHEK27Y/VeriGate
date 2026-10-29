@@ -1,29 +1,41 @@
-# Research-build phase status
+# Evidence-first phase status
 
-The two project briefs define the following sequence. A phase is only complete when
-its evidence and checks exist; a working component is not a finished research claim.
+This file follows the 29 October 2026 completion brief. “Implemented” means code
+exists; it does not imply a validated research result or production readiness.
 
-| Phase | Required outcome | Current status |
+| Phase | State | Evidence and remaining gate |
 |---|---|---|
-| 0 — baseline and hygiene | Honest README/report, generated tables, green CI | Complete in the prior commit; current local checks remain green. |
-| 1 — dataset and protocol | Public sources, answer-aware reviewed labels, grouped splits, fair baselines, CIs, filling-cache replay | **Expanded factoid proxy and two label rules complete; independent answer review open.** The NQ-Open miner has 11,586 pairs and proposes number, attribute, entity-slot and lexical-plus-semantic negatives. Connected questions stay in grouped splits; 25% is reserved for calibration. The strict alias rule has 6,000 positives; the broader lenient rule has 6,535. They are evaluated separately and neither is human answer review. The old replay is a small-corpus result. The optional review queue is blank and contributes no evidence. Generated-answer labels and large-cache retrieval remain. |
-| 2 — learned accept policy | Trained/calibrated model, ablations, transfer and opt-in gateway use | **Lowercase-safe verifier and five-seed strict/lenient rerun complete; deployment open.** `adaptive_token_diff` checks answer type and changed role/content tokens without capitalization. The old capitalization check remains an ablation. Across the strict corpus, token-diff coverage averaged 6.4% and mismatch among served 3.6%; with lenient labels, coverage was 6.4% and mismatch 2.3%. These are far below the capitalization baseline's 68.8% coverage, so the lower observed mismatch carries a severe coverage loss. The hand-authored smoke fixture now accepts 0 of 30 pairs with Tier-1, an additional sign this rule is overly restrictive for paraphrases. Group-bootstrap CIs and all policy comparisons are in `gold_verifier_policies.csv`; the smoke result is in `metrics.csv`. The 100-per-policy false-accept audit remains strict-label evidence. The requested trained cross-encoder is item 3, still open. No trained gold model is wired into the gateway. |
-| 3 — risk control | Correct bound, artifact, held-out resampling and shift study | **Expanded-corpus item 2 complete as a negative result; deployment open.** The exact finite-grid bound selected reject-all at 1%, 2%, and 5% in all five grouped splits, giving zero held-out coverage. The best nonempty candidate had a 7.9% upper bound. Candidate diagnostics, selected outcomes, and zero-error sample minima are in `gold_risk_candidates.csv`, `gold_risk.csv`, and `gold_risk_min_samples.csv`. Correlated oracle labels prevent a formal production guarantee; a reviewed generated-answer risk study and a usable deployable artifact remain open. |
-| 4 — answer shadow checks and drift | Async fresh-answer checks, tenant controller, drift replay | **Partial.** The opt-in shadow sampler records cached question and answer plus a fresh answer. A pinned local triple judge exists, but failed gold validation and produced no model-judged rows: the review queue has blank answers and shadow is off. No reviewed outcome set, drift replay or active controller exists. No real-provider shadow calls were made. See `SHADOW_REVIEW.md`. |
-| 5 — volatility and TTL | Labelled volatility corpus, classifier and staleness/hit-rate study | Not started. Existing keyword rules remain. |
-| 6 — provider routing quality | Real cheap/strong answers and cost/quality frontier | Not started; requires authorized provider usage. Historical router cost ratios are illustrative. |
-| 7 — scale and report | 1M-entry benchmark where feasible, measured HNSW recall/latency, full report | **Partial.** The report now includes generated tables for the learned pair proxy, filling-cache replay and synthetic risk study, plus explicit threats to validity. The older 1k–10k backend comparison is separate engineering evidence; 1M-entry HNSW recall/latency and crossover remain unmeasured. |
+| 0 — checkpoint and claims | In progress | README, demo page, proposal, novelty and results index corrected. Exact-revision CI and generated report drift still require final verification. |
+| 1 — actual-answer labels | Partial | Historical 11,586 NQ rows audited: 124 of 6,000 old positives have concrete cached text absent from incoming references. Directional miner/loader and 350-row unreviewed local queue exist. Independent reviewer adjudication is absent. |
+| 2 — frozen protocol | Open | Existing grouped five-seed partitions are exploratory and their corpus was inspected during development. A fresh, independently reviewed lockbox has not been reserved or opened. |
+| 3 — selective policy | Open | The runtime has a heuristic threshold, token-diff and optional always-after-gates NLI. It has no measured ACCEPT/REJECT/VERIFY uncertainty routing. No model should be trained against unreviewed proxy labels as final truth. |
+| 4 — live/replay agreement | Partial | Replay now stores a concrete simulated answer and exact mode uses an exact string key; tests cover vector ties. Live semantic policy remains query-only and does not consume the stored answer or a trained artifact. |
+| 5 — immutable evidence | Partial | [One hash-vector replay bundle](RESULTS_DIRECTIONAL.md) has input/source hashes, run ID and a validator. Broad workload and provider latency profiles remain. No cloud monetary saving is measured. |
+| 6 — demo/report/learning | Partial | [Demo and viva guide](DEMO_AND_VIVA.md) includes ten slides, a timed script and learning exercises. A supported final selective-policy contribution and reviewed result remain. |
 
-The larger factoid corpus remains an oracle reference-answer proxy, with
-lexical entity-slot categories rather than verified entity annotations.
-It exposed substantial reference-answer alias mismatch in every tested policy.
-The false-accept audit highlights possible alias-label noise: some answer strings
-differ by granularity or formatting and require manual review before claiming
-they are truly wrong answers.
-The lenient rule is itself noisy: shared years or name parts can belong to
-different facts. Strict and lenient outcomes must remain separate.
-The judge and replay numbers currently refer to the previous small corpus;
-risk was rerun on the expanded corpus. None establishes the rate of incorrect
-generated cached answers.
-`CACHE_MATCH_MODE=exact` remains the default.
-No paid provider calls were made. Untracked `audit/` content was not modified.
+## Capability matrix
+
+| Capability | Classification | What can safely be said |
+|---|---|---|
+| Exact tenant-scoped cache, TTL/LRU, rate limit, provider failover, streaming | Implemented and tested locally | Useful gateway engineering; local mocks are not cloud quality evidence. |
+| Semantic nearest-query lookup and token-diff check | Implemented but unvalidated for answer correctness | Explicit opt-in, can both falsely accept and falsely reject. |
+| NLI question equivalence | Optional runtime feature | Pretrained model, question-only, no proven answer-level safety. |
+| NQ strict/lenient and learned studies | Offline historical proxies | Five overlapping splits, correlated reference rows; never pool with reviewed labels. |
+| Directional reference-string audit | Offline diagnostic | Detects 124 discrepancies requiring adjudication; not 124 proven wrong answers. |
+| Risk selector at 1%, 2%, 5% | Failed useful-coverage experiment | Reject-all in every reported expanded-corpus split; no deployed guarantee. |
+| Local FLAN-T5 judge | Failed validation | Do not use as truth or mix with reference labels. |
+| Human-reviewed answer correctness | Planned | Queue is blank; no evidence yet. |
+| Production monetary savings, global novelty | Unsubstantiated | Do not claim. |
+
+## Claim-to-evidence map
+
+| Claim | Evidence | Boundary |
+|---|---|---|
+| Default is exact | [`app/config.py`](../app/config.py), exact-mode tests | Does not prove an upstream answer is true or fresh. |
+| Specific-answer proxy mismatch exists | [`answer_label_audit.json`](../evaluation/results/answer_label_audit.json), local discrepancy TSV | String absence needs review; not an observed production error rate. |
+| Token-diff trades coverage for lower proxy mismatch | [`gold_verifier_policies.csv`](../evaluation/results/gold_verifier_policies.csv) | Historical symmetric NQ labels and overlapping seeds. |
+| Risk selection is reject-all | [`gold_risk.csv`](../evaluation/results/gold_risk.csv) | IID formal guarantee does not apply to correlated mined pairs. |
+| Test suite status | [`checks.json`](../evaluation/results/checks.json) | Counts apply to the recorded run/revision; see CI for final status. |
+
+The old broad roadmap and [archived results](archive/RESULTS_LOG_HISTORICAL.md)
+are historical context. Keep `CACHE_MATCH_MODE=exact` and the shadow sampler off by default.

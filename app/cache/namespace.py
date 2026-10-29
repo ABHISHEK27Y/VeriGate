@@ -5,6 +5,8 @@ import json
 
 from ..config import get_settings
 
+POLICY_VERSION = "token-diff-v2"
+
 
 def namespace() -> str:
     config = get_settings().model_dump()
@@ -33,5 +35,7 @@ def namespace() -> str:
         "cache_epoch",
     )
     payload = json.dumps({key: config[key] for key in fields}, sort_keys=True)
-    digest = hashlib.sha256(("schema-v3:" + payload).encode()).hexdigest()[:24]
+    digest = hashlib.sha256(("schema-v3:" + POLICY_VERSION + ":" + payload).encode()).hexdigest()[
+        :24
+    ]
     return f"cache:v3:{digest}"

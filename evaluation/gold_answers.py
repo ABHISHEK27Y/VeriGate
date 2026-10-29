@@ -46,8 +46,15 @@ def normalized_aliases(answers: list[str]) -> frozenset[str]:
 
 
 def reuse_ok(first: list[str], second: list[str]) -> bool:
+    """Historical symmetric alias-set proxy, not a specific-answer reuse label."""
     left, right = normalized_aliases(first), normalized_aliases(second)
     return bool(left and right and left.intersection(right))
+
+
+def cached_answer_reference_match(cached_answer: str, incoming_answers: list[str]) -> bool:
+    """Directional reference-string match; still not an independent correctness judgment."""
+    answer = normalize_answer(cached_answer)
+    return bool(answer and answer in normalized_aliases(incoming_answers))
 
 
 def _name_parts(answer: str) -> set[str]:
@@ -65,7 +72,7 @@ def _date_parts(answer: str) -> tuple[set[str], set[str], set[str]]:
 
 
 def lenient_reuse_ok(first: list[str], second: list[str]) -> bool:
-    """Broad alias-overlap proxy; intentionally separate from strict matching."""
+    """Historical overmatching sensitivity proxy; never use as ground truth."""
     if reuse_ok(first, second):
         return True
     for left in first:
@@ -118,7 +125,10 @@ def load_pairs(path: Path) -> tuple[list[Pair], dict[str, frozenset[str]]]:
         if not required.issubset(reader.fieldnames or []):
             raise ValueError(f"Gold pair file lacks columns: {sorted(required)}")
         for row in reader:
-            if row["label_type"] != "gold_answer_match" or row["reuse_ok"] not in {"0", "1"}:
+            if row["label_type"] not in {
+                "gold_answer_match",
+                "cached_answer_reference_match",
+            } or row["reuse_ok"] not in {"0", "1"}:
                 raise ValueError("Invalid gold-answer label")
             first, second = json.loads(row["stored_aliases"]), json.loads(row["incoming_aliases"])
             if not isinstance(first, list) or not isinstance(second, list):
@@ -130,7 +140,12 @@ def load_pairs(path: Path) -> tuple[list[Pair], dict[str, frozenset[str]]]:
                 or normalize_answer(row["cached_answer"]) not in first_set
             ):
                 raise ValueError("Gold-answer pairs require nonempty answers")
-            if (row["reuse_ok"] == "1") != bool(first_set & second_set):
+            expected = (
+                bool(first_set & second_set)
+                if row["label_type"] == "gold_answer_match"
+                else cached_answer_reference_match(row["cached_answer"], second)
+            )
+            if (row["reuse_ok"] == "1") != expected:
                 raise ValueError("Gold-answer match label disagrees with aliases")
             for query, values in (
                 (row["stored_query"], first_set),
@@ -148,7 +163,7 @@ def load_pairs(path: Path) -> tuple[list[Pair], dict[str, frozenset[str]]]:
                     source_id=row["source_id"],
                     cached_answer=row["cached_answer"],
                     answer_reusable=row["reuse_ok"] == "1",
-                    annotation_status="gold_answer_match",
+                    annotation_status=row["label_type"],
                 )
             )
     if not pairs:

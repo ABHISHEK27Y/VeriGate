@@ -64,6 +64,12 @@ def test_old_capitalization_check_remains_explicit_baseline() -> None:
     ) == (True, "ok")
 
 
+def test_tense_change_rejects_even_when_nouns_match() -> None:
+    assert verify_equivalent(
+        "who is the president of the club", "who was the president of the club"
+    ) == (False, "scope_or_tense_mismatch")
+
+
 def test_policy_wires_token_diff_as_semantic_default() -> None:
     new = CachePolicy().decide("capital of austria", "capital of australia", 0.99)
     old = CachePolicy(verifier_mode="capitalization").decide(

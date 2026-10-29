@@ -58,7 +58,36 @@ def test_gold_replay_labels_cross_pair_hits_instead_of_unknown() -> None:
         ttl_steps=100,
         tenants=1,
         answer_aliases=aliases,
+        answers_by_query={
+            "who is alpha": "alpha",
+            "tell me alpha": "alpha",
+            "who is beta": "beta",
+            "tell me beta": "beta",
+        },
     )
     assert result.accepted_unknown == 0
     assert result.accepted_known_false > 0
     assert result.accepted_known == result.requests - result.upstream_calls
+
+
+def test_exact_replay_ignores_vector_ties_and_uses_concrete_answer() -> None:
+    pairs = [
+        Pair("alpha", "alpha", True, "fixture", "1", cached_answer="wrong"),
+        Pair("beta", "beta", True, "fixture", "2", cached_answer="beta"),
+    ]
+    vectors = {query: np.array([1.0, 0.0], dtype=np.float32) for query in ("alpha", "beta")}
+    result = replay(
+        pairs,
+        vectors,
+        CachePolicy(),
+        requests=100,
+        seed=7,
+        capacity=10,
+        ttl_steps=100,
+        tenants=1,
+        exact=True,
+        answer_aliases={"alpha": frozenset({"alpha"}), "beta": frozenset({"beta"})},
+        answers_by_query={"alpha": "wrong", "beta": "beta"},
+    )
+    assert result.upstream_calls == len(pairs)
+    assert result.accepted_known_false > 0

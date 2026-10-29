@@ -22,7 +22,7 @@ import numpy as np
 
 from app.config import get_settings
 from app.embeddings import active_backend, tokenize
-from evaluation.gold_answers import normalized_aliases, reuse_ok
+from evaluation.gold_answers import cached_answer_reference_match, normalized_aliases, reuse_ok
 from evaluation.reproduce import ROOT, _batch_model
 
 SOURCE_URL = (
@@ -31,7 +31,7 @@ SOURCE_URL = (
 )
 DATA = ROOT / "data"
 SOURCE = DATA / "NQ-open.train.jsonl"
-OUTPUT = DATA / "gold_answer_pairs.tsv"
+OUTPUT = DATA / "answer_pairs_directional_newmine.tsv"
 SEED = 42
 MIN_SIMILARITY = 0.55
 MAX_QUESTIONS = 40_000
@@ -39,7 +39,7 @@ MAX_PAIRS = 12_000
 MIN_PAIRS = 10_000
 MIN_GROUP = 2
 MAX_GROUP = 4
-MINING_VERSION = "nq-structured-v2"
+MINING_VERSION = "nq-directional-v1"
 MIN_QUERY_TOKENS = 4
 MIN_SHARED_PREFIX = 2
 MIN_CONTEXT_PREFIX = 3
@@ -368,6 +368,8 @@ def _choose_pairs(
 
 
 def build(source: Path = SOURCE, output: Path = OUTPUT) -> dict[str, object]:
+    if output.exists():
+        raise FileExistsError(f"Preserving existing derived dataset: {output}")
     if active_backend() != "minilm":
         raise ValueError("Gold-answer mining requires the pinned MiniLM embedding backend")
     questions, groups = _sample(_source_questions(source), MAX_QUESTIONS)
@@ -399,6 +401,7 @@ def build(source: Path = SOURCE, output: Path = OUTPUT) -> dict[str, object]:
         writer.writeheader()
         for score, left, right, label, kind in selected:
             first, second = questions[left], questions[right]
+            concrete_match = cached_answer_reference_match(first.answers[0], list(second.answers))
             writer.writerow(
                 {
                     "source_id": f"nq:{first.source_id}:{second.source_id}",
@@ -407,11 +410,13 @@ def build(source: Path = SOURCE, output: Path = OUTPUT) -> dict[str, object]:
                     "cached_answer": first.answers[0],
                     "stored_aliases": json.dumps(first.answers, ensure_ascii=False),
                     "incoming_aliases": json.dumps(second.answers, ensure_ascii=False),
-                    "reuse_ok": int(label),
-                    "label_type": "gold_answer_match",
+                    "reuse_ok": int(concrete_match),
+                    "label_type": "cached_answer_reference_match",
                     "embedding_similarity": f"{score:.8f}",
-                    "hard_negative": int(not label),
-                    "negative_type": kind if not label else "",
+                    "hard_negative": int(not concrete_match),
+                    "negative_type": kind
+                    if not label
+                    else ("cached_text_absent" if not concrete_match else ""),
                 }
             )
     manifest: dict[str, object] = {
@@ -428,19 +433,38 @@ def build(source: Path = SOURCE, output: Path = OUTPUT) -> dict[str, object]:
         "positive_candidates": len(positive),
         "negative_candidates": len(negative),
         "selected_pairs": len(selected),
-        "selected_positive": sum(row[3] for row in selected),
-        "selected_negative": sum(not row[3] for row in selected),
+        "selected_positive": sum(
+            cached_answer_reference_match(
+                questions[row[1]].answers[0], list(questions[row[2]].answers)
+            )
+            for row in selected
+        ),
+        "selected_negative": sum(
+            not cached_answer_reference_match(
+                questions[row[1]].answers[0], list(questions[row[2]].answers)
+            )
+            for row in selected
+        ),
         "selected_hard_negative": sum(not row[3] for row in selected),
+        "selected_cached_text_absent": sum(
+            row[3]
+            and not cached_answer_reference_match(
+                questions[row[1]].answers[0], list(questions[row[2]].answers)
+            )
+            for row in selected
+        ),
         "selected_negative_types": {
             kind: sum(row[4] == kind for row in selected)
             for kind in ("attribute_swap", "number_swap", "entity_span_swap", "lexical_semantic")
         },
-        "label_type": "gold_answer_match",
+        "label_type": "cached_answer_reference_match",
+        "schema_version": "directional-pair-v1",
+        "construction": "The stored answer is fixed before incoming-query comparison.",
     }
     output.with_suffix(".provenance.json").write_text(
         json.dumps(manifest, indent=2) + "\n", encoding="utf-8", newline="\n"
     )
-    aggregate = ROOT / "evaluation" / "results" / "gold_mining.csv"
+    aggregate = ROOT / "evaluation" / "results" / "directional_mining.csv"
     aggregate.parent.mkdir(parents=True, exist_ok=True)
     row = {
         "mining_version": MINING_VERSION,
@@ -450,8 +474,8 @@ def build(source: Path = SOURCE, output: Path = OUTPUT) -> dict[str, object]:
         "positive_candidates": len(positive),
         "negative_candidates": len(negative),
         "selected_pairs": len(selected),
-        "selected_positive": sum(item[3] for item in selected),
-        "selected_negative": sum(not item[3] for item in selected),
+        "selected_positive": manifest["selected_positive"],
+        "selected_negative": manifest["selected_negative"],
         **{
             kind: sum(item[4] == kind for item in selected)
             for kind in ("attribute_swap", "number_swap", "entity_span_swap", "lexical_semantic")

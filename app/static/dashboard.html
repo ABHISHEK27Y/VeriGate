@@ -182,10 +182,10 @@ footer{border-top:1px solid var(--line);padding:34px 0 60px;color:var(--faint);f
 
 <header class="hero"><div class="wrap">
   <div class="eyebrow">B.Tech Major Project — LLM Gateway</div>
-  <h1>A semantic cache that verifies every hit <em>before it answers.</em></h1>
-  <p>VeriGate reuses answers for reworded questions to cut LLM cost and latency — but a two-tier
-     verifier rejects look-alike matches, so a query like “capital of Australia” never receives
-     the cached answer for “capital of Austria.”</p>
+  <h1>An LLM gateway with an <em>experimental answer cache.</em></h1>
+  <p>Exact-prompt reuse is the default. Opt-in semantic matching can reuse nearby questions,
+     but its query-only checks can accept a wrong answer or reject a valid paraphrase.
+     The playground below shows the configured mode and each request's decision reason.</p>
   <div class="actions">
     <a class="btn pri" href="#playground">Open playground</a>
     <a class="btn sec" href="#results">View results</a>
@@ -202,37 +202,33 @@ footer{border-top:1px solid var(--line);padding:34px 0 60px;color:var(--faint);f
       <p>Match strictness is computed per query from entities, numbers, length and neighbourhood
          density — not one global constant.</p></div>
     <div class="item"><div class="n">B</div><h3>Self-verifier</h3>
-      <p>Two tiers — structural checks (numbers, negation, entities) then NLI equivalence —
-         reject false hits similarity alone would accept.</p></div>
+      <p>Token-difference checks filter some changed numbers, roles, scope and tense.
+         Optional question-to-question NLI adds a model check; neither verifies the actual answer.</p></div>
     <div class="item"><div class="n">C</div><h3>Staleness detection</h3>
-      <p>Time-sensitive queries are detected and never cached, so a cached answer can’t go
-         stale.</p></div>
+      <p>A keyword rule bypasses some time-sensitive queries. Coverage is incomplete,
+         so other cached answers can become stale.</p></div>
   </div>
 </div></section>
 
 <div class="divider"></div>
 
 <section id="results"><div class="wrap reveal">
-  <div class="shead"><span class="no">02</span><h2>Measured results</h2></div>
+  <div class="shead"><span class="no">02</span><h2>Current evidence</h2></div>
   <div class="metrics">
-    <div class="m"><div class="num" data-to="0" data-suffix="%">0%</div>
-      <div class="lbl">false-hit rate<br><b>baseline: 46.7%</b></div></div>
-    <div class="m"><div class="num" data-to="100" data-suffix="%">100%</div>
-      <div class="lbl">cache precision<br><b>baseline: 46%</b></div></div>
-    <div class="m"><div class="num" data-to="1000" data-prefix="~" data-suffix="×">~1000×</div>
-      <div class="lbl">faster on a hit<br><b>Gemini 23s → 22ms</b></div></div>
-    <div class="m"><div class="num" data-to="7000" data-prefix="~" data-suffix="×">~7000×</div>
-      <div class="lbl">faster KNN lookup<br><b>293ms → 0.04ms</b></div></div>
+    <div class="m"><div class="num">Exact</div><div class="lbl">default matching mode</div></div>
+    <div class="m"><div class="num">NQ</div><div class="lbl">mined factoid pairs<br><b>historical reference proxy</b></div></div>
+    <div class="m"><div class="num">Review</div><div class="lbl">specific-answer discrepancies<br><b>unreviewed, counts in audit file</b></div></div>
+    <div class="m"><div class="num">0</div><div class="lbl">independently reviewed answer labels<br><b>quality claim pending</b></div></div>
   </div>
   <div class="cmp">
-    <div class="t">False-hit rate — wrong answers served (lower is better)</div>
-    <div class="cmprow"><div class="nm">Static baseline</div>
-      <div class="track"><i data-w="93" style="background:var(--block)"></i></div><div class="pct">46.7%</div></div>
-    <div class="cmprow"><div class="nm">VeriGate</div>
-      <div class="track"><i data-w="1.5" style="background:var(--accent)"></i></div><div class="pct">0.0%</div></div>
-    <div class="foot">Also verified: staleness detector 5/5 volatile caught · 12/12 tests ·
-      two vector backends (in-process NumPy + RediSearch/HNSW) · real Gemini integration ·
-      13 documented build phases.</div>
+    <div class="t">What the experiments establish</div>
+    <div class="foot">Five overlapping splits of a mined factoid-reference proxy show a
+      risk–coverage trade-off. The conservative token-diff verifier rejects many valid
+      paraphrases; risk selection chose reject-all at 1%, 2% and 5% targets. These
+      results do not measure generated-answer correctness or cloud cost savings.
+      See the repository's experimental results and dataset documentation for run IDs,
+      counts and limitations. The playground uses the configured provider; “mock” means
+      a deterministic local demo answer.</div>
   </div>
 </div></section>
 
@@ -313,7 +309,7 @@ const $=id=>document.getElementById(id);
 let s={total:0,hits:0,miss:0,bypass:0,block:0};
 const EX=[
   {t:"how do I reset my password",d:"MISS"},
-  {t:"what is the process to recover my account password",d:"→ HIT"},
+  {t:"what is the process to recover my account password",d:"paraphrase test"},
   {t:"what is the capital of Austria",d:"MISS"},
   {t:"what is the capital of Australia",d:"look-alike"},
   {t:"what is the weather today",d:"→ BYPASS"},
@@ -322,7 +318,7 @@ $("chips").innerHTML="";EX.forEach(e=>{const c=document.createElement("div");c.c
   c.innerHTML=`${e.t}<small>${e.d}</small>`;c.onclick=()=>{$("query").value=e.t;ask();};$("chips").appendChild(c);});
 
 async function health(){try{const r=await fetch("/health");if(!r.ok)throw new Error("Unavailable");const h=await r.json();
-  $("cfg").innerHTML=[["redis",h.redis],["vector index",h.vector_backend],["embeddings",h.embedding_backend],
+  $("cfg").innerHTML=[["matching",h.cache_match_mode],["redis",h.redis],["vector index",h.vector_backend],["embeddings",h.embedding_backend],
     ["provider",(h.providers||[]).join(", ")]].map(([k,v])=>`<div class="c"><div class="k">${k}</div><div class="v">${v}</div></div>`).join("");
   $("stat").textContent=h.vector_backend+" · "+(h.providers||[]).join(",");
 }catch(e){$("stat").textContent="offline";}}
