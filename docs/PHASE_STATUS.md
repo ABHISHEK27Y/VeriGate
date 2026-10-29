@@ -5,7 +5,7 @@ exists; it does not imply a validated research result or production readiness.
 
 | Phase | State | Evidence and remaining gate |
 |---|---|---|
-| 0 — checkpoint and claims | In progress | README, demo page, proposal, novelty and results index corrected. Exact-revision CI and generated report drift still require final verification. |
+| 0 — checkpoint and claims | Complete | README, demo page, proposal, novelty and results index corrected. At commit `a5536ef`, [CI run 40899654141](https://github.com/ABHISHEK27Y/VeriGate/actions/runs/40899654141) passed tests, Redis Stack tests, lint/typecheck, security audit, Docker build, and generated-report verification. Deploy Check was correctly skipped on the PR branch. |
 | 1 — actual-answer labels | Partial | Historical 11,586 NQ rows audited: 124 of 6,000 old positives have concrete cached text absent from incoming references. Directional miner/loader and 350-row unreviewed local queue exist. Independent reviewer adjudication is absent. |
 | 2 — frozen protocol | Open | Existing grouped five-seed partitions are exploratory and their corpus was inspected during development. A fresh, independently reviewed lockbox has not been reserved or opened. |
 | 3 — selective policy | Open | The runtime has a heuristic threshold, token-diff and optional always-after-gates NLI. It has no measured ACCEPT/REJECT/VERIFY uncertainty routing. No model should be trained against unreviewed proxy labels as final truth. |
@@ -35,7 +35,19 @@ exists; it does not imply a validated research result or production readiness.
 | Specific-answer proxy mismatch exists | [`answer_label_audit.json`](../evaluation/results/answer_label_audit.json), local discrepancy TSV | String absence needs review; not an observed production error rate. |
 | Token-diff trades coverage for lower proxy mismatch | [`gold_verifier_policies.csv`](../evaluation/results/gold_verifier_policies.csv) | Historical symmetric NQ labels and overlapping seeds. |
 | Risk selection is reject-all | [`gold_risk.csv`](../evaluation/results/gold_risk.csv) | IID formal guarantee does not apply to correlated mined pairs. |
-| Test suite status | [`checks.json`](../evaluation/results/checks.json) | Counts apply to the recorded run/revision; see CI for final status. |
+| Test suite status | [`checks.json`](../evaluation/results/checks.json), [CI run 40899654141](https://github.com/ABHISHEK27Y/VeriGate/actions/runs/40899654141) | 104 tests passed and 4 live-integration tests skipped at `a5536ef`; this verifies code checks, not answer quality. |
 
 The old broad roadmap and [archived results](archive/RESULTS_LOG_HISTORICAL.md)
 are historical context. Keep `CACHE_MATCH_MODE=exact` and the shadow sampler off by default.
+
+## Next evidence gate
+
+The local `data/answer_review_directional.tsv` contains 350 blank review decisions:
+200 deliberately selected diagnostic cases and 150 randomly selected cases. It is
+gitignored because it contains source question text. Two independent reviewers
+must judge whether the **recorded cached answer** can answer the incoming question,
+mark uncertainty when source context is insufficient, and resolve disagreements.
+Keep both original decisions and the resolution. Until then, Phases 1–6 cannot be
+reported as a completed answer-quality study or a production-ready selective
+policy. The protocol for the subsequent lockbox experiment is in
+[`EVIDENCE_PROTOCOL.md`](EVIDENCE_PROTOCOL.md).
