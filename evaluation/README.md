@@ -47,10 +47,16 @@ opinions should not be used as correctness evidence.
 
 The expanded miner records negative categories in `gold_mining.csv`, and the
 model experiment records grouped partition sizes in `gold_split_sizes.csv`.
+It also exports `false_accepts.csv`: a deterministic sample of 100 distinct
+held-out gold-answer-mismatch accepts per static, adaptive and local-NLI learned
+policy. The file contains both questions, both gold answer sets, negative type,
+score, threshold and a heuristic answer-granularity flag. It is an error sample,
+not a prevalence estimate; alias mismatches may include genuinely equivalent
+answers written differently.
 The old small-corpus risk, replay, and judge results remain labelled as
-historical in the report. The larger risk rerun is a separate step:
-`python -m evaluation.gold_model --risk` (item 2). The judge rerun and
-volatility study are subsequent steps, not part of this dataset/model pass.
+historical in the report. `python -m evaluation.gold_model --risk` regenerates
+the expanded-corpus risk and false-accept files; the judge rerun and volatility
+study remain separate future steps.
 
 ## Historical smoke evaluator
 

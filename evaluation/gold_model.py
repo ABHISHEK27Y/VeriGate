@@ -26,7 +26,7 @@ from app.cache.risk import binomial_upper, select_threshold
 from app.config import get_settings
 from app.embeddings import active_backend, cosine, tokenize
 from evaluation.datasets import Pair, group_split, paws
-from evaluation.gold_answers import load_pairs
+from evaluation.gold_answers import load_pairs, normalize_answer
 from evaluation.protocol import Decision, bootstrap_ci, metrics
 from evaluation.reproduce import ROOT, SEEDS, THRESHOLDS, _vector_cache
 
@@ -47,6 +47,8 @@ _ANTONYMS = (
 )
 NLI_FEATURE_NAMES = (*FEATURE_NAMES, "antonym_mismatch", "nli_forward", "nli_reverse")
 MODEL_NAMES = ("learned_with_nli", "learned_without_nli")
+ERROR_POLICIES = ("static_val_f1", "adaptive_tier1", "learned_with_nli")
+ERROR_SAMPLE_SIZE = 100
 
 
 def _antonym_mismatch(first: str, second: str) -> float:
@@ -215,10 +217,91 @@ def _predict(  # noqa: PLR0913 - trained components stay separate for the ablati
     return np.asarray(calibrator.predict(raw), dtype=np.float64)
 
 
+def _gold_metadata() -> dict[str, dict[str, Any]]:
+    with GOLD.open(newline="", encoding="utf-8") as stream:
+        rows = list(csv.DictReader(stream, delimiter="\t"))
+    if len(rows) != len({row["source_id"] for row in rows}):
+        raise ValueError("Gold source IDs must be unique for error analysis")
+    return {row["source_id"]: row for row in rows}
+
+
+def _granularity_difference(first: list[str], second: list[str]) -> bool:
+    """Flag strict token containment in any answer alias; this is only a heuristic."""
+    for left in first:
+        left_tokens = normalize_answer(left).split()
+        for right in second:
+            right_tokens = normalize_answer(right).split()
+            short, long = sorted((left_tokens, right_tokens), key=len)
+            if (
+                short
+                and len(short) < len(long)
+                and any(
+                    long[index : index + len(short)] == short
+                    for index in range(len(long) - len(short) + 1)
+                )
+            ):
+                return True
+    return False
+
+
+def _false_accepts(  # noqa: PLR0913 - decisions and provenance must remain aligned
+    pairs: list[Pair],
+    scores: np.ndarray,
+    threshold: float,
+    *,
+    seed: int,
+    policy: str,
+    metadata: dict[str, dict[str, Any]],
+) -> list[dict[str, Any]]:
+    output = []
+    for pair, score in zip(pairs, scores, strict=True):
+        if pair.answer_reusable is not False or score < threshold:
+            continue
+        source = metadata[pair.source_id]
+        stored = json.loads(source["stored_aliases"])
+        incoming = json.loads(source["incoming_aliases"])
+        output.append(
+            {
+                "policy": policy,
+                "seed": seed,
+                "source_id": pair.source_id,
+                "stored_query": pair.stored_query,
+                "incoming_query": pair.incoming_query,
+                "stored_gold_answers": source["stored_aliases"],
+                "incoming_gold_answers": source["incoming_aliases"],
+                "negative_category": source["negative_type"],
+                "policy_score": float(score),
+                "policy_threshold": threshold,
+                "granularity_difference_heuristic": int(_granularity_difference(stored, incoming)),
+                "label_type": "gold_answer_match",
+            }
+        )
+    return output
+
+
+def _sample_false_accepts(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    sampled = []
+    for index, policy in enumerate(ERROR_POLICIES):
+        candidates = [row for row in rows if row["policy"] == policy]
+        random.Random(10_000 + index).shuffle(candidates)
+        seen = set()
+        for row in candidates:
+            if row["source_id"] in seen:
+                continue
+            sampled.append(row)
+            seen.add(row["source_id"])
+            if len(seen) == ERROR_SAMPLE_SIZE:
+                break
+        if len(seen) != ERROR_SAMPLE_SIZE:
+            raise ValueError(f"Insufficient distinct false accepts for {policy}: {len(seen)}")
+    return sampled
+
+
 def run(*, include_risk: bool = False) -> None:  # noqa: PLR0912, PLR0915 - aligned split state
     if active_backend() != "minilm":
         raise ValueError("Gold model experiment requires pinned MiniLM embeddings")
     gold, _ = load_pairs(GOLD)
+    gold_metadata = _gold_metadata()
     paws_rows = paws(ROOT / "data" / "paws.tsv")
     random.Random(42).shuffle(paws_rows)
     paws_rows = paws_rows[:500]
@@ -229,6 +312,7 @@ def run(*, include_risk: bool = False) -> None:  # noqa: PLR0912, PLR0915 - alig
     transfer: list[dict[str, Any]] = []
     risk: list[dict[str, Any]] = []
     risk_candidates: list[dict[str, Any]] = []
+    error_candidates: list[dict[str, Any]] = []
     split_rows: list[dict[str, Any]] = []
     for seed in SEEDS:
         splits = group_split(gold, seed, fractions=GOLD_SPLIT_FRACTIONS)
@@ -264,6 +348,17 @@ def run(*, include_risk: bool = False) -> None:  # noqa: PLR0912, PLR0915 - alig
                     source=source,
                 )
             )
+            if source == "nq_open":
+                error_candidates.extend(
+                    _false_accepts(
+                        rows,
+                        matrix[:, 0],
+                        static_threshold,
+                        seed=seed,
+                        policy="static_val_f1",
+                        metadata=gold_metadata,
+                    )
+                )
             decisions = [
                 heuristic.decide(pair.incoming_query, pair.stored_query, float(matrix[i, 0]), 0.0)[
                     0
@@ -280,6 +375,17 @@ def run(*, include_risk: bool = False) -> None:  # noqa: PLR0912, PLR0915 - alig
                     source=source,
                 )
             )
+            if source == "nq_open":
+                error_candidates.extend(
+                    _false_accepts(
+                        rows,
+                        np.asarray(decisions, dtype=np.float64),
+                        0.5,
+                        seed=seed,
+                        policy="adaptive_tier1",
+                        metadata=gold_metadata,
+                    )
+                )
         for name in MODEL_NAMES:
             columns = slice(None) if name == "learned_with_nli" else slice(None, -2)
             scaler = StandardScaler().fit(x_train[:, columns])
@@ -295,16 +401,28 @@ def run(*, include_risk: bool = False) -> None:  # noqa: PLR0912, PLR0915 - alig
                 ("nq_open", test, x_test, records),
                 ("paws", paws_rows, paws_matrix, transfer),
             ):
+                scores = _predict(matrix, columns, scaler, model, calibrator)
                 destination.append(
                     _record(
                         rows,
-                        _predict(matrix, columns, scaler, model, calibrator),
+                        scores,
                         threshold,
                         seed=seed,
                         system=name,
                         source=source,
                     )
                 )
+                if source == "nq_open" and name == "learned_with_nli":
+                    error_candidates.extend(
+                        _false_accepts(
+                            rows,
+                            scores,
+                            threshold,
+                            seed=seed,
+                            policy=name,
+                            metadata=gold_metadata,
+                        )
+                    )
             if name != "learned_with_nli" or not include_risk:
                 continue
             calibration_scores = _predict(x_cal, columns, scaler, model, calibrator)
@@ -362,6 +480,7 @@ def run(*, include_risk: bool = False) -> None:  # noqa: PLR0912, PLR0915 - alig
     _write(RESULTS / "gold_model.csv", records)
     _write(RESULTS / "gold_paws_transfer.csv", transfer)
     _write(RESULTS / "gold_split_sizes.csv", split_rows)
+    _write(RESULTS / "false_accepts.csv", _sample_false_accepts(error_candidates))
     if include_risk:
         _write(RESULTS / "gold_risk.csv", risk)
         _write(RESULTS / "gold_risk_candidates.csv", risk_candidates)

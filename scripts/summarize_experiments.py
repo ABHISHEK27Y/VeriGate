@@ -50,6 +50,7 @@ def main() -> None:  # noqa: PLR0915 - one report assembled from source CSVs
     gold_risk = _rows("gold_risk.csv")
     gold_risk_candidates = _rows("gold_risk_candidates.csv")
     gold_risk_minimum = _rows("gold_risk_min_samples.csv")
+    false_accepts = _rows("false_accepts.csv")
     gold_stream = _rows("gold_stream.csv")
     mining = _rows("gold_mining.csv")[0]
     split_sizes = _rows("gold_split_sizes.csv")
@@ -211,6 +212,52 @@ def main() -> None:  # noqa: PLR0915 - one report assembled from source CSVs
                     else "does not survive the larger mined set."
                 )
             ),
+            "",
+            "### False-accept sample (diagnostic, not a rate estimate)",
+            "",
+            "`false_accepts.csv` contains 100 distinct held-out source pairs per",
+            "policy, sampled deterministically from false accepts across five seeds.",
+            "A pair may appear under multiple policies; this selected error sample",
+            "cannot estimate category-specific risk or compare policy error rates.",
+            "The granularity flag detects strict token containment between any",
+            "normalized gold-answer aliases (for example, `1969` within",
+            "`July 1969`). It is a heuristic, not manual adjudication.",
+            "Some apparent mismatches may also be alias-format differences, such",
+            "as name order, rather than genuinely wrong answer reuse. The sampled",
+            "errors mostly come from `lexical_semantic`, the largest mined negative",
+            "category; the sample cannot establish a category's error propensity.",
+            "",
+            "| Negative category | Static | Adaptive | Learned + NLI |",
+            "|---|---:|---:|---:|",
+        ]
+    )
+    for category in sorted({row["negative_category"] for row in false_accepts}):
+        counts = [
+            sum(
+                row["policy"] == policy and row["negative_category"] == category
+                for row in false_accepts
+            )
+            for policy in ("static_val_f1", "adaptive_tier1", "learned_with_nli")
+        ]
+        lines.append(f"| {category} | {counts[0]} | {counts[1]} | {counts[2]} |")
+    lines.extend(
+        [
+            "",
+            "| Gold-answer granularity heuristic | Static | Adaptive | Learned + NLI |",
+            "|---|---:|---:|---:|",
+        ]
+    )
+    for flag, label in (("1", "Strict token containment"), ("0", "No strict containment")):
+        counts = [
+            sum(
+                row["policy"] == policy and row["granularity_difference_heuristic"] == flag
+                for row in false_accepts
+            )
+            for policy in ("static_val_f1", "adaptive_tier1", "learned_with_nli")
+        ]
+        lines.append(f"| {label} | {counts[0]} | {counts[1]} | {counts[2]} |")
+    lines.extend(
+        [
             "",
             "### PAWS transfer (query-pair proxy; separate label type)",
             "",

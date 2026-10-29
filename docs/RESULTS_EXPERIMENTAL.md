@@ -102,6 +102,32 @@ The learned model uses lexical, entity/number, polarity, and bidirectional
 local NLI entailment features. No model is deployed from this study.
 The earlier near-zero mismatch does not survive the larger mined set.
 
+### False-accept sample (diagnostic, not a rate estimate)
+
+`false_accepts.csv` contains 100 distinct held-out source pairs per
+policy, sampled deterministically from false accepts across five seeds.
+A pair may appear under multiple policies; this selected error sample
+cannot estimate category-specific risk or compare policy error rates.
+The granularity flag detects strict token containment between any
+normalized gold-answer aliases (for example, `1969` within
+`July 1969`). It is a heuristic, not manual adjudication.
+Some apparent mismatches may also be alias-format differences, such
+as name order, rather than genuinely wrong answer reuse. The sampled
+errors mostly come from `lexical_semantic`, the largest mined negative
+category; the sample cannot establish a category's error propensity.
+
+| Negative category | Static | Adaptive | Learned + NLI |
+|---|---:|---:|---:|
+| attribute_swap | 1 | 0 | 0 |
+| entity_span_swap | 1 | 4 | 2 |
+| lexical_semantic | 97 | 96 | 97 |
+| number_swap | 1 | 0 | 1 |
+
+| Gold-answer granularity heuristic | Static | Adaptive | Learned + NLI |
+|---|---:|---:|---:|
+| Strict token containment | 9 | 8 | 11 |
+| No strict containment | 91 | 92 | 89 |
+
 ### PAWS transfer (query-pair proxy; separate label type)
 
 PAWS labels are paraphrase judgments, not cached-answer truth. The
