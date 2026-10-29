@@ -6,7 +6,7 @@ from pathlib import Path
 
 from ..config import get_settings
 
-POLICY_VERSION = "answer-aware-v1"
+POLICY_VERSION = "token-diff-v2"
 
 
 def namespace() -> str:

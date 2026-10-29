@@ -71,6 +71,7 @@ def test_live_gateway_and_replay_accept_same_valid_answer(client) -> None:
     cache = client.app.state.semantic_cache
     cache._policy.verifier = ControlledVerifier()
     tenant = tenant_id("demo-key-123")
+
     async def seed() -> None:
         token = _runtime.set(client.app.state.config)
         try:
