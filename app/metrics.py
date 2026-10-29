@@ -14,6 +14,7 @@ FALSE_HIT_REJECTED = Counter(
 )
 RATE_LIMITED = Counter("verigate_rate_limited_total", "Requests rejected by rate limiter")
 BUDGET_EXCEEDED = Counter("verigate_budget_exceeded_total", "Requests rejected by admission budget")
+SHADOW = Counter("verigate_shadow_total", "Shadow cache-hit audit samples", ["outcome"])
 LATENCY = Histogram(
     "verigate_latency_seconds",
     "End-to-end latency",

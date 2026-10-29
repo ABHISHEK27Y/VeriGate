@@ -40,6 +40,7 @@ from .providers.registry import ProviderRegistry
 from .rate_limit import RateLimiter
 from .redis_client import close_redis, create_redis, redis_backend_name
 from .schemas import ChatRequest, ChatResponse
+from .shadow import ShadowAuditor
 
 # Configure structured logging
 configure_logging(json_output=True)
@@ -71,6 +72,9 @@ async def lifespan(app: FastAPI):
         app.state.verifier = app.state.cache._policy.verifier
         app.state.provider_registry = ProviderRegistry.from_settings(app.state.redis)
         app.state.providers = app.state.provider_registry
+        app.state.shadow_auditor = ShadowAuditor(
+            app.state.redis, app.state.provider_registry, app.state.config
+        )
         app.state.rate_limiter = RateLimiter(app.state.redis)
         app.state.budget_check = budget_check_and_count
         if (
@@ -88,6 +92,8 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         log.info("Shutting down VeriGate gateway")
+        if hasattr(app.state, "shadow_auditor"):
+            await app.state.shadow_auditor.aclose()
         if hasattr(app.state, "provider_registry"):
             await app.state.provider_registry.aclose()
         await close_redis(app.state.redis)
@@ -258,6 +264,7 @@ async def chat(req: ChatRequest, request: Request, x_api_key: str | None = Heade
     result: LookupResult = await request.app.state.semantic_cache.lookup(prompt, tenant)
 
     if result.status == "HIT":
+        request.app.state.shadow_auditor.maybe_schedule(prompt, result.answer or "", tenant)
         CACHE.labels(result="hit").inc()
         REQUESTS.labels(outcome="hit").inc()
         LATENCY.labels(path="hit").observe(time.perf_counter() - t0)
@@ -301,7 +308,7 @@ async def chat(req: ChatRequest, request: Request, x_api_key: str | None = Heade
 
 
 @app.post("/v1/chat/stream")
-async def chat_stream(
+async def chat_stream(  # noqa: PLR0915
     req: ChatRequest, request: Request, x_api_key: str | None = Header(default=None)
 ):
     """Streaming endpoint (Server-Sent Events). Cache hits stream instantly."""
@@ -325,6 +332,7 @@ async def chat_stream(
 
     async def event_gen():
         if result.status == "HIT":
+            request.app.state.shadow_auditor.maybe_schedule(prompt, result.answer or "", tenant)
             CACHE.labels(result="hit").inc()
             REQUESTS.labels(outcome="hit").inc()
             LATENCY.labels(path="hit").observe(time.perf_counter() - started)

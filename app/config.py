@@ -83,6 +83,13 @@ class Settings(BaseSettings):
     max_response_chars: int = Field(default=1_000_000, gt=0)
     provider_timeout: float = Field(default=30.0, gt=0)
 
+    # Optional shadow samples: a cache HIT still returns immediately. A sampled
+    # fresh answer is retained for human review, never treated as a truth label.
+    shadow_enabled: bool = False
+    shadow_sample_rate: float = Field(default=0.0, ge=0.0, le=1.0)
+    shadow_max_pending: int = Field(default=4, gt=0, le=64)
+    shadow_review_limit: int = Field(default=100, gt=0, le=10000)
+
     # Upstream LLM provider: "mock" (free, default), "openai", or "gemini".
     # Mock is used only when explicitly selected; keys come from the environment.
     llm_provider: str = "mock"
