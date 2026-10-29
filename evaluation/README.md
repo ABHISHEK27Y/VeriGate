@@ -32,8 +32,6 @@ With the pinned local MiniLM and NLI models available, run:
 ```powershell
 python -m scripts.build_answer_pairs --download
 python -m evaluation.gold_model
-python -m evaluation.stream_gold
-python -m scripts.judge_answer_reuse
 python scripts/summarize_experiments.py
 ```
 
@@ -46,6 +44,13 @@ The judge validates against NQ gold first, then can judge only unlabelled
 triples with actual cached answers; blank review rows are skipped. No paid
 provider calls are involved. The reported judge failed validation, so its
 opinions should not be used as correctness evidence.
+
+The expanded miner records negative categories in `gold_mining.csv`, and the
+model experiment records grouped partition sizes in `gold_split_sizes.csv`.
+The old small-corpus risk, replay, and judge results remain labelled as
+historical in the report. The larger risk rerun is a separate step:
+`python -m evaluation.gold_model --risk` (item 2). The judge rerun and
+volatility study are subsequent steps, not part of this dataset/model pass.
 
 ## Historical smoke evaluator
 

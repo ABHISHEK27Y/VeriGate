@@ -51,11 +51,18 @@ those required fields. A freshly generated queue is **entirely unreviewed**.
 
 `python -m scripts.build_answer_pairs --download` fetches the official NQ-Open
 train JSONL if needed, samples repeated-answer groups, embeds questions with the
-pinned MiniLM model, and mines high-similarity positive and hard-negative pairs.
+pinned MiniLM model, and mines at least 10,000 high-similarity pairs. Negatives
+are proposed by number substitution, a same-subject/different-relation template,
+a lexical entity-slot substitution, or a lexical-plus-semantic fallback requiring
+shared content words. All must have disjoint reference-answer aliases. The
+first three categories are explicit hard-case proxies; the last is not selected
+by MiniLM similarity alone. Type counts are in `evaluation/results/gold_mining.csv`.
 It stores the source and derived SHA-256 hashes, model revision, seed, selection
-parameters, and class counts in a local provenance JSON. Each question appears
-in at most one selected pair. `group_split()` still groups by normalized
-question for five-seed train/validation/calibration/test evaluation.
+parameters, and class counts in a local provenance JSON. Positive questions
+appear in one pair; a negative question may appear in two. `group_split()`
+keeps connected query components together for five-seed
+train/validation/calibration/test evaluation. The expanded study reserves
+25% for calibration; split counts are in `gold_split_sizes.csv`.
 
 The label compares normalized gold answer **alias sets**, ignoring case,
 punctuation, articles and repeated whitespace. The cached answer is an oracle
@@ -65,7 +72,17 @@ can still be equivalent (for example, unlisted synonyms or number formats).
 NQ-Open is factoid English Wikipedia QA, so these labels do not cover
 multi-part instructions, dialogue, retrieval context, time-sensitive answers,
 or tenant-specific policy. The miner intentionally enriches repeated answers
-and structural hard negatives; its 50/50 class balance is not deployment
-prevalence. The gold-answer study must be reported separately from QQP/PAWS
+and structural hard negatives; its roughly balanced classes are not deployment
+prevalence. NQ-Open questions are lowercased, so capitalization-based named-
+entity checks cannot identify entities here. The entity-slot type is a lexical
+proxy; it can include non-entities. The different-attribute type is sparse and
+cannot support a standalone performance conclusion. The gold-answer study must
+be reported separately from QQP/PAWS
 query-pair labels and from any model-judged labels. It supports a stronger
 *factoid proxy* than query paraphrase, not a production answer-error claim.
+
+TriviaQA was assessed but is not included in this pass. Its
+[official release](https://nlp.cs.washington.edu/triviaqa/) bundles questions
+with a large evidence corpus and a different answer schema; it needs a
+separate loader, provenance, and source-separated evaluation. No TriviaQA
+rows are counted in the NQ results.

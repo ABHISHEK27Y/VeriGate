@@ -5,12 +5,21 @@ from __future__ import annotations
 import csv
 import json
 
+import numpy as np
 import pytest
 
-from evaluation.datasets import group_split
+from evaluation.datasets import Pair, group_split
 from evaluation.gold_answers import load_pairs, normalize_answer, reuse_ok
-from evaluation.gold_model import _antonym_mismatch
-from scripts.build_answer_pairs import _choose_disjoint
+from evaluation.gold_model import _antonym_mismatch, _question_component_ids
+from scripts.build_answer_pairs import (
+    Question,
+    _choose_pairs,
+    _entity_span_swap,
+    _negative_candidates,
+)
+
+MAX_USES = 2
+SHARED_QUERY_ID = 2
 
 
 def test_alias_normalization_and_mismatch():
@@ -70,12 +79,56 @@ def test_loader_checks_labels_and_group_split(tmp_path):
         load_pairs(path)
 
 
-def test_disjoint_miner_does_not_reuse_questions():
-    selected = _choose_disjoint(
-        [(0.9, 0, 1, False), (0.8, 0, 2, False)],
-        [(0.7, 3, 4, True)],
+def test_positive_pairs_are_disjoint():
+    selected = _choose_pairs(
+        [(0.9, 0, 1, "positive"), (0.8, 0, 2, "positive")],
+        [(0.7, 3, 4, "number_swap")],
         4,
+        minimum=2,
     )
     assert len(selected) == len({True, False})
     used = [index for _, first, second, _, _ in selected for index in (first, second)]
     assert len(used) == len(set(used))
+
+
+def test_negative_question_reuse_is_capped_at_two():
+    selected = _choose_pairs(
+        [(0.9, 0, 1, "positive")],
+        [(0.9, 2, 3, "number_swap"), (0.8, 2, 4, "entity_span_swap")],
+        3,
+        minimum=3,
+    )
+    negatives = [item for item in selected if not item[3]]
+    assert len(negatives) == MAX_USES
+    assert sum(SHARED_QUERY_ID in (item[1], item[2]) for item in negatives) == MAX_USES
+    pairs = [
+        Pair(str(left), str(right), label, "nq_open", str(index))
+        for index, (_, left, right, label, _) in enumerate(selected)
+    ]
+    splits = group_split(pairs, 11)
+    locations = {
+        pair.source_id: split for split, split_pairs in splits.items() for pair in split_pairs
+    }
+    negative_ids = [str(index) for index, item in enumerate(selected) if not item[3]]
+    assert locations[negative_ids[0]] == locations[negative_ids[1]]
+    group_ids = _question_component_ids(pairs)
+    assert group_ids[int(negative_ids[0])] == group_ids[int(negative_ids[1])]
+
+
+def test_structural_negative_categories_without_embedding_nearest_neighbours():
+    rows = [
+        ("who directed the movie dune", "Denis Villeneuve"),
+        ("who directed the movie titanic", "James Cameron"),
+        ("who wrote the movie dune", "Jon Spaihts"),
+        ("who directed dune", "Denis Villeneuve"),
+        ("who wrote dune", "Frank Herbert"),
+        ("who won the 2018 final", "France"),
+        ("who won the 2019 final", "Brazil"),
+    ]
+    questions = [
+        Question(i, text, (answer,), frozenset({answer})) for i, (text, answer) in enumerate(rows)
+    ]
+    vectors = np.ones((len(questions), 4), dtype=np.float32) / 2
+    kinds = {kind for _, _, _, kind in _negative_candidates(questions, vectors)}
+    assert {"entity_span_swap", "attribute_swap", "number_swap"} <= kinds
+    assert _entity_span_swap(rows[0][0], rows[1][0])
