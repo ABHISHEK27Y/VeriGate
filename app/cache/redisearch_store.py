@@ -143,7 +143,7 @@ async def clear(tenant: str | None = None) -> None:
                 )
 
 
-async def knn(vec: np.ndarray, tenant: str, k: int = 1):
+async def knn(vec: np.ndarray, tenant: str, k: int = 1, *, include_key: bool = False):
     # Escape TAG syntax even for callers outside the authenticated gateway.
     escaped = re.sub(r"([^a-zA-Z0-9_])", lambda m: "\\" + m[0], tenant)
     q = f"(@tenant:{{{escaped}}})=>[KNN {k} @vec $BLOB AS score]"
@@ -178,16 +178,37 @@ async def knn(vec: np.ndarray, tenant: str, k: int = 1):
                 continue
             fields = res[i + 1]
             values = dict(zip(fields[::2], fields[1::2], strict=True))
-            out.append(
-                (
-                    row[b"query"].decode(),
-                    row[b"answer"].decode(),
-                    1.0 - float(values.get(b"score", b"1")),
-                )
+            # A hash can change after FT.SEARCH computed its score. Do not pair
+            # that score with a different question or answer from the hash.
+            if (
+                row.get(b"tenant") != tenant.encode()
+                or row.get(b"query") != values.get(b"query")
+                or row.get(b"answer") != values.get(b"answer")
+            ):
+                continue
+            hit = (
+                row[b"query"].decode(),
+                row[b"answer"].decode(),
+                1.0 - float(values.get(b"score", b"1")),
             )
+            out.append((*hit, key.decode()) if include_key else hit)
             eid = key.decode().rsplit(":", 1)[1]
             await r.zadd(f"{_namespace()}:lru:{tenant}", {eid: time.time()}, xx=True)
         return out
+
+
+async def read_candidate(key: str, tenant: str) -> dict[str, str] | None:
+    """Recheck the selected hash immediately before serving a RediSearch hit."""
+    if not key.startswith(f"{_namespace()}:entry:{tenant}:"):
+        return None
+    async with _client() as r:
+        row = await r.hgetall(key)
+    if not row or row.get(b"tenant") != tenant.encode():
+        return None
+    try:
+        return {"query": row[b"query"].decode(), "answer": row[b"answer"].decode()}
+    except KeyError:
+        return None
 
 
 async def smoke_test() -> None:

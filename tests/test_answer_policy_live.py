@@ -4,6 +4,7 @@ from pathlib import Path
 
 import pytest
 
+from app.cache import redisearch_store as rs
 from app.cache.answer_policy import AnswerPolicy
 from app.cache.policy import CachePolicy
 from app.config import _runtime
@@ -16,6 +17,7 @@ ARTIFACT = (
     Path(__file__).resolve().parents[1] / "app" / "cache" / "artifacts" / "answer_policy_v1.json"
 )
 EXPECTED_REUSES = 2
+REDISEARCH_NEIGHBORS = 5
 
 
 class ControlledVerifier:
@@ -111,6 +113,85 @@ def test_live_gateway_and_replay_accept_same_valid_answer(client) -> None:
 
 
 test_live_gateway_and_replay_accept_same_valid_answer.config_overrides = {
+    "cache_match_mode": "semantic",
+    "answer_policy_artifact": str(ARTIFACT),
+}
+
+
+def test_changed_inproc_answer_after_policy_decision_calls_provider(client) -> None:
+    stored = "What is the capital of France?"
+    incoming = "Name France's capital city."
+    cache = client.app.state.semantic_cache
+    cache._policy.verifier = ControlledVerifier()
+    tenant = tenant_id("demo-key-123")
+
+    async def seed_and_patch() -> None:
+        token = _runtime.set(client.app.state.config)
+        try:
+            await cache.store(stored, "Paris", tenant)
+            original_infer = cache._infer
+
+            async def mutate_after_decision(function, *args):
+                result = await original_infer(function, *args)
+                if function == cache._answer_policy.decide:
+                    ids = await cache.redis.smembers(cache._ids_key(tenant))
+                    eid = next(iter(ids))
+                    await cache.redis.hset(cache._entry_key(tenant, eid), "answer", "Berlin")
+                return result
+
+            cache._infer = mutate_after_decision
+        finally:
+            _runtime.reset(token)
+
+    client.portal.call(seed_and_patch)
+    response = client.post(
+        "/v1/chat", json={"prompt": incoming}, headers={"x-api-key": "demo-key-123"}
+    ).json()
+    assert response["cache"] == "MISS", response
+    assert response["answer"] != "Berlin"
+    assert response["provider"] == "mock"
+
+
+test_changed_inproc_answer_after_policy_decision_calls_provider.config_overrides = {
+    "cache_match_mode": "semantic",
+    "answer_policy_artifact": str(ARTIFACT),
+}
+
+
+def test_changed_redisearch_answer_after_policy_decision_is_miss(client, monkeypatch) -> None:
+    cache = client.app.state.semantic_cache
+    cache._policy.verifier = ControlledVerifier()
+    tenant = tenant_id("demo-key-123")
+    stored = "What is the capital of France?"
+    incoming = "Name France's capital city."
+    key = f"test:rs:entry:{tenant}:candidate"
+
+    async def fake_knn(_vec, _tenant, k=5, *, include_key=False):
+        assert include_key and k == REDISEARCH_NEIGHBORS
+        return [(stored, "Paris", 0.8, key)]
+
+    async def changed_candidate(_key, _tenant):
+        assert _key == key and _tenant == tenant
+        return {"query": stored, "answer": "Berlin"}
+
+    monkeypatch.setattr(rs, "knn", fake_knn)
+    monkeypatch.setattr(rs, "read_candidate", changed_candidate)
+
+    async def lookup():
+        token = _runtime.set(
+            client.app.state.config.model_copy(update={"vector_backend": "redisearch"})
+        )
+        try:
+            return await cache.lookup(incoming, tenant)
+        finally:
+            _runtime.reset(token)
+
+    result = client.portal.call(lookup)
+    assert result.status == "MISS"
+    assert result.reason == "candidate_changed"
+
+
+test_changed_redisearch_answer_after_policy_decision_is_miss.config_overrides = {
     "cache_match_mode": "semantic",
     "answer_policy_artifact": str(ARTIFACT),
 }

@@ -180,17 +180,17 @@ class SemanticCache:
 
     async def _nearest_redisearch(self, qvec: np.ndarray, tenant: str):
         try:
-            hits = await rs.knn(qvec, tenant, k=5)
+            hits = await rs.knn(qvec, tenant, k=5, include_key=True)
         except Exception:
             logging.getLogger(__name__).exception("RediSearch lookup failed")
             raise
         if not hits:
             return None, -1.0, 0.0
-        best_q, best_a, best_sim = hits[0]
+        best_q, best_a, best_sim, best_key = hits[0]
         sims = [h[2] for h in hits]
         within = sum(1 for s in sims[1:] if best_sim - s <= _SIMILARITY_DENSITY_WINDOW)
         density = min(1.0, within / len(sims))
-        return {"query": best_q, "answer": best_a}, float(best_sim), density
+        return {"query": best_q, "answer": best_a, "key": best_key}, float(best_sim), density
 
     async def _nearest(self, qvec: np.ndarray, tenant: str):
         if get_settings().vector_backend == "redisearch":
@@ -217,7 +217,7 @@ class SemanticCache:
         task.add_done_callback(finished)
         return await asyncio.shield(task)
 
-    async def _lookup(self, query: str, tenant: str) -> LookupResult:  # noqa: PLR0911
+    async def _lookup(self, query: str, tenant: str) -> LookupResult:  # noqa: PLR0911, PLR0912
         if not get_settings().cache_enabled:
             return LookupResult(status="MISS", reason="cache_disabled")
 
@@ -265,11 +265,18 @@ class SemanticCache:
             )
         if not hit:
             return LookupResult(status="MISS", threshold=threshold, similarity=sim, reason=reason)
+        if get_settings().vector_backend == "redisearch":
+            candidate_row = await rs.read_candidate(best["key"], tenant)
+        else:
+            candidate_row = await hash_fields(self.redis, self._entry_key(tenant, best["id"]))
+        if not candidate_row:
+            return LookupResult(status="MISS", reason="expired_or_evicted")
+        if (
+            candidate_row.get("query") != best["query"]
+            or candidate_row.get("answer") != best["answer"]
+        ):
+            return LookupResult(status="MISS", reason="candidate_changed")
         if get_settings().vector_backend != "redisearch":
-            row = await hash_fields(self.redis, self._entry_key(tenant, best["id"]))
-            if not row:
-                return LookupResult(status="MISS", reason="expired_or_evicted")
-            best["answer"] = row["answer"]
             await self.redis.zadd(self._lru_key(tenant), {best["id"]: time.time()}, xx=True)
         return LookupResult(
             status="HIT",
