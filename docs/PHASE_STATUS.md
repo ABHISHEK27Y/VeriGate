@@ -54,3 +54,13 @@ Keep both original decisions and the resolution. Until then, Phases 1–6 cannot
 reported as a completed answer-quality study or a production-ready selective
 policy. The protocol for the subsequent lockbox experiment is in
 [`EVIDENCE_PROTOCOL.md`](EVIDENCE_PROTOCOL.md).
+
+# Realistic-query pilot checkpoint (NQ-Open dev, MiniLM)
+
+The first independent-source descriptive pilot is complete. See
+[`RESULTS_REALISTIC_PILOT.md`](RESULTS_REALISTIC_PILOT.md) and the frozen
+`evaluation/pilot_freeze_nq_dev_v1.json`. It uses the real pinned MiniLM backend
+and unchanged answer policy, with row-level decisions and warm local timings.
+It has no reliable answer-reuse labels, so no incorrect-acceptance estimate is
+claimed. The pilot exposed float32 similarity values slightly above 1 for five
+exact repeats; fixing and retesting that edge case is pending.

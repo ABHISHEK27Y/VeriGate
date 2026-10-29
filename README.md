@@ -25,6 +25,8 @@ An additional opt-in `ANSWER_POLICY_ARTIFACT=app/cache/artifacts/answer_policy_v
 routes semantic candidates through an answer-aware ACCEPT / VERIFY / REJECT policy.
 VERIFY and REJECT both call the upstream provider. The [controlled comparison](docs/RESULTS_ANSWER_AWARE.md)
 reports what that policy did on authored factoid cases, including its latency and limits.
+The [NQ-Open dev MiniLM pilot](docs/RESULTS_REALISTIC_PILOT.md) records decisions
+on independent public queries without claiming answer correctness.
 See [production configuration](docs/PRODUCTION_CONFIGURATION.md) and the
 [audit report](docs/audit/AUDIT_REPORT.md) for historical findings and release blockers.
 New to the stack? Start with the chapter-by-chapter

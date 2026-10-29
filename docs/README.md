@@ -11,6 +11,8 @@ The [evaluation harness](../evaluation/README.md) describes the smoke fixture an
 [generated pair-label results](RESULTS_V2.md) show the newer held-out proxy evaluation.
 The [experimental model, replay and risk study](RESULTS_EXPERIMENTAL.md) records
 further work without presenting it as answer-cache correctness.
+The [NQ-Open dev MiniLM pilot](RESULTS_REALISTIC_PILOT.md) reports unlabelled
+real-query decisions and warm local latency under a frozen answer policy.
 The [shadow review sampler](SHADOW_REVIEW.md) is an opt-in way to collect
 fresh/cached answer pairs for independent review.
 The [results log](RESULTS_LOG.md), [older evaluation plan](EVALUATION_PLAN.md), and
