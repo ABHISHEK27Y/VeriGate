@@ -203,8 +203,7 @@ def main() -> None:  # noqa: PLR0912, PLR0915 - one report from source CSVs
     for system in ("static_val_f1", "adaptive_tier1", "learned_with_nli", "learned_without_nli"):
         rows = [row for row in gold if row["system"] == system]
         lines.append(
-            f"| {system} | {_mean(rows, 'coverage')} | "
-            f"{_mean(rows, 'false_hit_among_served')} |"
+            f"| {system} | {_mean(rows, 'coverage')} | {_mean(rows, 'false_hit_among_served')} |"
         )
     lines.extend(
         [
@@ -360,8 +359,7 @@ def main() -> None:  # noqa: PLR0912, PLR0915 - one report from source CSVs
     for system in ("static_val_f1", "adaptive_tier1", "learned_with_nli", "learned_without_nli"):
         rows = [row for row in gold_paws if row["system"] == system]
         lines.append(
-            f"| {system} | {_mean(rows, 'coverage')} | "
-            f"{_mean(rows, 'false_hit_among_served')} |"
+            f"| {system} | {_mean(rows, 'coverage')} | {_mean(rows, 'false_hit_among_served')} |"
         )
     lines.extend(
         [

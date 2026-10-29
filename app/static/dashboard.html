@@ -239,7 +239,7 @@ footer{border-top:1px solid var(--line);padding:34px 0 60px;color:var(--faint);f
   <div class="play">
     <div class="panel">
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px">
-        <div style="flex:1;min-width:160px"><label>API key</label><input id="apikey" value="demo-key-123"></div>
+        <div style="flex:1;min-width:160px"><label>API key</label><input id="apikey" type="password" placeholder="Enter your API key" autocomplete="off"></div>
       </div>
       <label>Query</label>
       <textarea id="query" placeholder="how do I reset my password"></textarea>
@@ -255,6 +255,8 @@ footer{border-top:1px solid var(--line);padding:34px 0 60px;color:var(--faint);f
         <div class="answer" id="ranswer"></div>
         <div class="meta">
           <div><span>provider</span><b id="rprov">—</b></div>
+          <div><span>intended route</span><b id="rintended">—</b></div>
+          <div><span>fallback used</span><b id="rfallback">—</b></div>
           <div><span>latency</span><b id="rlat">—</b></div>
           <div><span>similarity</span><b id="rsim">—</b></div>
           <div><span>threshold</span><b id="rthr">—</b></div>
@@ -271,9 +273,10 @@ footer{border-top:1px solid var(--line);padding:34px 0 60px;color:var(--faint);f
           <div class="stat"><span><span class="dot" style="background:var(--hit)"></span>hits</span><b id="s-hits">0</b></div>
           <div class="stat"><span><span class="dot" style="background:var(--miss)"></span>miss</span><b id="s-miss">0</b></div>
           <div class="stat"><span><span class="dot" style="background:var(--bypass)"></span>bypass</span><b id="s-bypass">0</b></div>
-          <div class="stat"><span><span class="dot" style="background:var(--block)"></span>blocked</span><b id="s-block">0</b></div>
+          <div class="stat"><span><span class="dot" style="background:var(--block)"></span>declined candidates</span><b id="s-declined">0</b></div>
+          <div class="stat"><span>request errors</span><b id="s-errors">0</b></div>
         </div>
-        <div class="hint">“blocked” = the verifier caught a look-alike and refused the wrong cached answer.</div>
+        <div class="hint">“Declined” means VERIFY or REJECT called the provider. It does not prove the cached answer was wrong. Counts are for this browser session.</div>
       </div>
       <div class="panel" style="margin-top:16px">
         <label>History</label>
@@ -306,7 +309,7 @@ footer{border-top:1px solid var(--line);padding:34px 0 60px;color:var(--faint);f
 
 <script>
 const $=id=>document.getElementById(id);
-let s={total:0,hits:0,miss:0,bypass:0,block:0};
+let s={total:0,hits:0,miss:0,bypass:0,declined:0,errors:0};
 const EX=[
   {t:"how do I reset my password",d:"MISS"},
   {t:"what is the process to recover my account password",d:"paraphrase test"},
@@ -317,7 +320,9 @@ const EX=[
 $("chips").innerHTML="";EX.forEach(e=>{const c=document.createElement("div");c.className="chip";
   c.innerHTML=`${e.t}<small>${e.d}</small>`;c.onclick=()=>{$("query").value=e.t;ask();};$("chips").appendChild(c);});
 
-async function health(){try{const r=await fetch("/health");if(!r.ok)throw new Error("Unavailable");const h=await r.json();
+async function health(){try{const r=await fetch("/health");if(!r.ok)throw new Error("Unavailable");let h=await r.json();
+  if(!h.cache_match_mode&&$("apikey").value){const detail=await fetch("/admin/config",{headers:{"x-api-key":$("apikey").value}});if(detail.ok)h=await detail.json();}
+  if(!h.cache_match_mode){$("cfg").textContent="Enter an API key to view configuration.";$("stat").textContent="ready · configuration private";return;}
   $("cfg").innerHTML=[["matching",h.cache_match_mode],["policy",h.answer_policy_version||h.cache_policy_version],
     ["NLI enabled",String(h.verifier_nli_enabled)],["redis",h.redis],["vector index",h.vector_backend],["embeddings",h.embedding_backend],
     ["provider",(h.providers||[]).join(", ")]].map(([k,v])=>`<div class="c"><div class="k">${k}</div><div class="v">${v}</div></div>`).join("");
@@ -326,29 +331,31 @@ async function health(){try{const r=await fetch("/health");if(!r.ok)throw new Er
 
 function setS(){$("s-total").textContent=s.total;const d=s.hits+s.miss;
   $("s-rate").textContent=d?Math.round(100*s.hits/d)+"%":"0%";
-  $("s-hits").textContent=s.hits;$("s-miss").textContent=s.miss;$("s-bypass").textContent=s.bypass;$("s-block").textContent=s.block;}
+  $("s-hits").textContent=s.hits;$("s-miss").textContent=s.miss;$("s-bypass").textContent=s.bypass;$("s-declined").textContent=s.declined;$("s-errors").textContent=s.errors;}
 
-async function ask(){const q=$("query").value.trim();if(!q)return;$("ask").disabled=true;$("err").textContent="";
+async function ask(){const q=$("query").value.trim();if(!q)return;$("ask").disabled=true;$("err").textContent="";s.total++;
   try{const r=await fetch("/v1/chat",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":$("apikey").value},body:JSON.stringify({prompt:q})});
-    if(r.status===429){$("err").textContent="Rate limited (429).";return;}
-    if(r.status===401){$("err").textContent="Invalid API key (401).";return;}
+    if(r.status===429){s.errors++;$("err").textContent="Rate limited (429).";return;}
+    if(r.status===401){s.errors++;$("err").textContent="Invalid API key (401).";return;}
     if(!r.ok)throw new Error("Gateway returned HTTP "+r.status);
-    const d=await r.json();const rej=d.note&&d.note.startsWith("verify_rejected");
-    const b=$("rbadge");b.textContent=(rej?"BLOCKED · ":"")+d.cache;b.className="rbadge b-"+(rej?"REJECT":d.cache);
-    $("ranswer").textContent=d.answer;$("rprov").textContent=d.provider;$("rlat").textContent=(d.latency_ms??0)+" ms";
+    const d=await r.json();const decision=d.note&&d.note.startsWith("answer_")?d.note.split(":")[0].slice(7).toUpperCase():"";
+    const declined=decision==="VERIFY"||decision==="REJECT"||(d.note||"").startsWith("verify_rejected");
+    const b=$("rbadge");b.textContent=(decision?decision+" · ":declined?"DECLINED · ":"")+d.cache;b.className="rbadge b-"+(declined?"REJECT":d.cache);
+    $("ranswer").textContent=d.answer;$("rprov").textContent=d.provider;$("rintended").textContent=d.intended_provider||"—";$("rfallback").textContent=d.fallback_used?"yes":"no";$("rlat").textContent=(d.latency_ms??0)+" ms";
     $("rsim").textContent=d.similarity!=null?d.similarity.toFixed(3):"—";$("rthr").textContent=d.threshold!=null?d.threshold.toFixed(3):"—";
     $("rreason").textContent=d.note||"—";$("result").style.display="block";
-    s.total++;if(d.cache==="HIT")s.hits++;else if(d.cache==="BYPASS")s.bypass++;else s.miss++;if(rej)s.block++;setS();
-    const col=rej?"var(--block)":d.cache==="HIT"?"var(--hit)":d.cache==="BYPASS"?"var(--bypass)":"var(--miss)";
+    if(d.cache==="HIT")s.hits++;else if(d.cache==="BYPASS")s.bypass++;else s.miss++;if(declined)s.declined++;setS();
+    const col=declined?"var(--block)":d.cache==="HIT"?"var(--hit)":d.cache==="BYPASS"?"var(--bypass)":"var(--miss)";
     const tr=document.createElement("tr");
-    tr.innerHTML=`<td><span class="dot" style="background:${col}"></span>${rej?"BLOCK":d.cache}</td>
+    tr.innerHTML=`<td><span class="dot" style="background:${col}"></span>${declined?"DECLINED":d.cache}</td>
       <td>${q.replace(/</g,"&lt;")}</td><td class="c">${d.similarity!=null?d.similarity.toFixed(2):"—"}</td><td class="c">${d.latency_ms??"—"}</td>`;
     $("log").prepend(tr);while($("log").children.length>100)$("log").lastElementChild.remove();
-  }catch(e){$("err").textContent="Request failed: "+e.message;}finally{$("ask").disabled=false;}}
+  }catch(e){s.errors++;$("err").textContent="Request failed: "+e.message;}finally{$("ask").disabled=false;setS();}}
 
 $("ask").onclick=ask;
+$("apikey").addEventListener("change",health);
 $("clear").onclick=async()=>{try{const r=await fetch("/admin/cache/clear",{method:"POST",headers:{"x-api-key":$("apikey").value}});if(!r.ok)throw new Error("HTTP "+r.status);$("err").textContent="Cache cleared.";}catch(e){$("err").textContent="Clear failed.";}};
-$("reset").onclick=()=>{s={total:0,hits:0,miss:0,bypass:0,block:0};$("log").innerHTML="";setS();};
+$("reset").onclick=()=>{s={total:0,hits:0,miss:0,bypass:0,declined:0,errors:0};$("log").innerHTML="";setS();};
 $("query").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();ask();}});
 
 const io=new IntersectionObserver(es=>es.forEach(en=>{if(en.isIntersecting){en.target.classList.add("in");

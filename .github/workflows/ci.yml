@@ -41,6 +41,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # historical answer-policy study source is verified at its commit
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -68,6 +70,7 @@ jobs:
           python -m scripts.verify_evidence_bundle evidence-20261029-hash-v3
           python -m scripts.export_directional_report evidence-20261029-hash-v3
           python -m scripts.export_answer_policy_report answer_aware_20261029_v6
+          python -m scripts.verify_current_pilots
           git diff --exit-code -- evaluation/results/checks.json report/generated/ docs/RESULTS_DIRECTIONAL.md docs/RESULTS_ANSWER_AWARE.md
 
       - name: Upload evaluation results
@@ -117,6 +120,19 @@ jobs:
           TEST_ALLOW_REDIS_FLUSHDB: "1"
         run: |
           python -m pytest tests/ -v --tb=short
+
+      - name: Live HTTP benchmark with Redis Stack and delayed mock provider
+        env:
+          REDIS_URL: redis://localhost:6379/0
+        run: |
+          python -m scripts.benchmark_live_gateway evaluation/results/live_http_redis_ci
+
+      - name: Upload live benchmark artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-http-redis-benchmark
+          path: evaluation/results/live_http_redis_ci/
+          retention-days: 7
 
   security-audit:
     name: Security Audit

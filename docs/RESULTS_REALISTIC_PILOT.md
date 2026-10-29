@@ -67,3 +67,16 @@ No incorrect-acceptance rate is reported. NQ reference strings and unreviewed
 cross-question matches do not establish that a specific cached answer is valid
 for a new question. This sample is not production traffic, and its mix of exact
 repeats and random distinct queries is a chosen pilot design, not traffic prevalence.
+
+## Versioned numerical-boundary follow-up
+
+The [v3 run](../evaluation/runs/nq_dev_minilm_pilot_v3/manifest.json) uses the
+same frozen input, model revisions, and policy thresholds after a narrowly scoped
+float32 cosine tolerance and long-input guard were added to the answer-policy
+code. Its manifest hashes the updated source and outputs; v1 remains unchanged.
+The answer-aware policy accepted all **10/10 exact repeats**, versus **5/10** in
+v1. It still rejected all 50 distinct random neighbors. Its warm local lookup
+p95 was **58.46 ms** in v3, versus **62.19 ms** in v1; these single-run timings are not a statistically
+supported speed improvement. The behavior change is limited to tiny numerical
+overshoot above one, while NaN, infinity, and materially invalid scores remain
+rejected in regression tests.

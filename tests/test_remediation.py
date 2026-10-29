@@ -51,7 +51,11 @@ def test_safe_mode_rejects_reordered_roles(client):
 
 
 def test_body_limit_and_bearer_metrics(client):
-    response = client.post("/v1/chat", content=b" " * (settings.max_request_bytes + 1))
+    response = client.post(
+        "/v1/chat",
+        content=b" " * (settings.max_request_bytes + 1),
+        headers={"x-api-key": "demo-key-123"},
+    )
     assert response.status_code == 413
     assert (
         client.get("/metrics", headers={"authorization": "Bearer test-metrics-token"}).status_code

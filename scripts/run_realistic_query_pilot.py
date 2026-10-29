@@ -232,6 +232,16 @@ def run(run_id: str) -> Path:  # noqa: PLR0915 - one immutable pilot run
         ).hexdigest(),
         "artifact_sha256": _sha(ROOT / freeze["policy"]["artifact"]),
         "artifact_version": policy.version,
+        "source_code_sha256": {
+            name: _sha(ROOT / name)
+            for name in (
+                "app/cache/answer_policy.py",
+                "app/cache/policy.py",
+                "app/cache/verifier.py",
+                "app/embeddings.py",
+                "scripts/run_realistic_query_pilot.py",
+            )
+        },
         "embedding_model": freeze["embedding"],
         "nli_model": policy.model,
         "nli_revision": policy.revision,

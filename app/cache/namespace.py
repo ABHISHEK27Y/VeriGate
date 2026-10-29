@@ -7,6 +7,7 @@ from pathlib import Path
 from ..config import get_settings
 
 POLICY_VERSION = "token-diff-v2"
+ANSWER_POLICY_RUNTIME_VERSION = "2"
 
 
 def namespace() -> str:
@@ -39,6 +40,7 @@ def namespace() -> str:
     selected = {key: config[key] for key in fields}
     if artifact := config["answer_policy_artifact"]:
         selected["answer_policy_sha256"] = hashlib.sha256(Path(artifact).read_bytes()).hexdigest()
+        selected["answer_policy_runtime_version"] = ANSWER_POLICY_RUNTIME_VERSION
     payload = json.dumps(selected, sort_keys=True)
     digest = hashlib.sha256(("schema-v3:" + POLICY_VERSION + ":" + payload).encode()).hexdigest()[
         :24

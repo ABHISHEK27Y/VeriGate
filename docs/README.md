@@ -13,6 +13,8 @@ The [experimental model, replay and risk study](RESULTS_EXPERIMENTAL.md) records
 further work without presenting it as answer-cache correctness.
 The [NQ-Open dev MiniLM pilot](RESULTS_REALISTIC_PILOT.md) reports unlabelled
 real-query decisions and warm local latency under a frozen answer policy.
+The [close-neighbor diagnostic](RESULTS_CLOSE_NEIGHBOR.md) compares frozen
+policies on NQ reference-string proxies, including accepted mismatches.
 The [shadow review sampler](SHADOW_REVIEW.md) is an opt-in way to collect
 fresh/cached answer pairs for independent review.
 The [results log](RESULTS_LOG.md), [older evaluation plan](EVALUATION_PLAN.md), and

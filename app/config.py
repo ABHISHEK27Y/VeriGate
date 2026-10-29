@@ -83,6 +83,8 @@ class Settings(BaseSettings):
     # Provider call timeout (seconds)
     max_response_chars: int = Field(default=1_000_000, gt=0)
     provider_timeout: float = Field(default=30.0, gt=0)
+    provider_first_token_timeout: float = Field(default=8.0, gt=0)
+    provider_stream_idle_timeout: float = Field(default=8.0, gt=0)
 
     # Optional shadow samples: a cache HIT still returns immediately. A sampled
     # fresh answer is retained for human review, never treated as a truth label.

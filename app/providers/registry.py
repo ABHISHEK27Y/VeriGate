@@ -8,6 +8,7 @@ evaluation/cascade.py). The unused tier stays as failover.
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator, Mapping
 from dataclasses import dataclass, field
 from types import MappingProxyType
@@ -115,23 +116,46 @@ class ProviderRegistry:
             ]  # cheap first; strong as failover
         return list(self.providers)
 
-    async def route_stream(self, prompt: str) -> tuple[str, AsyncIterator[str]]:
+    def intended_route(self, prompt: str) -> str:
+        """The configured first choice, independent of breaker/fallback state."""
+        return self._order_for(prompt)[0].name
+
+    def cache_scopes(self) -> tuple[str, ...]:
+        """Cache partitions created by this registry for one API-key tenant."""
+        if self.cascade:
+            return tuple(provider.name for provider in self.cascade.values())
+        return ()
+
+    async def route_stream(self, prompt: str) -> tuple[str, AsyncIterator[str]]:  # noqa: PLR0915
         """Pick a provider (cascade + circuit-breaker + failover) -> (name, token_stream)."""
         last_err: Exception | None = None
         order = self._order_for(prompt)
         # Acquire ownership before attempting upstream work.
+        first_timeout = min(
+            get_settings().provider_first_token_timeout,
+            get_settings().provider_timeout / max(len(order), 1),
+        )
         for p in order:
             ticket = await breaker.acquire(p.name, self.redis)
             if ticket is None:
                 continue
+            agen = None
             try:
                 agen = p.stream(prompt)
-                first = await agen.__anext__()
+                async with asyncio.timeout(first_timeout):
+                    first = await agen.__anext__()
 
                 async def _wrapped(first_chunk=first, gen=agen, provider_name=p.name, lease=ticket):
                     try:
                         yield first_chunk
-                        async for chunk in gen:
+                        while True:
+                            try:
+                                async with asyncio.timeout(
+                                    get_settings().provider_stream_idle_timeout
+                                ):
+                                    chunk = await gen.__anext__()
+                            except StopAsyncIteration:
+                                break
                             yield chunk
                     except Exception as error:
                         if breaker.transient(error):
@@ -143,17 +167,23 @@ class ProviderRegistry:
                         await gen.aclose()
 
                 return p.name, _wrapped()
+            except asyncio.CancelledError:
+                if agen is not None and hasattr(agen, "aclose"):
+                    await agen.aclose()
+                raise
             except StopAsyncIteration:
-                await breaker.record_success(p.name, self.redis, ticket)
-                return p.name, _empty()
+                if agen is not None and hasattr(agen, "aclose"):
+                    await agen.aclose()
+                await breaker.record_failure(p.name, self.redis, ticket)
+                last_err = RuntimeError("provider returned no first token")
+                continue
             except Exception as e:  # noqa: BLE001
+                if agen is not None and hasattr(agen, "aclose"):
+                    await agen.aclose()
                 if breaker.transient(e):
                     await breaker.record_failure(p.name, self.redis, ticket)
+                else:
+                    raise RuntimeError("provider rejected request") from e
                 last_err = e
                 continue
         raise RuntimeError("all providers unavailable") from last_err
-
-
-async def _empty() -> AsyncIterator[str]:
-    if False:
-        yield ""  # pragma: no cover

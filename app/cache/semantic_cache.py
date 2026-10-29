@@ -28,6 +28,7 @@ import numpy as np
 
 from ..config import get_settings
 from ..embeddings import Embedder
+from ..metrics import STAGE_LATENCY
 from ..redis_client import create_redis, hash_fields, remove_member, set_members
 from . import redisearch_store as rs
 from . import storage
@@ -226,7 +227,9 @@ class SemanticCache:
 
         if get_settings().cache_match_mode == "exact":
             eid = hashlib.sha256(query.encode("utf-8")).hexdigest()
+            stage_started = time.perf_counter()
             row = await hash_fields(self.redis, self._entry_key(tenant, eid))
+            STAGE_LATENCY.labels(stage="exact_lookup").observe(time.perf_counter() - stage_started)
             if row and row.get("query") == query:
                 await self.redis.zadd(self._lru_key(tenant), {eid: time.time()}, xx=True)
                 return LookupResult(
@@ -240,13 +243,20 @@ class SemanticCache:
         # Ensure index is built from Redis before searching
         if get_settings().vector_backend != "redisearch":
             # Redis is authoritative, including writes/clears made by other workers.
+            stage_started = time.perf_counter()
             await self._ensure(tenant)
+            STAGE_LATENCY.labels(stage="index_sync").observe(time.perf_counter() - stage_started)
 
+        stage_started = time.perf_counter()
         qvec = await self._infer(self.embedder.embed, query)
+        STAGE_LATENCY.labels(stage="embedding").observe(time.perf_counter() - stage_started)
+        stage_started = time.perf_counter()
         best, sim, density = await self._nearest(qvec, tenant)  # tenant-scoped
+        STAGE_LATENCY.labels(stage="retrieval").observe(time.perf_counter() - stage_started)
         if best is None:
             return LookupResult(status="MISS", similarity=None, reason="empty_cache")
 
+        stage_started = time.perf_counter()
         if self._answer_policy is not None:
             decision = await self._infer(
                 self._answer_policy.decide,
@@ -263,12 +273,17 @@ class SemanticCache:
             hit, reason, threshold = await self._infer(
                 self._policy.decide, query, best["query"], sim, density
             )
+        STAGE_LATENCY.labels(stage="policy_decision").observe(time.perf_counter() - stage_started)
         if not hit:
             return LookupResult(status="MISS", threshold=threshold, similarity=sim, reason=reason)
+        stage_started = time.perf_counter()
         if get_settings().vector_backend == "redisearch":
             candidate_row = await rs.read_candidate(best["key"], tenant)
         else:
             candidate_row = await hash_fields(self.redis, self._entry_key(tenant, best["id"]))
+        STAGE_LATENCY.labels(stage="candidate_identity").observe(
+            time.perf_counter() - stage_started
+        )
         if not candidate_row:
             return LookupResult(status="MISS", reason="expired_or_evicted")
         if (
@@ -292,7 +307,7 @@ class SemanticCache:
             await self._store(query, answer, tenant)
 
     async def _store(self, query: str, answer: str, tenant: str) -> None:
-        if not get_settings().cache_enabled or is_volatile(query):
+        if not answer.strip() or not get_settings().cache_enabled or is_volatile(query):
             return
         if (
             len(query.encode("utf-8")) + len(answer.encode("utf-8"))

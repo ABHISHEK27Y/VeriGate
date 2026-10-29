@@ -62,5 +62,8 @@ The first independent-source descriptive pilot is complete. See
 `evaluation/pilot_freeze_nq_dev_v1.json`. It uses the real pinned MiniLM backend
 and unchanged answer policy, with row-level decisions and warm local timings.
 It has no reliable answer-reuse labels, so no incorrect-acceptance estimate is
-claimed. The pilot exposed float32 similarity values slightly above 1 for five
-exact repeats; fixing and retesting that edge case is pending.
+claimed. A versioned v2 run confirms the float32 boundary fix accepts all ten
+exact repeats under the unchanged policy thresholds. The separate
+[`RESULTS_CLOSE_NEIGHBOR.md`](RESULTS_CLOSE_NEIGHBOR.md) diagnostic tests 40
+close NQ dev pairs and retains two accepted reference mismatches. Independent
+answer-quality validation remains open.

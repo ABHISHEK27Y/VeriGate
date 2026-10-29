@@ -19,6 +19,20 @@ controlled result is in [RESULTS_ANSWER_AWARE.md](RESULTS_ANSWER_AWARE.md).
 Its authored cases do not establish a production safety threshold. Keep exact
 matching for production until a representative independent evaluation exists.
 
+The single-turn request accepts `prompt` or one `user` message, plus optional
+`cache_bypass: true`. Unknown fields, including unsupported system messages and
+generation parameters, return 422. Bypass skips both cache reads and writes but
+still consumes rate-limit and admitted-miss/bypass budget. Empty or failed
+provider outputs are never cached. A successful provider answer is returned even
+if a later cache write fails. A cache lookup failure is treated as a miss, while
+Redis failure in required rate or budget admission returns 503.
+
+When cascade routing is enabled, cache entries are partitioned by the intended
+cheap/strong route. A fallback model's answer is returned but not cached under
+the failed route. JSON responses include actual and intended provider names and
+`fallback_used`; streaming responses expose provider names in headers. This is
+model provenance, not a claim that different model outputs have equal quality.
+
 ## Installation and reproducibility
 
 Use Python 3.11 and the checked-in hashed lock:
@@ -60,6 +74,9 @@ multiple applications in one process; replace/restart an app to change configura
 | `REQUEST_BODY_TIMEOUT` | 10 | Seconds allowed for the complete request body |
 | `MAX_RESPONSE_CHARS` | 1000000 | Maximum assembled upstream response size |
 | `DAILY_REQUEST_BUDGET` | 0 | Admitted misses/bypasses per key and UTC day; zero disables this limit |
+| `PROVIDER_TIMEOUT` | 30 | Total upstream deadline in seconds |
+| `PROVIDER_FIRST_TOKEN_TIMEOUT` | 8 | Maximum first-token wait per attempt, also limited by equal share of total deadline |
+| `PROVIDER_STREAM_IDLE_TIMEOUT` | 8 | Maximum idle time between tokens, within the total deadline |
 
 The daily request budget **does not count provider retries, cascade attempts, tokens or
 money**. Use provider-side spending limits for monetary enforcement. Hits do not consume
@@ -78,6 +95,11 @@ provider health is configuration-only; no billable synthetic request is sent.
 `X-Metrics-Token` header. Create a private file containing only that token, point
 `METRICS_TOKEN_FILE` at it, and set `GRAFANA_ADMIN_PASSWORD` before starting the observability
 Compose file. Prometheus reads the token from a Docker secret; it is not embedded in YAML.
+In production, `/health` exposes status only. `/admin/config` requires an API
+key for configuration details. The dashboard asks for the key rather than
+embedding a demo credential. Stage histograms and bounded outcome counters
+are available through authenticated `/metrics`; their labels contain no prompt,
+answer, or credential text.
 
 For multiple workers, set `PROMETHEUS_MULTIPROC_DIR` **before starting Python** to a shared,
 writable, empty directory for that one deployment. Clean that directory only while all

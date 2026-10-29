@@ -6,11 +6,15 @@ import argparse
 import csv
 import hashlib
 import json
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNS = ROOT / "evaluation" / "runs"
 REPORT = ROOT / "docs" / "RESULTS_ANSWER_AWARE.md"
+# The v6 study was run with dirty source at its recorded HEAD and committed in
+# this later revision. Verify those recorded source hashes against that commit.
+V6_SOURCE_COMMIT = "ceb520f"
 
 
 def _sha(path: Path) -> str:
@@ -33,7 +37,12 @@ def run(run_id: str) -> Path:
     if _sha(ROOT / "evaluation" / "controlled_answer_cases.json") != manifest["development_sha256"]:
         raise ValueError("Static threshold development controls changed")
     for name, expected in manifest["source_hashes"].items():
-        if _sha(ROOT / name) != expected:
+        source = (
+            subprocess.check_output(["git", "show", f"{V6_SOURCE_COMMIT}:{name}"], cwd=ROOT)
+            if run_id == "answer_aware_20261029_v6"
+            else (ROOT / name).read_bytes()
+        )
+        if hashlib.sha256(source).hexdigest() != expected:
             raise ValueError(f"Study source changed: {name}")
     with (folder / "metrics.csv").open(newline="", encoding="utf-8") as stream:
         metrics = list(csv.DictReader(stream))

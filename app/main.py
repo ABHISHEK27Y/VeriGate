@@ -25,16 +25,19 @@ from .cache.namespace import POLICY_VERSION
 from .cache.semantic_cache import LookupResult, SemanticCache
 from .config import Settings, _runtime, get_settings, snapshot
 from .embeddings import Embedder
-from .identity import tenant_id
+from .identity import key_allowed, tenant_id
 from .limits import RequestLimitsMiddleware
 from .logging_config import LoggingMiddleware, configure_logging, get_logger
 from .metrics import (
     BUDGET_EXCEEDED,
     CACHE,
+    CACHE_FAILURES,
+    CANDIDATE_DECISION,
     CANDIDATE_VERIFIER_REJECTED,
     LATENCY,
     RATE_LIMITED,
     REQUESTS,
+    STAGE_LATENCY,
     render_metrics,
 )
 from .providers.registry import ProviderRegistry
@@ -56,10 +59,15 @@ async def lifespan(app: FastAPI):
 
     app.state.config = getattr(app.state, "config", snapshot())
     token = _runtime.set(app.state.config)
-    app.state.redis = create_redis()
-    app.state.binary_redis = create_redis(binary=True)
-    pool_token = rs.active_client.set(app.state.binary_redis)
+    redis_client = None
+    binary_client = None
+    pool_token = None
     try:
+        redis_client = create_redis()
+        app.state.redis = redis_client
+        binary_client = create_redis(binary=True)
+        app.state.binary_redis = binary_client
+        pool_token = rs.active_client.set(binary_client)
         get_settings().validate_production()
         await app.state.redis.ping()
         if get_settings().environment == "production":
@@ -97,9 +105,12 @@ async def lifespan(app: FastAPI):
             await app.state.shadow_auditor.aclose()
         if hasattr(app.state, "provider_registry"):
             await app.state.provider_registry.aclose()
-        await close_redis(app.state.redis)
-        await close_redis(app.state.binary_redis)
-        rs.active_client.reset(pool_token)
+        if redis_client is not None:
+            await close_redis(redis_client)
+        if binary_client is not None:
+            await close_redis(binary_client)
+        if pool_token is not None:
+            rs.active_client.reset(pool_token)
         _runtime.reset(token)
 
 
@@ -108,10 +119,11 @@ app = FastAPI(
     version=__version__,
     lifespan=lifespan,
 )
+app.state.config = snapshot()
 
 # CORS middleware
-if get_settings().cors_origins:
-    origins = [o.strip() for o in get_settings().cors_origins.split(",") if o.strip()]
+if app.state.config.cors_origins:
+    origins = [o.strip() for o in app.state.config.cors_origins.split(",") if o.strip()]
 else:
     origins = []  # same-origin unless explicitly configured
 
@@ -129,8 +141,9 @@ app.add_middleware(RequestLimitsMiddleware, owner=app)
 
 
 def _auth(api_key: str | None) -> str:
-    if not api_key or api_key not in get_settings().api_key_set:
+    if not key_allowed(api_key, get_settings().api_key_set):
         raise HTTPException(status_code=401, detail="invalid or missing API key")
+    assert api_key is not None
     return api_key
 
 
@@ -140,8 +153,19 @@ def _tenant(api_key: str) -> str:
     return tenant_id(api_key)
 
 
+def _cache_tenant(request: Request, prompt: str, tenant: str) -> str:
+    registry = request.app.state.provider_registry
+    if registry.cascade:
+        return f"{tenant}:{registry.intended_route(prompt)}"
+    return tenant
+
+
 async def _check_rate_limit(api_key: str, request: Request) -> None:
-    allowed, remaining = await request.app.state.rate_limiter.allow(api_key)
+    try:
+        allowed, remaining = await request.app.state.rate_limiter.allow(api_key)
+    except Exception as exc:
+        log.warning("rate_limit_unavailable", tenant=_tenant(api_key))
+        raise HTTPException(status_code=503, detail="admission unavailable") from exc
     if not allowed:
         RATE_LIMITED.inc()
         REQUESTS.labels(outcome="rate_limited").inc()
@@ -151,36 +175,96 @@ async def _check_rate_limit(api_key: str, request: Request) -> None:
 
 async def _check_budget(api_key: str, request: Request) -> None:
     """Charge one admitted miss/bypass; cache hits never reach here."""
-    if not await budget_check_and_count(api_key, request.app.state.redis):
+    try:
+        admitted = await budget_check_and_count(api_key, request.app.state.redis)
+    except Exception as exc:
+        log.warning("budget_unavailable", tenant=_tenant(api_key))
+        raise HTTPException(status_code=503, detail="admission unavailable") from exc
+    if not admitted:
         BUDGET_EXCEEDED.inc()
         log.warning("Daily budget exceeded", tenant=_tenant(api_key))
         raise HTTPException(status_code=429, detail="daily request budget exceeded")
 
 
+async def _cache_lookup(request: Request, prompt: str, tenant: str, bypass: bool) -> LookupResult:
+    if bypass:
+        return LookupResult(status="BYPASS", reason="requested_bypass")
+    try:
+        result: LookupResult = await request.app.state.semantic_cache.lookup(prompt, tenant)
+    except Exception:
+        CACHE_FAILURES.labels(stage="lookup").inc()
+        log.warning("cache_lookup_failed", tenant=tenant)
+        return LookupResult(status="MISS", reason="cache_unavailable")
+    else:
+        return result
+
+
+async def _cache_store(request: Request, prompt: str, answer: str, tenant: str) -> None:
+    started = time.perf_counter()
+    try:
+        await request.app.state.semantic_cache.store(prompt, answer, tenant)
+    except Exception:
+        CACHE_FAILURES.labels(stage="write").inc()
+        log.warning("cache_write_failed", tenant=tenant)
+    finally:
+        STAGE_LATENCY.labels(stage="cache_write").observe(time.perf_counter() - started)
+
+
+def _count_candidate_decision(result: LookupResult) -> None:
+    reason = result.reason or ""
+    if reason.startswith("answer_"):
+        action = reason.split(":", 1)[0].removeprefix("answer_")
+        if action in {"accept", "verify", "reject"}:
+            CANDIDATE_DECISION.labels(action=action).inc()
+    if reason.startswith("verify_rejected"):
+        CANDIDATE_VERIFIER_REJECTED.inc()
+
+
 def _check_response_length(length: int) -> None:
     if length > get_settings().max_response_chars:
-        raise RuntimeError("Provider response exceeds configured limit")
+        raise ResponseTooLargeError
+
+
+class ResponseTooLargeError(Exception):
+    """The configured upstream response limit was exceeded."""
 
 
 async def _generate_answer(prompt: str, request: Request) -> tuple[str, str]:
     """Call the provider (with failover) and assemble the full answer."""
     stream = None
+    generation_started = time.perf_counter()
     try:
         async with asyncio.timeout(get_settings().provider_timeout):
+            route_started = time.perf_counter()
             provider_name, stream = await request.app.state.provider_registry.route_stream(prompt)
+            STAGE_LATENCY.labels(stage="provider_first_token").observe(
+                time.perf_counter() - route_started
+            )
             chunks = []
             length = 0
             async for chunk in stream:
                 length += len(chunk)
                 _check_response_length(length)
                 chunks.append(chunk)
-        return provider_name, "".join(chunks).strip()
+    except TimeoutError as exc:
+        log.warning("upstream_timeout")
+        raise HTTPException(status_code=504, detail="upstream timeout") from exc
+    except ResponseTooLargeError as exc:
+        log.warning("upstream_response_too_large")
+        raise HTTPException(status_code=502, detail="upstream response too large") from exc
     except Exception as exc:
         log.warning("upstream_failed", error_type=type(exc).__name__)
         raise HTTPException(status_code=502, detail="upstream unavailable") from exc
     finally:
+        STAGE_LATENCY.labels(stage="full_generation").observe(
+            time.perf_counter() - generation_started
+        )
         if stream is not None and hasattr(stream, "aclose"):
             await stream.aclose()
+    answer = "".join(chunks).strip()
+    if not answer:
+        raise HTTPException(status_code=502, detail="empty upstream answer")
+    return provider_name, answer
 
 
 _UI_FILE = Path(__file__).parent / "static" / "dashboard.html"
@@ -197,7 +281,10 @@ def dashboard():
 async def clear_cache(request: Request, x_api_key: str | None = Header(default=None)):
     """Clear the caller's own tenant cache (requires a valid API key). Used by the dashboard."""
     api_key = _auth(x_api_key)
-    await request.app.state.semantic_cache.clear(_tenant(api_key))
+    tenant = _tenant(api_key)
+    await request.app.state.semantic_cache.clear(tenant)
+    for route in request.app.state.provider_registry.cache_scopes():
+        await request.app.state.semantic_cache.clear(f"{tenant}:{route}")
     return {"status": "cleared"}
 
 
@@ -209,6 +296,19 @@ async def live():
 @app.get("/ready")
 @app.get("/health")
 async def health(request: Request):
+    details = await _health_details(request)
+    if get_settings().environment == "production":
+        return {"status": details["status"]}
+    return details
+
+
+@app.get("/admin/config")
+async def config_details(request: Request, x_api_key: str | None = Header(default=None)):
+    _auth(x_api_key)
+    return await _health_details(request)
+
+
+async def _health_details(request: Request) -> dict:
     try:
         await request.app.state.redis.ping()
         if (
@@ -234,7 +334,11 @@ async def health(request: Request):
         ),
         "verifier_nli_enabled": get_settings().verifier_nli,
         "provider_health": "configuration_only",
-        "providers": [p.name for p in request.app.state.provider_registry.providers],
+        "providers": (
+            list(request.app.state.provider_registry.cache_scopes())
+            if request.app.state.provider_registry.cascade
+            else [p.name for p in request.app.state.provider_registry.providers]
+        ),
     }
 
 
@@ -269,7 +373,10 @@ async def chat(req: ChatRequest, request: Request, x_api_key: str | None = Heade
         raise HTTPException(status_code=400, detail="empty prompt")
 
     t0 = time.perf_counter()
-    result: LookupResult = await request.app.state.semantic_cache.lookup(prompt, tenant)
+    cache_tenant = _cache_tenant(request, prompt, tenant)
+    intended_provider = request.app.state.provider_registry.intended_route(prompt)
+    result = await _cache_lookup(request, prompt, cache_tenant, req.cache_bypass)
+    _count_candidate_decision(result)
 
     if result.status == "HIT":
         request.app.state.shadow_auditor.maybe_schedule(
@@ -285,22 +392,19 @@ async def chat(req: ChatRequest, request: Request, x_api_key: str | None = Heade
             answer=result.answer or "",
             cache="HIT",
             provider="cache",
+            intended_provider=intended_provider,
             latency_ms=round((time.perf_counter() - t0) * 1000, 2),
             threshold=result.threshold,
             similarity=result.similarity,
             note=result.reason,
         )
 
-    # Track verifier rejections separately (the novelty's key metric)
-    if result.reason and result.reason.startswith("verify_rejected"):
-        CANDIDATE_VERIFIER_REJECTED.inc()
-
     await _check_budget(api_key, request)  # only miss/bypass reach a provider — hits are free
     provider_name, answer = await _generate_answer(prompt, request)
 
     path = "bypass" if result.status == "BYPASS" else "miss"
-    if result.status != "BYPASS":
-        await request.app.state.semantic_cache.store(prompt, answer, tenant)
+    if result.status != "BYPASS" and provider_name == intended_provider:
+        await _cache_store(request, prompt, answer, cache_tenant)
 
     CACHE.labels(result=path).inc()
     REQUESTS.labels(outcome=path).inc()
@@ -310,6 +414,8 @@ async def chat(req: ChatRequest, request: Request, x_api_key: str | None = Heade
         answer=answer,
         cache=result.status,
         provider=provider_name,
+        intended_provider=intended_provider,
+        fallback_used=provider_name != intended_provider,
         latency_ms=round((time.perf_counter() - t0) * 1000, 2),
         threshold=result.threshold,
         similarity=result.similarity,
@@ -331,12 +437,23 @@ async def chat_stream(  # noqa: PLR0915
     if not prompt:
         raise HTTPException(status_code=400, detail="empty prompt")
 
-    result: LookupResult = await request.app.state.semantic_cache.lookup(prompt, tenant)
+    cache_tenant = _cache_tenant(request, prompt, tenant)
+    intended_provider = request.app.state.provider_registry.intended_route(prompt)
+    result = await _cache_lookup(request, prompt, cache_tenant, req.cache_bypass)
+    _count_candidate_decision(result)
     if result.status != "HIT":
         await _check_budget(api_key, request)  # charge before streaming starts
         try:
             async with asyncio.timeout_at(deadline):
-                _, source = await request.app.state.provider_registry.route_stream(prompt)
+                route_started = time.perf_counter()
+                provider_name, source = await request.app.state.provider_registry.route_stream(
+                    prompt
+                )
+                STAGE_LATENCY.labels(stage="provider_first_token").observe(
+                    time.perf_counter() - route_started
+                )
+        except TimeoutError as exc:
+            raise HTTPException(status_code=504, detail="upstream timeout") from exc
         except Exception as exc:
             raise HTTPException(status_code=502, detail="upstream unavailable") from exc
 
@@ -351,10 +468,9 @@ async def chat_stream(  # noqa: PLR0915
             yield f"data: {json.dumps(result.answer)}\n\n"
             yield "data: [DONE]\n\n"
             return
-        if result.reason and result.reason.startswith("verify_rejected"):
-            CANDIDATE_VERIFIER_REJECTED.inc()
         buf = []
         length = 0
+        generation_started = time.perf_counter()
         try:
             async with asyncio.timeout_at(deadline):
                 async for chunk in source:
@@ -362,24 +478,47 @@ async def chat_stream(  # noqa: PLR0915
                     _check_response_length(length)
                     buf.append(chunk)
                     yield f"data: {json.dumps(chunk)}\n\n"
-        except Exception:
+        except Exception as exc:
             log.warning("upstream_stream_failed")
             REQUESTS.labels(outcome="stream_error").inc()
             LATENCY.labels(path="stream_error").observe(time.perf_counter() - started)
-            yield 'event: error\ndata: {"error":"upstream unavailable"}\n\n'
+            code = (
+                "upstream response too large"
+                if isinstance(exc, ResponseTooLargeError)
+                else "upstream timeout"
+                if isinstance(exc, TimeoutError)
+                else "upstream unavailable"
+            )
+            yield f"event: error\ndata: {json.dumps({'error': code})}\n\n"
             return
         finally:
+            STAGE_LATENCY.labels(stage="full_generation").observe(
+                time.perf_counter() - generation_started
+            )
             if hasattr(source, "aclose"):
                 await source.aclose()
-        if result.status != "BYPASS":
-            await request.app.state.semantic_cache.store(prompt, "".join(buf).strip(), tenant)
+        answer = "".join(buf).strip()
+        if not answer:
+            REQUESTS.labels(outcome="stream_error").inc()
+            LATENCY.labels(path="stream_error").observe(time.perf_counter() - started)
+            yield 'event: error\ndata: {"error":"empty upstream answer"}\n\n'
+            return
+        if result.status != "BYPASS" and provider_name == intended_provider:
+            await _cache_store(request, prompt, answer, cache_tenant)
         path = "bypass" if result.status == "BYPASS" else "miss"
         CACHE.labels(result=path).inc()
         REQUESTS.labels(outcome=path).inc()
         LATENCY.labels(path=path).observe(time.perf_counter() - started)
         yield "data: [DONE]\n\n"
 
-    return StreamingResponse(event_gen(), media_type="text/event-stream")
+    return StreamingResponse(
+        event_gen(),
+        media_type="text/event-stream",
+        headers={
+            "X-Provider": "cache" if result.status == "HIT" else provider_name,
+            "X-Intended-Provider": intended_provider,
+        },
+    )
 
 
 def create_app(config: Settings | None = None) -> FastAPI:

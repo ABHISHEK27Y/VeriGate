@@ -31,6 +31,7 @@ See [production configuration](docs/PRODUCTION_CONFIGURATION.md) and the
 [audit report](docs/audit/AUDIT_REPORT.md) for historical findings and release blockers.
 New to the stack? Start with the chapter-by-chapter
 [VeriGate learning guide](docs/VERIGATE_LEARNING_GUIDE.md) before reading the audit.
+For the current software changes and remaining gates, see [PROJECT_PROGRESS.md](PROJECT_PROGRESS.md).
 
 ## What is this project in one paragraph?
 

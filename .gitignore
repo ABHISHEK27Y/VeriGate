@@ -12,6 +12,7 @@ __pycache__/
 .pytest_cache/
 .pytest_tmp/
 evaluation/results/tests.xml
+evaluation/results/live_http_redis_ci/
 audit/tmp/
 .coverage
 build/

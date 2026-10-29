@@ -17,6 +17,8 @@ from ..embeddings import tokenize
 from .verifier import NliVerifier, _negation_flag, _numbers
 
 Action = Literal["ACCEPT", "VERIFY", "REJECT"]
+_COSINE_ROUNDING_TOLERANCE = 0.0001
+_MAX_ASSERTION_BYTES = 384  # conservative bound below the NLI model's 512-token window
 
 
 @dataclass(frozen=True)
@@ -62,8 +64,14 @@ class AnswerPolicy:
         similarity: float,
         verifier: NliVerifier,
     ) -> AnswerDecision:
-        if not answer.strip() or not math.isfinite(similarity) or not -1 <= similarity <= 1:
+        if (
+            not answer.strip()
+            or not math.isfinite(similarity)
+            or abs(similarity) > 1 + _COSINE_ROUNDING_TOLERANCE
+        ):
             return AnswerDecision("REJECT", "invalid_candidate", None)
+        # Normalized float32 dot products can overshoot one by a few ULPs.
+        similarity = max(-1.0, min(1.0, similarity))
         if similarity < self.min_similarity:
             return AnswerDecision("REJECT", "below_retrieval_threshold", None)
         if _numbers(incoming) != _numbers(stored):
@@ -83,6 +91,11 @@ class AnswerPolicy:
             return AnswerDecision("VERIFY", "ambiguous_context", None)
         premise = f"The answer to {stored} is {answer}."
         hypothesis = f"The answer to {incoming} is {answer}."
+        if (
+            max(len(premise.encode("utf-8")), len(hypothesis.encode("utf-8")))
+            > _MAX_ASSERTION_BYTES
+        ):
+            return AnswerDecision("VERIFY", "context_too_long", None)
         score = verifier.entail_prob(premise, hypothesis)
         if score is None or not math.isfinite(score):
             return AnswerDecision("VERIFY", "verifier_unavailable", None)

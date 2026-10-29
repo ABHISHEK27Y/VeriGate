@@ -1,7 +1,9 @@
 """The same answer policy governs gateway misses and chronological replay hits."""
 
+from contextlib import asynccontextmanager
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from app.cache import redisearch_store as rs
@@ -64,6 +66,36 @@ def test_answer_decisions_cover_valid_invalid_ambiguous_and_conflict() -> None:
         ).action
         == "VERIFY"
     )
+
+
+@pytest.mark.parametrize("score", [1.0, 1.000000238418579])
+def test_float32_cosine_rounding_keeps_valid_exact_answer(score: float) -> None:
+    policy = AnswerPolicy.load(ARTIFACT)
+    result = policy.decide(
+        "Who wrote Hamlet?", "Who wrote Hamlet?", "Shakespeare", score, ControlledVerifier()
+    )
+    assert result.action == "ACCEPT"
+
+
+@pytest.mark.parametrize("score", [float("nan"), float("inf"), 1.01, -1.01])
+def test_invalid_cosine_still_rejected(score: float) -> None:
+    policy = AnswerPolicy.load(ARTIFACT)
+    result = policy.decide(
+        "Who wrote Hamlet?", "Who wrote Hamlet?", "Shakespeare", score, ControlledVerifier()
+    )
+    assert result.action == "REJECT"
+    assert result.reason == "invalid_candidate"
+
+
+def test_long_context_abstains_before_nli() -> None:
+    class NoModelVerifier:
+        def entail_prob(self, _premise: str, _hypothesis: str) -> float:
+            raise AssertionError("NLI should not see truncated context")
+
+    query = "Explain the unusual historical record " + "detail " * 90
+    result = AnswerPolicy.load(ARTIFACT).decide(query, query, "record", 0.9, NoModelVerifier())
+    assert result.action == "VERIFY"
+    assert result.reason == "context_too_long"
 
 
 def test_live_gateway_and_replay_accept_same_valid_answer(client) -> None:
@@ -196,3 +228,31 @@ test_changed_redisearch_answer_after_policy_decision_is_miss.config_overrides = 
     "cache_match_mode": "semantic",
     "answer_policy_artifact": str(ARTIFACT),
 }
+
+
+@pytest.mark.asyncio
+async def test_redisearch_discards_hash_changed_after_search(monkeypatch) -> None:
+    tenant = "t_test"
+    key = f"{rs._namespace()}:entry:{tenant}:one"
+
+    class ChangingRedis:
+        async def execute_command(self, *_args):
+            return [
+                1,
+                key.encode(),
+                [b"query", b"Which city?", b"answer", b"Paris", b"score", b"0.1"],
+            ]
+
+        async def hgetall(self, _key):
+            return {b"tenant": tenant.encode(), b"query": b"Which city?", b"answer": b"Berlin"}
+
+        async def zadd(self, *_args, **_kwargs):
+            raise AssertionError("changed candidate must not be touched")
+
+    @asynccontextmanager
+    async def fake_client():
+        yield ChangingRedis()
+
+    monkeypatch.setattr(rs, "_client", fake_client)
+    hits = await rs.knn(np.array([1.0, 0.0], dtype=np.float32), tenant)
+    assert hits == []
