@@ -6,7 +6,7 @@ exists; it does not imply a validated research result or production readiness.
 | Phase | State | Evidence and remaining gate |
 |---|---|---|
 | 0 — checkpoint and claims | Complete | README, demo page, proposal, novelty and results index corrected. At commit `a5536ef`, [CI run 40899654141](https://github.com/ABHISHEK27Y/VeriGate/actions/runs/40899654141) passed tests, Redis Stack tests, lint/typecheck, security audit, Docker build, and generated-report verification. Deploy Check was correctly skipped on the PR branch. |
-| 1 — actual-answer labels | Partial | Historical 11,586 NQ rows audited: 124 of 6,000 old positives have concrete cached text absent from incoming references. Directional miner/loader and 350-row unreviewed local queue exist. Independent reviewer adjudication is absent. |
+| 1 — actual-answer labels | Partial | Historical 11,586 NQ rows audited: 124 of 6,000 old positives have concrete cached text absent from incoming references. Two pinned local judges now annotate the 350-row queue as `model_judged` only; [controlled validation](AUTOMATED_JUDGE_RESULTS.md) shows that FLAN fails to identify positive cases. Independent answer-quality validation is absent. |
 | 2 — frozen protocol | Open | Existing grouped five-seed partitions are exploratory and their corpus was inspected during development. A fresh, independently reviewed lockbox has not been reserved or opened. |
 | 3 — selective policy | Open | The runtime has a heuristic threshold, token-diff and optional always-after-gates NLI. It has no measured ACCEPT/REJECT/VERIFY uncertainty routing. No model should be trained against unreviewed proxy labels as final truth. |
 | 4 — live/replay agreement | Partial | Replay now stores a concrete simulated answer and exact mode uses an exact string key; tests cover vector ties. Live semantic policy remains query-only and does not consume the stored answer or a trained artifact. |
@@ -23,7 +23,8 @@ exists; it does not imply a validated research result or production readiness.
 | NQ strict/lenient and learned studies | Offline historical proxies | Five overlapping splits, correlated reference rows; never pool with reviewed labels. |
 | Directional reference-string audit | Offline diagnostic | Detects 124 discrepancies requiring adjudication; not 124 proven wrong answers. |
 | Risk selector at 1%, 2%, 5% | Failed useful-coverage experiment | Reject-all in every reported expanded-corpus split; no deployed guarantee. |
-| Local FLAN-T5 judge | Failed validation | Do not use as truth or mix with reference labels. |
+| Local FLAN-T5 judge | Failed validation | The new controlled run also found zero positive predictions; do not use as truth. |
+| Local answer-aware NLI judge | Offline exploratory | 13/15 controlled binary decisions correct; two valid cases rejected and the ambiguous case received a high YES score. Not sufficient for deployment. |
 | Human-reviewed answer correctness | Planned | Queue is blank; no evidence yet. |
 | Production monetary savings, global novelty | Unsubstantiated | Do not claim. |
 
