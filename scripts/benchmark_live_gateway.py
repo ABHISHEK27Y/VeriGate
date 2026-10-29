@@ -66,7 +66,8 @@ async def _scenario(  # noqa: PLR0913 - explicit benchmark dimensions
         "fallback_used": result["fallback_used"],
         "note": result["note"],
         "http_complete_ms": round(elapsed_ms, 3),
-        "mock_provider_invoked": result["provider"] != "cache",
+        "mock_provider_invoked": result["provider"] != "cache"
+        and not result["note"].startswith("coalesced:"),
     }
 
 

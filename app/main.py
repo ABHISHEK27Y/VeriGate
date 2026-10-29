@@ -45,6 +45,7 @@ from .rate_limit import RateLimiter
 from .redis_client import close_redis, create_redis, redis_backend_name
 from .schemas import ChatRequest, ChatResponse
 from .shadow import ShadowAuditor
+from .singleflight import SingleFlight
 
 # Configure structured logging
 configure_logging(json_output=True)
@@ -52,7 +53,7 @@ log = get_logger("verigate.main")
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI):  # noqa: PLR0915
     """Application lifespan handler - startup and shutdown."""
     # Startup
     log.info("Starting VeriGate gateway", version=__version__)
@@ -80,6 +81,7 @@ async def lifespan(app: FastAPI):
         app.state.index = app.state.cache._index
         app.state.verifier = app.state.cache._policy.verifier
         app.state.provider_registry = ProviderRegistry.from_settings(app.state.redis)
+        app.state.singleflight = SingleFlight()
         app.state.providers = app.state.provider_registry
         app.state.shadow_auditor = ShadowAuditor(
             app.state.redis, app.state.provider_registry, app.state.config
@@ -400,11 +402,28 @@ async def chat(req: ChatRequest, request: Request, x_api_key: str | None = Heade
         )
 
     await _check_budget(api_key, request)  # only miss/bypass reach a provider — hits are free
-    provider_name, answer = await _generate_answer(prompt, request)
-
     path = "bypass" if result.status == "BYPASS" else "miss"
-    if result.status != "BYPASS" and provider_name == intended_provider:
-        await _cache_store(request, prompt, answer, cache_tenant)
+
+    async def generate_and_store() -> tuple[str, str]:
+        provider_name, answer = await _generate_answer(prompt, request)
+        if provider_name == intended_provider:
+            await _cache_store(request, prompt, answer, cache_tenant)
+        return provider_name, answer
+
+    if result.status == "BYPASS":
+        provider_name, answer = await _generate_answer(prompt, request)
+        joined = False
+    else:
+        try:
+            (provider_name, answer), joined = await request.app.state.singleflight.run(
+                f"{cache_tenant}\x00{prompt}",
+                generate_and_store,
+                get_settings().provider_timeout + 2,
+            )
+        except TimeoutError as exc:
+            raise HTTPException(status_code=504, detail="coalesced request timeout") from exc
+        except RuntimeError as exc:
+            raise HTTPException(status_code=502, detail="upstream unavailable") from exc
 
     CACHE.labels(result=path).inc()
     REQUESTS.labels(outcome=path).inc()
@@ -419,7 +438,7 @@ async def chat(req: ChatRequest, request: Request, x_api_key: str | None = Heade
         latency_ms=round((time.perf_counter() - t0) * 1000, 2),
         threshold=result.threshold,
         similarity=result.similarity,
-        note=result.reason,
+        note=f"coalesced:{result.reason}" if joined else result.reason,
     )
 
 
