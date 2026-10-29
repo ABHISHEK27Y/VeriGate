@@ -88,6 +88,7 @@ class Settings(BaseSettings):
     shadow_enabled: bool = False
     shadow_sample_rate: float = Field(default=0.0, ge=0.0, le=1.0)
     shadow_max_pending: int = Field(default=4, gt=0, le=64)
+    shadow_daily_limit_per_tenant: int = Field(default=20, ge=0)
     shadow_review_limit: int = Field(default=100, gt=0, le=10000)
 
     # Upstream LLM provider: "mock" (free, default), "openai", or "gemini".

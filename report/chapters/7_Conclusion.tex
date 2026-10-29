@@ -11,11 +11,13 @@ or measured monetary savings. Its thresholds were not tuned on a separate valida
 set. Therefore this report does not claim a formal error guarantee, a production quality
 bound, or that adaptive thresholds and verification were invented by this project.
 
-The next research step is an answer-aware dataset with provenance and independent review,
-group-separated train, validation, calibration, and held-out test partitions, plus a
-stream replay that measures retrieval, acceptance, verification cost, and end-to-end
-cache behaviour. Only after those measurements should a learned or risk-controlled policy
-be selected. Negative or mixed findings will be reported as results rather than hidden.
+New public pair-proxy experiments now use group-separated partitions, learned and
+calibrated accept scores, a filling-cache replay, and a synthetic risk-control exercise.
+The QQP-to-PAWS transfer is weak, and strict pair-proxy risk targets lead to reject-all.
+Those findings challenge the earlier smoke-set optimism; they still cannot validate
+answer reuse. The next research step is independent review of actual cached answers,
+followed by a held-out replay and a costed provider comparison. Only then should a
+learned or risk-controlled semantic policy be considered for deployment.
 
 Operationally, public deployment still requires production secrets, a real provider,
 shared Redis, monitoring, load tests, and a release check for the exact revision being

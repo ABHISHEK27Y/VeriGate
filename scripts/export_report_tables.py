@@ -7,7 +7,9 @@ from __future__ import annotations
 
 import csv
 import json
+from collections import defaultdict
 from pathlib import Path
+from statistics import mean
 
 ROOT = Path(__file__).resolve().parents[1]
 RESULTS = ROOT / "evaluation" / "results"
@@ -154,7 +156,88 @@ def main() -> None:
         ],
     )
 
-    print(f"Generated five LaTeX tables in {OUTPUT}")
+    learned = rows(
+        "learned_transfer.csv",
+        {"test_source", "system", "coverage", "false_hit_among_served", "label_type"},
+    )
+    proxy_groups: dict[tuple[str, str], list[dict[str, str]]] = defaultdict(list)
+    for row in learned:
+        if row["label_type"] != "query_pair_proxy":
+            raise ValueError("Unexpected learned-transfer label type")
+        if row["test_source"] in {"qqp", "paws"} and row["system"] in {
+            "logistic_all",
+            "gradient_boosting",
+        }:
+            proxy_groups[(row["test_source"], row["system"])].append(row)
+    table(
+        "learned_proxy.tex",
+        "Five-seed query-pair proxy transfer; false acceptance is among accepted "
+        "pairs, not answers.",
+        "tab:learned-proxy",
+        "|l|l|r|r|",
+        ["Test source", "Model", "Coverage", "False pair acceptance"],
+        [
+            [
+                escape(source),
+                escape(system),
+                percent(str(mean(float(row["coverage"]) for row in group))),
+                percent(str(mean(float(row["false_hit_among_served"]) for row in group))),
+            ]
+            for (source, system), group in sorted(proxy_groups.items())
+        ],
+    )
+
+    stream = rows(
+        "stream_proxy.csv",
+        {
+            "capacity_per_tenant",
+            "system",
+            "accepted_known",
+            "accepted_known_false",
+            "accepted_unknown",
+        },
+    )
+    table(
+        "stream_proxy.tex",
+        "Chronological QQP pair-proxy replay; unknown cross-pair outcomes are not "
+        "counted as correct.",
+        "tab:stream-proxy",
+        "|r|l|r|r|r|",
+        ["Capacity", "Policy", "Known accepts", "Known false", "Unknown accepts"],
+        [
+            [
+                row["capacity_per_tenant"],
+                escape(row["system"]),
+                row["accepted_known"],
+                row["accepted_known_false"],
+                row["accepted_unknown"],
+            ]
+            for row in stream
+        ],
+    )
+
+    risk = rows("risk_synthetic.csv", {"epsilon", "threshold", "true_risk_exceeds_target"})
+    risk_groups: dict[str, list[dict[str, str]]] = defaultdict(list)
+    for row in risk:
+        risk_groups[row["epsilon"]].append(row)
+    table(
+        "risk_synthetic.tex",
+        "Synthetic IID bound exercise; reject-all runs have no defined conditional risk.",
+        "tab:risk-synthetic",
+        "|r|r|r|r|",
+        ["Target", "Runs", "Nonempty selections", "True-risk violations"],
+        [
+            [
+                percent(target),
+                str(len(group)),
+                str(sum(row["threshold"] != "inf" for row in group)),
+                str(sum(row["true_risk_exceeds_target"] == "1" for row in group)),
+            ]
+            for target, group in sorted(risk_groups.items(), key=lambda item: float(item[0]))
+        ],
+    )
+
+    print(f"Generated eight LaTeX tables in {OUTPUT}")
 
 
 if __name__ == "__main__":

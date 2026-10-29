@@ -66,6 +66,12 @@ class ShadowAuditor:
     async def _sample(self, prompt: str, cached_answer: str, tenant: str) -> None:
         stream = None
         try:
+            budget_key = f"{self.key_prefix}:shadow:budget:{tenant}"
+            await self.redis.set(budget_key, 0, nx=True, ex=86400)
+            count = await self.redis.incr(budget_key)
+            if count > self.config.shadow_daily_limit_per_tenant:
+                SHADOW.labels(outcome="budget_exhausted").inc()
+                return
             async with asyncio.timeout(self.config.provider_timeout):
                 provider, stream = await self.providers.route_stream(prompt)
                 chunks: list[str] = []

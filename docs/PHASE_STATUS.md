@@ -12,7 +12,7 @@ its evidence and checks exist; a working component is not a finished research cl
 | 4 — answer shadow checks and drift | Async fresh-answer checks, tenant controller, drift replay | **Partial.** An opt-in, bounded async sampler records fresh and cached answers per tenant for human review without changing cache-hit responses. There is no correctness judge, reviewed outcome set, drift replay or active controller. No real-provider shadow calls were made. See `SHADOW_REVIEW.md`. |
 | 5 — volatility and TTL | Labelled volatility corpus, classifier and staleness/hit-rate study | Not started. Existing keyword rules remain. |
 | 6 — provider routing quality | Real cheap/strong answers and cost/quality frontier | Not started; requires authorized provider usage. Historical router cost ratios are illustrative. |
-| 7 — scale and report | 1M-entry benchmark where feasible, measured HNSW recall/latency, full report | Not started. Existing smaller backend comparison is separate engineering evidence. |
+| 7 — scale and report | 1M-entry benchmark where feasible, measured HNSW recall/latency, full report | **Partial.** The report now includes generated tables for the learned pair proxy, filling-cache replay and synthetic risk study, plus explicit threats to validity. The older 1k–10k backend comparison is separate engineering evidence; 1M-entry HNSW recall/latency and crossover remain unmeasured. |
 
 The present data show substantial non-equivalent pair acceptance on public sources.
 That directly challenges the historical smoke result; it does **not** establish the

@@ -15,6 +15,7 @@ from app.identity import tenant_id
 from app.shadow import ShadowAuditor
 
 TTL_SECONDS = 60
+TWO_TENANTS = 2
 
 
 class FakeProvider:
@@ -120,6 +121,34 @@ async def test_oversized_review_record_is_discarded():
         assert auditor.maybe_schedule("question", "cached", "tenant-a")
         await asyncio.gather(*auditor._tasks)
         assert await redis.keys("*:shadow:review:*") == []
+    finally:
+        await auditor.aclose()
+        await redis.aclose()
+        _runtime.reset(token)
+
+
+@pytest.mark.asyncio
+async def test_shadow_tenant_daily_budget_caps_provider_calls():
+    token = _runtime.set(
+        snapshot(
+            Settings(
+                shadow_enabled=True,
+                shadow_sample_rate=1,
+                shadow_daily_limit_per_tenant=1,
+            )
+        )
+    )
+    redis = fakeredis.aioredis.FakeRedis(decode_responses=True)
+    provider = FakeProvider()
+    provider.release.set()
+    auditor = ShadowAuditor(redis, provider)
+    try:
+        for _ in range(2):
+            assert auditor.maybe_schedule("question", "cached", "tenant-a")
+            await asyncio.gather(*auditor._tasks)
+        assert auditor.maybe_schedule("question", "cached", "tenant-b")
+        await asyncio.gather(*auditor._tasks)
+        assert provider.calls == TWO_TENANTS  # one allowed for each tenant
     finally:
         await auditor.aclose()
         await redis.aclose()

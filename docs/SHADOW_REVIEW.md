@@ -5,7 +5,10 @@ default. With both enabled, a sampled cache HIT returns its cached answer
 immediately while a bounded background task asks the configured provider for a
 fresh answer. This makes **an additional provider request** for each sample;
 real providers may charge for it. It is not included in the current daily
-request-admission budget. The process cancels unfinished samples at shutdown.
+request-admission budget. A Redis-backed `SHADOW_DAILY_LIMIT_PER_TENANT`
+(default 20; zero disables all fresh calls) caps sampled upstream calls per
+tenant per rolling 24-hour window. The process cancels unfinished samples at
+shutdown.
 
 Each sample is stored in Redis under the current cache namespace and tenant:
 `<namespace>:shadow:review:<tenant_id>`. The Redis list is capped by
@@ -19,7 +22,7 @@ cached answer was wrong; even an identical answer is not proof of correctness.
 
 The sampler caps in-flight work with `SHADOW_MAX_PENDING` (default 4), applies
 the normal provider timeout and response-length limit, and increments
-`verigate_shadow_total{outcome=scheduled|recorded|failed}`. Failures are
+`verigate_shadow_total{outcome=scheduled|recorded|failed|budget_exhausted}`. Failures are
 counted without changing the user response. Since it is in-process and
 best-effort, it is not a durable audit queue. Records exceeding
 `MAX_CACHE_ENTRY_BYTES` are discarded. The proposed Phase 4 controller

@@ -29,9 +29,7 @@ recall nor negative acceptance is an end-to-end workload cache-hit or monetary-s
 The current fixture is deliberately small and was used during development. Thresholds and
 heuristic weights were not selected on a separate validation split. The displayed differences
 are descriptive results on this fixture; they cannot establish generalisation or a fair
-comparison with published systems. A future evaluation must label the reusability of each
-\emph{specific cached answer}, split related examples by group, tune policies on validation
-data, and replay a filling cache on a held-out workload.
+comparison with published systems.
 
 \begin{figure}[H]
 \centering
@@ -39,6 +37,33 @@ data, and replay a filling cache on a held-out workload.
 \caption{Threshold sweep on the candidate-pair smoke fixture. Axes are negative-pair
 acceptance and positive-pair recall, not real workload risk and savings.}
 \end{figure}
+
+\section{Public Query-Pair Proxy Experiments}
+Separate scripts load QQP, PAWS, and STS-B query or sentence pairs and keep repeated
+normalized queries in the same train, validation, calibration, or test group. Five fixed
+seeds evaluate learned accept scorers and transfer. The model was trained on QQP, so PAWS
+is a distribution-shift challenge. The table gives the mean per-seed coverage and false
+\emph{pair} acceptance among served pairs; it does not say whether a specific cached
+answer would have satisfied a request. The strong deterioration on PAWS is a negative
+result, not evidence that learned semantic reuse is ready to deploy.
+
+\input{generated/learned_proxy}
+
+A chronological replay fills tenant-partitioned caches under TTL and LRU constraints.
+It exercises real neighbourhood density. The source dataset only labels the designated
+pair; when retrieval crosses pairs, the outcome is marked unknown rather than correct.
+The replay counts below therefore cannot be converted into a true workload answer-error
+rate or a monetary saving claim.
+
+\input{generated/stream_proxy}
+
+An exact binomial upper bound with a finite threshold grid was exercised on synthetic IID
+data. The table records how often a nonempty threshold was selected and whether its
+known synthetic true risk exceeded the target. Reject-all runs have zero coverage and no
+defined conditional risk. Public QQP-to-PAWS pair-proxy calibration selected reject-all
+at the tested targets, so it gives no evidence of a useful answer-level guarantee.
+
+\input{generated/risk_synthetic}
 
 \section{Stage and Backend Timings}
 The following archived timing CSV files were produced by the repository's latency and
@@ -57,11 +82,17 @@ measure billed spend. The numbers are useful for testing the router's mechanics 
 
 \input{generated/cascade}
 
-\section{Validity and Next Experiment}
-The smoke fixture is too small for an empirical risk claim. It lacks answer-aware labels,
-independent annotation, group-separated train/validation/test splits, a realistic request
-stream, uncertainty intervals, and a real accounting of verification and provider costs.
-Optional NLI was not part of the default reproduced table; it requires a separately
-available model and should be reported only when that model ran successfully. The next
-phase will build a reviewable dataset and evaluation protocol before selecting a learned
-or risk-controlled policy.
+\section{Threats to Validity and Limitations}
+QQP duplicate flags, PAWS paraphrases, and a binarized STS-B similarity score are
+query-pair proxies, not labels for answer reuse. Source class balance differs from real
+gateway traffic, and QQP labels can be noisy. Related examples may share semantic
+families that normalized-text grouping cannot detect. Five overlapping random splits
+and their bootstrap intervals do not substitute for an independently collected workload.
+Synthetic IID risk-control behavior depends on exchangeability; tenant traffic, provider
+updates, domain drift, and adaptive cache state can violate that assumption. The current
+review queue has no independently reviewed answer labels. The opt-in shadow sampler
+collects fresh/cached answer pairs, but a different fresh answer is not itself a correctness
+judgment and no drift controller is active. The single main embedding model, optional NLI
+availability, missing real-provider quality comparison, limited backend scale, and absent
+measured end-to-end cost prevent a production semantic-reuse claim. Exact matching stays
+the default while answer-aware review and held-out evaluation remain unfinished.
