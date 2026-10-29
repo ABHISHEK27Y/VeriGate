@@ -1,8 +1,8 @@
 """CachePolicy — the single source of truth for the cache decision.
 
-Both the live gateway (semantic_cache.lookup) and the evaluation harness use this, so a
-result measured in evaluation is exactly the behaviour that ships. Toggling the flags is
-what produces the ablation study (baseline vs +adaptive vs +verifier vs full).
+The live semantic cache and several evaluation paths use this decision function.
+Comparability still depends on matching retrieval, features, configuration and labels;
+an offline pair score alone does not establish live answer correctness.
 """
 
 from __future__ import annotations

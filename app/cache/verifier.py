@@ -1,8 +1,8 @@
-"""Sub-contribution B: self-verification (reject false hits).
+"""Query-only structural and optional NLI filters for semantic-cache candidates.
 
 Before serving a candidate cached answer (one that already cleared the similarity
-threshold), confirm the two queries are truly equivalent WITHOUT calling the expensive
-LLM. Tier-1 symbolic checks catch the failure modes semantic similarity is blind to:
+threshold), filter some known mismatches WITHOUT calling the upstream LLM.
+Tier-1 symbolic checks cover these failure modes:
 
   - numbers/quantities must match     ("5 GB"  vs "50 GB")
   - negation/polarity must match      ("is X safe" vs "is X NOT safe")
@@ -11,11 +11,11 @@ LLM. Tier-1 symbolic checks catch the failure modes semantic similarity is blind
 The token-diff check is conservative: it can reject valid paraphrases. The old
 capitalization check remains available as an explicit research ablation.
 
-Tier-2 can use a lightweight NLI cross-encoder for borderline cases. The
-capitalization heuristic is retained only as an explicit ablation baseline.
+When enabled, Tier-2 runs NLI after the structural checks for every surviving
+candidate. It is not an uncertainty-routed verifier and it does not inspect the
+stored answer.
 
-Policy: conservative on the checks it does make. A miss costs money; a false hit costs
-correctness, and we optimize for correctness.
+These checks can reject valid paraphrases and accept incompatible cached answers.
 """
 
 from __future__ import annotations

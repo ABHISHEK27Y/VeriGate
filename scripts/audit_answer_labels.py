@@ -110,9 +110,7 @@ def run(source: Path = SOURCE) -> dict[str, object]:
         "label_meaning": "reference-string membership only; actual reuse needs human review",
         "review_status": "unreviewed",
     }
-    SUMMARY.write_text(
-        json.dumps(summary, indent=2) + "\n", encoding="utf-8", newline="\n"
-    )
+    SUMMARY.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8", newline="\n")
     return summary
 
 

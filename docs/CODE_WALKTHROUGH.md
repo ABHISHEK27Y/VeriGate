@@ -152,25 +152,26 @@ and serves the dashboard at `/` and `/ui`.
 
 ### `static/dashboard.html`
 A dependency-free single-page UI served **same-origin** by the gateway (no CORS). Talks to
-`/v1/chat`, `/health`, `/admin/cache/clear`. Explains the contribution, shows animated results,
+`/v1/chat`, `/health`, `/admin/cache/clear`. Shows the configured mode, scoped evidence,
 and provides the interactive playground.
 
 ### `evaluation/` and `tests/`
 `evaluation/*` produce the figures: `run.py` (accuracy/ablation + the trade-off graph),
 `cascade.py` (cost-vs-quality), `latency.py` + `backend_compare.py` (latency/scaling).
-`tests/*` (15) cover health, auth, cache hit/miss, verifier, volatility, rate-limit, metrics,
+`tests/*` cover health, auth, cache hit/miss, verifier, volatility, rate-limit, metrics,
 **tenant isolation**, and **cascade routing**.
 
 ---
 
 ## 4. Key design decisions (be ready to defend these)
 
-1. **One shared `CachePolicy`** for gateway + evaluation → results equal shipped behaviour; the
-   ablation is just flag toggles.
-2. **Verifier over a looser threshold** → you get high recall *and* correctness; the threshold
-   alone forces a bad trade-off.
-3. **Tier-2 NLI is opt-in** → data showed it maximizes correctness but costs recall/latency and
-   is redundant once the adaptive threshold is on. Defaults reflect the evidence, not hype.
+1. **One shared `CachePolicy` decision function** is used by the gateway and several
+   evaluations. Input retrieval, configuration and labels must also match before an
+   offline result describes live behaviour.
+2. **Verifier after a threshold** filters some structural mismatches but rejects many
+   valid paraphrases. Neither step proves the specific cached answer is usable.
+3. **Tier-2 NLI is opt-in** and runs after structural checks for every surviving
+   candidate when enabled. It compares questions only; it is not selective routing.
 4. **Per-tenant partitioning** → identified cross-tenant leakage as the defining risk of a
    *semantic* cache in the threat model, then eliminated it (tests on both backends).
 5. **In-process index first, RediSearch for scale** → benchmark showed the O(n) cost was

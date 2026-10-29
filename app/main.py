@@ -21,6 +21,7 @@ from prometheus_client import CONTENT_TYPE_LATEST
 from . import __version__
 from .budget import check_and_count as budget_check_and_count
 from .cache import redisearch_store as rs
+from .cache.namespace import POLICY_VERSION
 from .cache.semantic_cache import LookupResult, SemanticCache
 from .config import Settings, _runtime, get_settings, snapshot
 from .embeddings import Embedder
@@ -225,6 +226,8 @@ async def health(request: Request):
         "vector_backend": get_settings().vector_backend,
         "cache_enabled": get_settings().cache_enabled,
         "cache_match_mode": get_settings().cache_match_mode,
+        "cache_policy_version": POLICY_VERSION,
+        "verifier_nli_enabled": get_settings().verifier_nli,
         "provider_health": "configuration_only",
         "providers": [p.name for p in request.app.state.provider_registry.providers],
     }
