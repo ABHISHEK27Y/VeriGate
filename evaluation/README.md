@@ -25,6 +25,28 @@ public source labels establishes that a particular cached answer is reusable. Se
 [`docs/DATASHEET.md`](../docs/DATASHEET.md) and
 [`docs/PHASE_STATUS.md`](../docs/PHASE_STATUS.md) for the remaining work.
 
+## NQ-Open oracle-answer study
+
+With the pinned local MiniLM and NLI models available, run:
+
+```powershell
+python -m scripts.build_answer_pairs --download
+python -m evaluation.gold_model
+python -m evaluation.stream_gold
+python -m scripts.judge_answer_reuse
+python scripts/summarize_experiments.py
+```
+
+The source, mined pairs, NLI feature cache, and any per-row judge opinions
+stay in gitignored `data/`. Aggregate CSVs under `evaluation/results/` and
+`docs/RESULTS_EXPERIMENTAL.md` are generated from that run. The gold label is
+normalized NQ answer-alias agreement, not a human judgment of a generated
+answer. PAWS transfer is reported separately with `query_pair_proxy` labels.
+The judge validates against NQ gold first, then can judge only unlabelled
+triples with actual cached answers; blank review rows are skipped. No paid
+provider calls are involved. The reported judge failed validation, so its
+opinions should not be used as correctness evidence.
+
 ## Historical smoke evaluator
 
 From the repository root, using the locked development environment:

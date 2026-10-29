@@ -40,7 +40,9 @@ class ShadowAuditor:
         self._tasks: set[asyncio.Task[None]] = set()
         self._closed = False
 
-    def maybe_schedule(self, prompt: str, cached_answer: str, tenant: str) -> bool:
+    def maybe_schedule(
+        self, prompt: str, cached_answer: str, tenant: str, cached_query: str | None = None
+    ) -> bool:
         """Schedule without awaiting upstream work or holding up a cache response."""
         settings = self.config
         if (
@@ -52,7 +54,9 @@ class ShadowAuditor:
             return False
         if secrets.randbelow(1_000_000) >= int(settings.shadow_sample_rate * 1_000_000):
             return False
-        task = asyncio.create_task(self._sample(prompt, cached_answer, tenant))
+        task = asyncio.create_task(
+            self._sample(prompt, cached_answer, tenant, cached_query or prompt)
+        )
         self._tasks.add(task)
         task.add_done_callback(self._finished)
         SHADOW.labels(outcome="scheduled").inc()
@@ -63,7 +67,9 @@ class ShadowAuditor:
         if not task.cancelled():
             task.exception()  # retrieve errors even if the request has ended
 
-    async def _sample(self, prompt: str, cached_answer: str, tenant: str) -> None:
+    async def _sample(
+        self, prompt: str, cached_answer: str, tenant: str, cached_query: str
+    ) -> None:
         stream = None
         try:
             budget_key = f"{self.key_prefix}:shadow:budget:{tenant}"
@@ -85,6 +91,7 @@ class ShadowAuditor:
                 "id": uuid.uuid4().hex,
                 "tenant_id": tenant,
                 "prompt": prompt,
+                "cached_query": cached_query,
                 "cached_answer": cached_answer,
                 "fresh_answer": fresh_answer,
                 "provider": provider,

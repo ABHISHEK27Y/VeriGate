@@ -22,11 +22,26 @@ def _mean(rows: list[dict[str, str]], key: str) -> str:
     return f"{statistics.mean(values):.1%}" if values else "undefined"
 
 
+def _judge_metric(row: dict[str, str], key: str) -> tuple[str, str]:
+    estimate = row[key]
+    lower, upper = row[f"{key}_ci_low"], row[f"{key}_ci_high"]
+    if not estimate:
+        return "undefined", "undefined"
+    if key == "cohen_kappa":
+        return f"{float(estimate):.3f}", f"[{float(lower):.3f}, {float(upper):.3f}]"
+    return f"{float(estimate):.1%}", f"[{float(lower):.1%}, {float(upper):.1%}]"
+
+
 def main() -> None:
     learned = _rows("learned_transfer.csv")
     stream = _rows("stream_proxy.csv")
     risk = _rows("risk_synthetic.csv")
     shifted = _rows("risk_shift_proxy.csv")
+    gold = _rows("gold_model.csv")
+    gold_paws = _rows("gold_paws_transfer.csv")
+    gold_risk = _rows("gold_risk.csv")
+    gold_stream = _rows("gold_stream.csv")
+    judge = _rows("judge_validation.csv")[0]
     lines = [
         "# Exploratory research results",
         "",
@@ -126,6 +141,130 @@ def main() -> None:
             "",
         ]
     )
+    lines.extend(
+        [
+            "## NQ-Open gold-answer-match factoid study",
+            "",
+            "The miner pairs questions with high MiniLM similarity and compares",
+            "normalized NQ reference-answer aliases. It deliberately balances positive",
+            "pairs and hard negatives; the oracle cached answer is not a generated",
+            "answer. Grouped train/validation/calibration/test splits use five seeds.",
+            "Each held-out split has 180 pairs; per-split bootstrap intervals and",
+            "denominators are in `gold_model.csv`. Seeds reuse the same mined corpus,",
+            "so their means are not independent-sample confidence intervals.",
+            "",
+            "| Policy | Mean coverage | Mean gold-answer mismatch among served |",
+            "|---|---:|---:|",
+        ]
+    )
+    for system in ("static_val_f1", "adaptive_tier1", "learned_with_nli", "learned_without_nli"):
+        rows = [row for row in gold if row["system"] == system]
+        lines.append(
+            f"| {system} | {_mean(rows, 'coverage')} | "
+            f"{_mean(rows, 'false_hit_among_served')} |"
+        )
+    lines.extend(
+        [
+            "",
+            "The learned model uses lexical, entity/number, polarity, and bidirectional",
+            "local NLI entailment features. On this curated corpus it gives no clear",
+            "improvement over the static or adaptive policy; near-perfect outcomes",
+            "suggest the mined split may be easy. No model is deployed from this study.",
+            "",
+            "### PAWS transfer (query-pair proxy; separate label type)",
+            "",
+            "PAWS labels are paraphrase judgments, not cached-answer truth. The",
+            "NQ-trained model also sees blank cached-answer features on PAWS, a",
+            "material domain shift. These figures are deliberately not pooled with",
+            "NQ gold-answer-match results.",
+            "",
+            "| Policy | Mean coverage | Mean false pair acceptance among served |",
+            "|---|---:|---:|",
+        ]
+    )
+    for system in ("static_val_f1", "adaptive_tier1", "learned_with_nli", "learned_without_nli"):
+        rows = [row for row in gold_paws if row["system"] == system]
+        lines.append(
+            f"| {system} | {_mean(rows, 'coverage')} | "
+            f"{_mean(rows, 'false_hit_among_served')} |"
+        )
+    lines.extend(
+        [
+            "",
+            "### Gold-label risk selection",
+            "",
+            "A ten-threshold grid was selected on disjoint gold calibration groups",
+            "using the exact-binomial upper bound and a finite-grid correction.",
+            "",
+            "| Error target | Reject-all seeds | Mean held-out coverage |",
+            "|---:|---:|---:|",
+        ]
+    )
+    for target in sorted({row["epsilon"] for row in gold_risk}, key=float):
+        rows = [row for row in gold_risk if row["epsilon"] == target]
+        rejected = sum(int(row["test_accepted"]) == 0 for row in rows)
+        lines.append(
+            f"| {float(target):.0%} | {rejected}/{len(rows)} | {_mean(rows, 'test_coverage')} |"
+        )
+    lines.extend(
+        [
+            "",
+            "It selected **reject-all at every target in every seed**. Even zero",
+            "observed calibration errors cannot certify these strict bounds with",
+            "the available accepted sample sizes and grid correction. Coverage is",
+            "zero; no nonempty risk claim follows. Oracle alias labels also cannot",
+            "support a deployed generated-answer guarantee.",
+            "",
+            "### Chronological gold-answer replay",
+            "",
+            "All accepted hits, including cross-pair candidates, have an NQ alias",
+            "comparison; `accepted_unknown` is therefore zero in this study.",
+            "The replay uses a Zipf request order, TTL, LRU, and tenant partitions.",
+            "",
+            (
+                "| Per-tenant capacity | Policy | Requests | Accepted | "
+                "Gold-answer mismatches | Unknown |"
+            ),
+            "|---:|---|---:|---:|---:|---:|",
+        ]
+    )
+    for row in gold_stream:
+        lines.append(
+            f"| {row['capacity_per_tenant']} | {row['system']} | {row['requests']} | "
+            f"{row['accepted_known']} | {row['accepted_known_false']} | "
+            f"{row['accepted_unknown']} |"
+        )
+    lines.extend(
+        [
+            "",
+            "This measures reference-answer alias matches, not freshness, answer",
+            "completeness, provider quality, or production traffic savings.",
+            "",
+            "## Local triple judge validation",
+            "",
+            "The pinned local FLAN-T5-small judge was evaluated on a grouped",
+            "NQ held-out split. Abstentions count as NO for the primary metrics.",
+            "The values below come from `judge_validation.csv` with row-bootstrap",
+            "95% intervals. Undefined precision means no YES prediction.",
+            "",
+            f"Validation pairs: {judge['n']}; gold positives: {judge['gold_positive']};",
+            f"predicted YES: {judge['predicted_positive']}; abstentions: {judge['abstentions']}.",
+            "",
+            "| Measure | Estimate | 95% bootstrap interval |",
+            "|---|---:|---:|",
+            "",
+            "This judge failed validation: it predicted no reusable answers and",
+            "has no value as an automated correctness signal here. The optional",
+            "2,000-row review queue has blank cached answers, so all rows are",
+            "ineligible for judging. The shadow sampler is off by default. No",
+            "`model_judged` rows were produced; none are counted as gold evidence.",
+            "",
+        ]
+    )
+    metric_header = lines.index("| Measure | Estimate | 95% bootstrap interval |")
+    for offset, key in enumerate(("accuracy", "precision", "recall", "cohen_kappa"), 2):
+        estimate, interval = _judge_metric(judge, key)
+        lines.insert(metric_header + offset, f"| {key} | {estimate} | {interval} |")
     TARGET.write_text("\n".join(lines), encoding="utf-8", newline="\n")
     print(TARGET)
 

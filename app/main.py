@@ -264,7 +264,9 @@ async def chat(req: ChatRequest, request: Request, x_api_key: str | None = Heade
     result: LookupResult = await request.app.state.semantic_cache.lookup(prompt, tenant)
 
     if result.status == "HIT":
-        request.app.state.shadow_auditor.maybe_schedule(prompt, result.answer or "", tenant)
+        request.app.state.shadow_auditor.maybe_schedule(
+            prompt, result.answer or "", tenant, result.cached_query
+        )
         CACHE.labels(result="hit").inc()
         REQUESTS.labels(outcome="hit").inc()
         LATENCY.labels(path="hit").observe(time.perf_counter() - t0)
@@ -332,7 +334,9 @@ async def chat_stream(  # noqa: PLR0915
 
     async def event_gen():
         if result.status == "HIT":
-            request.app.state.shadow_auditor.maybe_schedule(prompt, result.answer or "", tenant)
+            request.app.state.shadow_auditor.maybe_schedule(
+                prompt, result.answer or "", tenant, result.cached_query
+            )
             CACHE.labels(result="hit").inc()
             REQUESTS.labels(outcome="hit").inc()
             LATENCY.labels(path="hit").observe(time.perf_counter() - started)

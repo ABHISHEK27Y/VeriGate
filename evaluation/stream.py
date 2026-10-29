@@ -48,7 +48,7 @@ class ReplayResult:
     max_resident_entries: int
 
 
-def replay(  # noqa: PLR0913, PLR0915 - chronological replay owns all event state
+def replay(  # noqa: PLR0912, PLR0913, PLR0915 - chronological replay owns event state
     pairs: list[Pair],
     vectors: dict[str, np.ndarray],
     policy: CachePolicy,
@@ -59,10 +59,17 @@ def replay(  # noqa: PLR0913, PLR0915 - chronological replay owns all event stat
     ttl_steps: int,
     tenants: int = 3,
     exact: bool = False,
+    answer_aliases: dict[str, frozenset[str]] | None = None,
 ) -> ReplayResult:
     """Replay Zipf-popular intents, filling the cache only after each miss."""
     if not pairs or requests <= 0 or capacity <= 0 or ttl_steps <= 0 or tenants <= 0:
         raise ValueError("Replay requires nonempty pairs and positive parameters")
+    if answer_aliases is not None and any(
+        query not in answer_aliases
+        for pair in pairs
+        for query in (pair.stored_query, pair.incoming_query)
+    ):
+        raise ValueError("Gold replay requires an alias set for every question")
     rng = random.Random(seed)
     weights = [1 / (rank + 1) ** 1.1 for rank in range(len(pairs))]
     order = rng.choices(range(len(pairs)), weights=weights, k=requests)
@@ -103,7 +110,12 @@ def replay(  # noqa: PLR0913, PLR0915 - chronological replay owns all event stat
                 hit, _, _ = policy.decide(query, candidate.query, best_sim, density)
             if hit:
                 candidate.last_used = step
-                if candidate.pair_index != index:
+                if answer_aliases is not None:
+                    accepted_known += 1
+                    accepted_known_false += not bool(
+                        answer_aliases[candidate.query] & answer_aliases[query]
+                    )
+                elif candidate.pair_index != index:
                     accepted_unknown += 1
                 else:
                     accepted_known += 1

@@ -1,0 +1,7 @@
+capacity_per_tenant,system,requests,accepted_known,accepted_unknown,accepted_known_false,upstream_calls,intended_retrieval_opportunities,intended_retrieval_successes,positive_density_lookups,mean_density,max_resident_entries,label_type
+10,exact,1500,692,0,0,808,715,715,627,0.13062924791381678,30,gold_answer_match
+10,static_0.72,1500,721,0,31,779,719,719,607,0.1279222466096211,30,gold_answer_match
+10,adaptive_tier1,1500,709,0,1,791,716,716,611,0.1283402784404786,30,gold_answer_match
+100,exact,1500,907,0,0,593,1010,1010,582,0.035844193535762826,248,gold_answer_match
+100,static_0.72,1500,987,0,111,513,998,998,390,0.033759238384441746,204,gold_answer_match
+100,adaptive_tier1,1500,953,0,1,547,1004,1004,390,0.03333914469004935,221,gold_answer_match

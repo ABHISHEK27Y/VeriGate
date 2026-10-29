@@ -1,0 +1,14 @@
+{
+  "model": "google/flan-t5-small",
+  "revision": "0fc9ddf78a1e988dac52e2dac162b0ede4fd74ab",
+  "prompt_version": "triple-yes-no-v1",
+  "validation_gold_sha256": "bef2570ef4fbd87bcda380e8520007840c65501f017815be933b19861bdf89c2",
+  "validation_n": 180,
+  "queue_blank_answers_skipped": 2000,
+  "queue_eligible": 0,
+  "shadow_eligible": 0,
+  "model_judged_count": 0,
+  "model_abstained_count": 0,
+  "label_type_for_unlabelled": "model_judged",
+  "raw_output": null
+}

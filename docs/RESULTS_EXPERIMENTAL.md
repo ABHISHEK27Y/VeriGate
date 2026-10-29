@@ -69,3 +69,97 @@ target. That is a valid conservative outcome, not proof of low deployed
 risk or robustness under shift. A formal claim needs IID or another
 justified sampling model, independently reviewed answer labels, and
 deployment data without material shift.
+
+## NQ-Open gold-answer-match factoid study
+
+The miner pairs questions with high MiniLM similarity and compares
+normalized NQ reference-answer aliases. It deliberately balances positive
+pairs and hard negatives; the oracle cached answer is not a generated
+answer. Grouped train/validation/calibration/test splits use five seeds.
+Each held-out split has 180 pairs; per-split bootstrap intervals and
+denominators are in `gold_model.csv`. Seeds reuse the same mined corpus,
+so their means are not independent-sample confidence intervals.
+
+| Policy | Mean coverage | Mean gold-answer mismatch among served |
+|---|---:|---:|
+| static_val_f1 | 51.3% | 0.0% |
+| adaptive_tier1 | 50.0% | 0.0% |
+| learned_with_nli | 51.1% | 0.2% |
+| learned_without_nli | 51.0% | 0.2% |
+
+The learned model uses lexical, entity/number, polarity, and bidirectional
+local NLI entailment features. On this curated corpus it gives no clear
+improvement over the static or adaptive policy; near-perfect outcomes
+suggest the mined split may be easy. No model is deployed from this study.
+
+### PAWS transfer (query-pair proxy; separate label type)
+
+PAWS labels are paraphrase judgments, not cached-answer truth. The
+NQ-trained model also sees blank cached-answer features on PAWS, a
+material domain shift. These figures are deliberately not pooled with
+NQ gold-answer-match results.
+
+| Policy | Mean coverage | Mean false pair acceptance among served |
+|---|---:|---:|
+| static_val_f1 | 76.8% | 52.3% |
+| adaptive_tier1 | 63.4% | 57.7% |
+| learned_with_nli | 97.8% | 56.2% |
+| learned_without_nli | 99.6% | 56.6% |
+
+### Gold-label risk selection
+
+A ten-threshold grid was selected on disjoint gold calibration groups
+using the exact-binomial upper bound and a finite-grid correction.
+
+| Error target | Reject-all seeds | Mean held-out coverage |
+|---:|---:|---:|
+| 1% | 5/5 | 0.0% |
+| 2% | 5/5 | 0.0% |
+| 5% | 5/5 | 0.0% |
+
+It selected **reject-all at every target in every seed**. Even zero
+observed calibration errors cannot certify these strict bounds with
+the available accepted sample sizes and grid correction. Coverage is
+zero; no nonempty risk claim follows. Oracle alias labels also cannot
+support a deployed generated-answer guarantee.
+
+### Chronological gold-answer replay
+
+All accepted hits, including cross-pair candidates, have an NQ alias
+comparison; `accepted_unknown` is therefore zero in this study.
+The replay uses a Zipf request order, TTL, LRU, and tenant partitions.
+
+| Per-tenant capacity | Policy | Requests | Accepted | Gold-answer mismatches | Unknown |
+|---:|---|---:|---:|---:|---:|
+| 10 | exact | 1500 | 692 | 0 | 0 |
+| 10 | static_0.72 | 1500 | 721 | 31 | 0 |
+| 10 | adaptive_tier1 | 1500 | 709 | 1 | 0 |
+| 100 | exact | 1500 | 907 | 0 | 0 |
+| 100 | static_0.72 | 1500 | 987 | 111 | 0 |
+| 100 | adaptive_tier1 | 1500 | 953 | 1 | 0 |
+
+This measures reference-answer alias matches, not freshness, answer
+completeness, provider quality, or production traffic savings.
+
+## Local triple judge validation
+
+The pinned local FLAN-T5-small judge was evaluated on a grouped
+NQ held-out split. Abstentions count as NO for the primary metrics.
+The values below come from `judge_validation.csv` with row-bootstrap
+95% intervals. Undefined precision means no YES prediction.
+
+Validation pairs: 180; gold positives: 94;
+predicted YES: 0; abstentions: 3.
+
+| Measure | Estimate | 95% bootstrap interval |
+|---|---:|---:|
+| accuracy | 47.8% | [40.6%, 55.0%] |
+| precision | undefined | undefined |
+| recall | 0.0% | [0.0%, 0.0%] |
+| cohen_kappa | 0.000 | [-0.000, 0.000] |
+
+This judge failed validation: it predicted no reusable answers and
+has no value as an automated correctness signal here. The optional
+2,000-row review queue has blank cached answers, so all rows are
+ineligible for judging. The shadow sampler is off by default. No
+`model_judged` rows were produced; none are counted as gold evidence.

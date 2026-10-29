@@ -46,6 +46,7 @@ class LookupResult:
     threshold: float | None = None
     similarity: float | None = None
     reason: str | None = None
+    cached_query: str | None = None  # needed to audit answer reuse on a HIT
 
 
 class SemanticCache:
@@ -219,7 +220,12 @@ class SemanticCache:
             row = await hash_fields(self.redis, self._entry_key(tenant, eid))
             if row and row.get("query") == query:
                 await self.redis.zadd(self._lru_key(tenant), {eid: time.time()}, xx=True)
-                return LookupResult(status="HIT", answer=row["answer"], reason="exact_match")
+                return LookupResult(
+                    status="HIT",
+                    answer=row["answer"],
+                    reason="exact_match",
+                    cached_query=row["query"],
+                )
             return LookupResult(status="MISS", reason="exact_match_required")
 
         # Ensure index is built from Redis before searching
@@ -244,7 +250,12 @@ class SemanticCache:
             best["answer"] = row["answer"]
             await self.redis.zadd(self._lru_key(tenant), {best["id"]: time.time()}, xx=True)
         return LookupResult(
-            status="HIT", answer=best["answer"], threshold=threshold, similarity=sim, reason=reason
+            status="HIT",
+            answer=best["answer"],
+            threshold=threshold,
+            similarity=sim,
+            reason=reason,
+            cached_query=best["query"],
         )
 
     async def store(self, query: str, answer: str, tenant: str) -> None:

@@ -13,11 +13,12 @@ shutdown.
 Each sample is stored in Redis under the current cache namespace and tenant:
 `<namespace>:shadow:review:<tenant_id>`. The Redis list is capped by
 `SHADOW_REVIEW_LIMIT` (default 100) and expires after `CACHE_TTL_SEC`. The
-record includes the prompt, cached answer, fresh answer, provider, timestamp,
+record includes the incoming prompt, cached query, cached answer, fresh answer, provider, timestamp,
 and an opaque ID. It has `review_status: unreviewed` and `label: null`.
 These records contain user content: restrict Redis access and handle exports
-as sensitive data. No review endpoint or automatic correctness judge is
-present yet. A different answer is a disagreement, **not** proof that the
+as sensitive data. A separate offline local-model judge script exists, but
+its first gold validation failed; it is not an online correctness decision
+or a review endpoint. A different answer is a disagreement, **not** proof that the
 cached answer was wrong; even an identical answer is not proof of correctness.
 
 The sampler caps in-flight work with `SHADOW_MAX_PENDING` (default 4), applies
@@ -27,3 +28,11 @@ counted without changing the user response. Since it is in-process and
 best-effort, it is not a durable audit queue. Records exceeding
 `MAX_CACHE_ENTRY_BYTES` are discarded. The proposed Phase 4 controller
 must wait for independently reviewed labels and a drift evaluation.
+
+`python -m scripts.judge_answer_reuse` validates a pinned local triple judge
+against NQ oracle factoid labels. Only unlabelled records with a nonblank
+cached query and cached answer are eligible for optional `model_judged`
+output. The existing 2,000-row QQP/PAWS review queue has blank cached
+answers, so it yields no judge labels. `--shadow-tenant TENANT` opts into
+reading a Redis shadow queue. Neither model opinions nor blank queue rows
+are counted as gold evidence. See `RESULTS_EXPERIMENTAL.md` for validation.

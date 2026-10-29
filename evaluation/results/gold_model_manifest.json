@@ -1,0 +1,42 @@
+{
+  "source_sha256": "bef2570ef4fbd87bcda380e8520007840c65501f017815be933b19861bdf89c2",
+  "embedding_model": "all-MiniLM-L6-v2",
+  "embedding_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+  "nli_model": "cross-encoder/nli-deberta-v3-xsmall",
+  "nli_revision": "a150876415327c80daeff35ca6f68f5ed8cf5c24",
+  "feature_names": [
+    "cosine",
+    "token_jaccard",
+    "length_ratio",
+    "number_mismatch",
+    "negation_mismatch",
+    "entity_mismatch",
+    "prefix_polarity_mismatch",
+    "density",
+    "answer_token_overlap",
+    "antonym_mismatch",
+    "nli_forward",
+    "nli_reverse"
+  ],
+  "seeds": [
+    11,
+    23,
+    37,
+    53,
+    71
+  ],
+  "risk_grid": [
+    0.5,
+    0.6,
+    0.7,
+    0.8,
+    0.9,
+    0.95,
+    0.98,
+    0.99,
+    0.995,
+    0.999
+  ],
+  "label_type": "gold_answer_match",
+  "deployable": false
+}

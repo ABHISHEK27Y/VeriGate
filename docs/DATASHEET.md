@@ -11,6 +11,7 @@ regressions, **not** for an independent thesis result.
 | PAWS | `data/paws.tsv`: `sentence1`, `sentence2`, `label` | Human-judged paraphrase label from PAWS-Wiki *labeled final* | [Google's source licence](https://github.com/google-research-datasets/paws/blob/master/LICENSE) permits use and requests attribution. High lexical overlap is an adversarial challenge; sentences are not necessarily questions. Do not mix in noisy unlabeled PAWS rows. |
 | STS-B | `data/stsb.tsv`: `sentence1`, `sentence2`, `score` | Score ≥ 4.0 on the 0–5 scale is a **binarization proxy**, not a native equivalence label | [GLUE](https://gluebenchmark.com/faq/) defers to source rights; STS-B mixes text from multiple source corpora with different licences. The threshold is fixed before evaluation. No text is committed here. |
 | VeriGate smoke | `evaluation/benchmark.py` | Author-intended equivalent / different | Hand-written, small, no independent annotation, and influenced policy design. |
+| NQ-Open train | `data/NQ-open.train.jsonl` from the [official NQ-Open repository](https://github.com/google-research-datasets/natural-questions/tree/master/nq_open) | Mined factoid pairs with `gold_answer_match`: normalized reference-answer alias sets intersect | [CC BY-SA 3.0](https://github.com/google-research-datasets/natural-questions/blob/master/nq_open/README.md). Raw questions and answers stay in gitignored `data/`; derived aggregate results may be committed. |
 
 All source text stays under gitignored `data/`. `evaluation.datasets.group_split` keeps
 repeated normalized queries and declared families together across train, validation,
@@ -45,3 +46,26 @@ work. It leaves cached answers, reviewer IDs, answer labels, reasons, tenant IDs
 context versions, and answer versions blank. `reviewed_answers()` ignores unfinished
 rows and rejects a purportedly resolved row without two distinct reviewers and
 those required fields. A freshly generated queue is **entirely unreviewed**.
+
+## NQ-Open gold-answer-match proxy
+
+`python -m scripts.build_answer_pairs --download` fetches the official NQ-Open
+train JSONL if needed, samples repeated-answer groups, embeds questions with the
+pinned MiniLM model, and mines high-similarity positive and hard-negative pairs.
+It stores the source and derived SHA-256 hashes, model revision, seed, selection
+parameters, and class counts in a local provenance JSON. Each question appears
+in at most one selected pair. `group_split()` still groups by normalized
+question for five-seed train/validation/calibration/test evaluation.
+
+The label compares normalized gold answer **alias sets**, ignoring case,
+punctuation, articles and repeated whitespace. The cached answer is an oracle
+NQ reference string, **not** a generated provider answer. Matching aliases
+can correspond to different senses or incomplete answers; nonmatching aliases
+can still be equivalent (for example, unlisted synonyms or number formats).
+NQ-Open is factoid English Wikipedia QA, so these labels do not cover
+multi-part instructions, dialogue, retrieval context, time-sensitive answers,
+or tenant-specific policy. The miner intentionally enriches repeated answers
+and structural hard negatives; its 50/50 class balance is not deployment
+prevalence. The gold-answer study must be reported separately from QQP/PAWS
+query-pair labels and from any model-judged labels. It supports a stronger
+*factoid proxy* than query paraphrase, not a production answer-error claim.

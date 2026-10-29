@@ -176,7 +176,9 @@ def test_chat_hit_schedules_shadow_without_changing_response(client):
     records = client.portal.call(read_records)
     assert len(tasks) == 1
     assert len(records) == 1
-    assert json.loads(records[0])["review_status"] == "unreviewed"
+    record = json.loads(records[0])
+    assert record["review_status"] == "unreviewed"
+    assert record["cached_query"] == query["prompt"]
 
 
 test_chat_hit_schedules_shadow_without_changing_response.config_overrides = {
