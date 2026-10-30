@@ -1,5 +1,6 @@
 """Regression tests for cache bypass and fail-closed provider handling."""
 
+import asyncio
 from collections.abc import AsyncIterator
 
 import fakeredis.aioredis
@@ -35,6 +36,30 @@ class LargeProvider(Provider):
 
     async def stream(self, prompt: str) -> AsyncIterator[str]:
         yield "too long"
+
+
+class SlowFirstProvider(Provider):
+    name = "slow-first-test"
+
+    async def stream(self, prompt: str) -> AsyncIterator[str]:
+        await asyncio.sleep(0.2)
+        yield "too late"
+
+
+@pytest.mark.parametrize("endpoint", ["/v1/chat", "/v1/chat/stream"])
+def test_first_token_timeout_returns_504_and_is_not_cached(client, endpoint: str) -> None:
+    client.app.state.provider_registry = ProviderRegistry(
+        providers=(SlowFirstProvider(),), redis=client.app.state.redis
+    )
+    client.app.state.config = client.app.state.config.model_copy(
+        update={"provider_first_token_timeout": 0.02}
+    )
+    prompt = f"first-token-timeout {endpoint}"
+    response = client.post(endpoint, json={"prompt": prompt}, headers=HEADERS)
+    assert response.status_code == 504  # noqa: PLR2004
+    assert response.json()["detail"] == "upstream timeout"
+    again = client.post(endpoint, json={"prompt": prompt}, headers=HEADERS)
+    assert again.status_code == 504  # noqa: PLR2004
 
 
 def test_bypass_skips_cache_read_and_write(client) -> None:

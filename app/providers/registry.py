@@ -186,4 +186,6 @@ class ProviderRegistry:
                     raise RuntimeError("provider rejected request") from e
                 last_err = e
                 continue
+        if isinstance(last_err, TimeoutError):
+            raise TimeoutError("all providers timed out") from last_err
         raise RuntimeError("all providers unavailable") from last_err
