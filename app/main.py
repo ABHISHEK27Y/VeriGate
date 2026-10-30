@@ -94,6 +94,12 @@ async def lifespan(app: FastAPI):  # noqa: PLR0915
         ):
             await asyncio.to_thread(app.state.model.embed, "warmup")
         if (
+            get_settings().cache_match_mode == "semantic"
+            and get_settings().answer_policy_artifact
+            and get_settings().answer_policy_prewarm
+        ):
+            await asyncio.to_thread(app.state.semantic_cache._policy.verifier.prewarm)
+        if (
             get_settings().vector_backend == "redisearch"
             and get_settings().cache_match_mode == "semantic"
         ):

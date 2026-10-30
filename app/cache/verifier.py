@@ -24,7 +24,9 @@ import functools
 import logging
 import re
 import threading
+import time
 from collections import OrderedDict
+from dataclasses import dataclass
 from difflib import SequenceMatcher
 from typing import Literal
 
@@ -32,8 +34,10 @@ import numpy as np
 
 from ..config import get_settings
 from ..embeddings import tokenize
+from ..metrics import STAGE_LATENCY
 
 _MAX_NLI_PAIRS = 8192
+_MAX_PLAUSIBLE_MODEL_WINDOW = 100_000
 
 log = logging.getLogger("verigate.verifier")
 
@@ -271,6 +275,13 @@ def _entities(text: str) -> set[str]:
 # already passed Tier-1, and results are cached per pair (independent of threshold), so the
 # overhead is paid at most once per distinct pair.
 # ---------------------------------------------------------------------------
+@dataclass(frozen=True)
+class NliAssessment:
+    score: float | None
+    status: Literal["ok", "too_long", "unavailable"]
+    input_tokens: int | None
+
+
 class NliVerifier:
     """Application-owned lazy model with a bounded pair cache."""
 
@@ -278,42 +289,80 @@ class NliVerifier:
         self.model = None
         self.unavailable = False
         self.lock = threading.Lock()
-        self.cache: OrderedDict[tuple[str, str], float | None] = OrderedDict()
+        self.cache: OrderedDict[tuple[str, str], NliAssessment] = OrderedDict()
 
-    def entail_prob(self, premise: str, hypothesis: str) -> float | None:
+    def prewarm(self) -> None:
+        """Load and run the pinned model before readiness when configured."""
+        result = self.assess("A short test answer is available.", "A test answer is available.")
+        if result.status != "ok":
+            raise RuntimeError("Pinned NLI model failed startup prewarm")
+
+    def assess(self, premise: str, hypothesis: str) -> NliAssessment:
+        """Score only when the complete paired input fits the model window."""
         key = (premise, hypothesis)
         with self.lock:
             if key in self.cache:
                 self.cache.move_to_end(key)
                 return self.cache[key]
             if self.unavailable:
-                return None
+                return NliAssessment(None, "unavailable", None)
             try:
                 if self.model is None:
                     from sentence_transformers import (  # noqa: PLC0415 - lazy ML dependency
                         CrossEncoder,  # noqa: PLC0415 - lazy ML dependency
                     )
 
+                    started = time.perf_counter()
                     self.model = CrossEncoder(
                         get_settings().nli_model, revision=get_settings().nli_revision or None
                     )
+                    STAGE_LATENCY.labels(stage="nli_model_load").observe(
+                        time.perf_counter() - started
+                    )
+                started = time.perf_counter()
+                tokenized = self.model.tokenizer(
+                    premise, hypothesis, truncation=False, add_special_tokens=True
+                )
+                count = len(tokenized["input_ids"])
+                STAGE_LATENCY.labels(stage="nli_tokenization").observe(
+                    time.perf_counter() - started
+                )
+                limits = (
+                    self.model.max_seq_length,
+                    self.model.tokenizer.model_max_length,
+                    self.model.model.config.max_position_embeddings,
+                )
+                valid_limits = [
+                    int(limit)
+                    for limit in limits
+                    if isinstance(limit, int) and 0 < limit < _MAX_PLAUSIBLE_MODEL_WINDOW
+                ]
+                if not valid_limits:
+                    raise ValueError("NLI model has no finite input length")  # noqa: TRY301
+                if count > min(valid_limits):
+                    return NliAssessment(None, "too_long", count)
+                started = time.perf_counter()
                 logits = np.asarray(self.model.predict([(premise, hypothesis)])).reshape(-1)
+                STAGE_LATENCY.labels(stage="nli_inference").observe(time.perf_counter() - started)
                 labels = self.model.model.config.id2label
                 entail = next(
                     (int(i) for i, label in labels.items() if "entail" in label.lower()), None
                 )
                 if entail is None:
-                    raise ValueError("NLI model must identify its entailment label")  # noqa: TRY301 - fail closed
+                    raise ValueError("NLI model must identify its entailment label")  # noqa: TRY301
                 probs = np.exp(logits - logits.max())
-                result = float(probs[entail] / probs.sum())
+                result = NliAssessment(float(probs[entail] / probs.sum()), "ok", count)
             except Exception:
                 log.exception("NLI unavailable; rejecting semantic reuse")
                 self.unavailable = True
-                return None
+                return NliAssessment(None, "unavailable", None)
             self.cache[key] = result
             if len(self.cache) > _MAX_NLI_PAIRS:
                 self.cache.popitem(last=False)
             return result
+
+    def entail_prob(self, premise: str, hypothesis: str) -> float | None:
+        return self.assess(premise, hypothesis).score
 
     def equivalent(self, q1: str, q2: str) -> bool | None:
         e1, e2 = self.entail_prob(q1, q2), self.entail_prob(q2, q1)

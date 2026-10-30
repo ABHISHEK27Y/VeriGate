@@ -18,8 +18,28 @@ from .verifier import NliVerifier, _negation_flag, _numbers
 
 Action = Literal["ACCEPT", "VERIFY", "REJECT"]
 _COSINE_ROUNDING_TOLERANCE = 0.0001
-_MAX_ASSERTION_BYTES = 384  # conservative bound below the NLI model's 512-token window
 _MIN_ANSWER_CHARS_FOR_MENTION = 3
+_SCOPE_ALIASES = {
+    "first": "first",
+    "earliest": "first",
+    "inaugural": "first",
+    "last": "last",
+    "final": "last",
+    "only": "only",
+    "sole": "only",
+    "most": "most",
+    "maximum": "most",
+    "least": "least",
+    "minimum": "least",
+}
+
+
+def _scope_terms(tokens: list[str]) -> set[str]:
+    return {
+        _SCOPE_ALIASES[token]
+        for index, token in enumerate(tokens)
+        if token in _SCOPE_ALIASES and not (token == "final" and index == len(tokens) - 1)
+    }
 
 
 @dataclass(frozen=True)
@@ -96,8 +116,7 @@ class AnswerPolicy:
                 return AnswerDecision("VERIFY", "answer_mentioned_in_question", None)
         # A fact scoped by an ordinal/superlative is not automatically a complete
         # answer to an unscoped question, or the reverse.
-        scope = {"first", "last", "most", "least", "only"}
-        if (set(incoming_tokens) & scope) != (set(stored_tokens) & scope):
+        if _scope_terms(incoming_tokens) != _scope_terms(stored_tokens):
             return AnswerDecision("VERIFY", "scope_changed", None)
         yes_no_openers = {"is", "are", "was", "were", "do", "does", "did", "can", "has"}
         if (
@@ -111,12 +130,14 @@ class AnswerPolicy:
             return AnswerDecision("VERIFY", "ambiguous_context", None)
         premise = f"The answer to {stored} is {answer}."
         hypothesis = f"The answer to {incoming} is {answer}."
-        if (
-            max(len(premise.encode("utf-8")), len(hypothesis.encode("utf-8")))
-            > _MAX_ASSERTION_BYTES
-        ):
-            return AnswerDecision("VERIFY", "context_too_long", None)
-        score = verifier.entail_prob(premise, hypothesis)
+        assess = getattr(verifier, "assess", None)
+        if assess is not None:
+            assessment = assess(premise, hypothesis)
+            if assessment.status == "too_long":
+                return AnswerDecision("VERIFY", "context_too_long", None)
+            score = assessment.score
+        else:
+            score = verifier.entail_prob(premise, hypothesis)
         if score is None or not math.isfinite(score):
             return AnswerDecision("VERIFY", "verifier_unavailable", None)
         if score >= self.accept_at:

@@ -1,0 +1,25 @@
+case_id,volatile,query,bypass,label_type
+stable_01,false,What is a credit score?,False,authored_development
+stable_02,false,How is a credit score calculated in principle?,False,authored_development
+stable_03,false,What does current account mean in banking?,False,authored_development
+stable_04,false,Explain the current account in the balance of payments.,True,authored_development
+stable_05,false,Define price elasticity of demand.,False,authored_development
+stable_06,false,What is the price mechanism in economics?,True,authored_development
+stable_07,false,How is a movie score composed?,True,authored_development
+stable_08,false,What is the score of a musical composition?,True,authored_development
+stable_09,false,What is the difference between stock and flow variables?,False,authored_development
+stable_10,false,Explain time complexity of binary search.,False,authored_development
+stable_11,false,What is the current in an electrical circuit?,True,authored_development
+stable_12,false,How does a temperature sensor work?,True,authored_development
+volatile_01,true,What is my credit score right now?,True,authored_development
+volatile_02,true,What is the current balance of my account?,True,authored_development
+volatile_03,true,What is the price of gold today?,True,authored_development
+volatile_04,true,What is the live cricket score?,True,authored_development
+volatile_05,true,What is the latest stock price?,True,authored_development
+volatile_06,true,What is the weather tomorrow?,True,authored_development
+volatile_07,true,What is the current temperature in Delhi?,True,authored_development
+volatile_08,true,What are today's exchange rates?,True,authored_development
+volatile_09,true,What news broke this week?,True,authored_development
+volatile_10,true,What time is it in Delhi now?,True,authored_development
+volatile_11,true,Who is the current CEO of the company?,True,authored_development
+volatile_12,true,What are the prices of flights this month?,True,authored_development

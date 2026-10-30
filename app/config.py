@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     cache_enabled: bool = True
     cache_match_mode: Literal["exact", "semantic"] = "exact"
     answer_policy_artifact: str = ""  # explicit opt-in; empty keeps historical semantic policy
+    answer_policy_prewarm: bool = False  # fail startup if the enabled NLI policy cannot initialize
     cache_epoch: str = "1"
     max_request_bytes: int = Field(default=65536, gt=0)
     max_concurrent_requests: int = Field(default=64, gt=0)

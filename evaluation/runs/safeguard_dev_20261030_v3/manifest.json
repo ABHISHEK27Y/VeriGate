@@ -1,0 +1,14 @@
+{
+  "schema_version": "safeguard-development-v1",
+  "run_id": "safeguard_dev_20261030_v3",
+  "label_type": "authored_development",
+  "input_sha256": "ddf75d1e26ee723403f9229da1aafa006d634a1162f7417f07ba600e7703f5e2",
+  "policy_artifact_sha256": "f9d2365021192fe7a78c54a0d250e1c384f416ad3c1818b084c5b89cd276b6a2",
+  "policy_source_sha256": "24271ef169c99e9a0d377fdbfba50b1c1380851a6900de960e919d39cd6e6c0a",
+  "verifier_source_sha256": "bfad9f311d588d76f60d0a3c81b258454ca0a1f084cdf10fe6eb87a374aa8925",
+  "python": "3.13.2",
+  "outputs": {
+    "decisions.csv": "3230b27c6e9d1041d26297019885a11b4bb23f830ab4715596a25f2af0aeea79",
+    "summary.json": "83be3d1bc45b8f939c00857fb4f14eded2a858259196bbdccc4e71182ba6384a"
+  }
+}

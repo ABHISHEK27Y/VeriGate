@@ -14,7 +14,7 @@ PILOTS = (
     ("nq_dev_minilm_pilot_v3", ROOT / "evaluation" / "pilot_freeze_nq_dev_v1.json", "4870b1f"),
     ("nq_dev_close_neighbors_v2", ROOT / "evaluation" / "close_neighbor_freeze_v1.json", "4870b1f"),
     ("nq_dev_close_neighbors_v4", ROOT / "evaluation" / "close_neighbor_freeze_v1.json", "eac87d7"),
-    ("nq_dev_close_neighbors_v5", ROOT / "evaluation" / "close_neighbor_freeze_v1.json", None),
+    ("nq_dev_close_neighbors_v5", ROOT / "evaluation" / "close_neighbor_freeze_v1.json", "6e9dec3"),
 )
 
 

@@ -1,5 +1,12 @@
 # Live Redis + MiniLM gateway checkpoint
 
+The 30 October follow-up adds an opt-in required NLI prewarm and a paired-token
+window check. A 30-repetition-per-warm-scenario lazy-versus-prewarm comparison
+is configured in CI using the same Redis Stack runner, pinned MiniLM/NLI, and
+delayed mock provider. Its artifact will separate gateway startup, first NLI
+request, warm HTTP latency, stage timings, and actual NLI inference counts.
+Results are pending; the measurements below remain the earlier checkpoint.
+
 This is a software benchmark of VeriGate's live HTTP path, not an independent
 answer-quality evaluation. It ran on GitHub Actions [run 40997695780](https://github.com/ABHISHEK27Y/VeriGate/actions/runs/40997695780),
 source commit `38d021e106f7682853a658f999d79144ba80aaae`. The [real semantic

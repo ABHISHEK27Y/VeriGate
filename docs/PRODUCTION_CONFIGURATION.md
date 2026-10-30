@@ -19,6 +19,13 @@ controlled result is in [RESULTS_ANSWER_AWARE.md](RESULTS_ANSWER_AWARE.md).
 Its authored cases do not establish a production safety threshold. Keep exact
 matching for production until a representative independent evaluation exists.
 
+`ANSWER_POLICY_PREWARM=false` is the default. With semantic mode and an answer
+policy artifact, set it to `true` to load and test the pinned NLI model during
+startup. The app does not become ready until this succeeds; a failed required
+prewarm fails startup. This moves model-load time before the first semantic
+request and does not reduce total startup-plus-request time. Allow enough
+startup time and memory for the model. Exact mode does not load NLI.
+
 The single-turn request accepts `prompt` or one `user` message, plus optional
 `cache_bypass: true`. Unknown fields, including unsupported system messages and
 generation parameters, return 422. Bypass skips both cache reads and writes but

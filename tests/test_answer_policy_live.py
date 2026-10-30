@@ -9,6 +9,7 @@ import pytest
 from app.cache import redisearch_store as rs
 from app.cache.answer_policy import AnswerPolicy
 from app.cache.policy import CachePolicy
+from app.cache.verifier import NliAssessment
 from app.config import _runtime
 from app.embeddings import Embedder
 from app.identity import tenant_id
@@ -89,8 +90,11 @@ def test_invalid_cosine_still_rejected(score: float) -> None:
 
 def test_long_context_abstains_before_nli() -> None:
     class NoModelVerifier:
+        def assess(self, _premise: str, _hypothesis: str) -> NliAssessment:
+            return NliAssessment(None, "too_long", 513)
+
         def entail_prob(self, _premise: str, _hypothesis: str) -> float:
-            raise AssertionError("NLI should not see truncated context")
+            raise AssertionError("NLI predict should not see truncated context")
 
     query = "Explain the unusual historical record " + "detail " * 90
     result = AnswerPolicy.load(ARTIFACT).decide(query, query, "the archive", 0.9, NoModelVerifier())
@@ -117,6 +121,28 @@ def test_changed_scope_abstains_without_nli() -> None:
         ControlledVerifier(),
     )
     assert result.action == "VERIFY"
+    assert result.reason == "scope_changed"
+
+
+def test_equivalent_scope_words_reach_nli() -> None:
+    result = AnswerPolicy.load(ARTIFACT).decide(
+        "Who was the earliest explorer to reach the South Pole?",
+        "Who was the first explorer to reach the South Pole?",
+        "Roald Amundsen",
+        0.9,
+        ControlledVerifier(),
+    )
+    assert result.action == "ACCEPT"
+
+
+def test_final_event_noun_does_not_mask_last_year_scope_change() -> None:
+    result = AnswerPolicy.load(ARTIFACT).decide(
+        "When did the team reach the final?",
+        "When was the last year the team reached the final?",
+        "2018",
+        0.9,
+        ControlledVerifier(),
+    )
     assert result.reason == "scope_changed"
 
 

@@ -15,6 +15,7 @@ evaluation/results/tests.xml
 evaluation/results/live_http_redis_ci/
 evaluation/results/real_semantic_ci/
 evaluation/results/multiworker_redis_ci/
+evaluation/results/prewarm_semantic_ci/
 audit/tmp/
 .coverage
 build/

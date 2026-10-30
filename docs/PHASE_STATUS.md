@@ -38,7 +38,7 @@ exists; it does not imply a validated research result or production readiness.
 | Token-diff trades coverage for lower proxy mismatch | [`gold_verifier_policies.csv`](../evaluation/results/gold_verifier_policies.csv) | Historical symmetric NQ labels and overlapping seeds. |
 | Risk selection is reject-all | [`gold_risk.csv`](../evaluation/results/gold_risk.csv) | IID formal guarantee does not apply to correlated mined pairs. |
 | Answer-aware policy trade-off | [immutable run](../evaluation/runs/answer_aware_20261029_v6/manifest.json), [generated report](RESULTS_ANSWER_AWARE.md) | Local authored facts, lexical hash retrieval, warm decision latency only; no production error guarantee. |
-| Test suite status | [`checks.json`](../evaluation/results/checks.json) | Current local full suite: 150 passed and 4 skipped (154 collected). Exact-revision CI must confirm the final commit; tests do not establish answer quality. |
+| Test suite status | [`checks.json`](../evaluation/results/checks.json) | Current local full suite: 169 passed and 4 skipped (173 collected). Exact-revision CI must confirm the final commit; tests do not establish answer quality. |
 
 The old broad roadmap and [archived results](archive/RESULTS_LOG_HISTORICAL.md)
 are historical context. Keep `CACHE_MATCH_MODE=exact` and the shadow sampler off by default.
@@ -70,3 +70,19 @@ reference mismatches; this remains a selected proxy result. The
 [`live real-path checkpoint`](RESULTS_LIVE_REAL_PATH.md) records Redis Stack,
 MiniLM/NLI, and two-worker measurements. Independent answer-quality validation
 and a bounded real-provider smoke remain open.
+
+## 30 October safeguard checkpoint
+
+The [authored safeguard run](../evaluation/runs/safeguard_dev_20261030_v3/summary.json)
+has 20 labelled development cases: 12 valid and 8 unsafe. The optional policy
+accepted 7 valid cases and 0 unsafe cases; it declined 5 valid reuse opportunities,
+including all 4 legitimate answer-mentioned examples. These are deliberately
+constructed tests, not an estimate of real-world error prevalence. The
+[freshness run](../evaluation/runs/freshness_dev_20261030_v3/summary.json)
+has 12 stable and 12 volatile authored queries. After the narrower concept rule,
+6 stable queries were still bypassed, while all 12 volatile queries were bypassed.
+Unknown intent continues to bypass. NLI now checks complete paired tokenization
+against the model window; [the token-window probe](../evaluation/runs/nli_window_20261030_v2.json)
+shows why byte length alone is insufficient. Required NLI prewarm is opt-in.
+The repeated Redis Stack comparison is scheduled in CI; no new live latency
+claim is made until its saved run completes.

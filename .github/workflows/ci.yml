@@ -141,6 +141,13 @@ jobs:
         run: |
           python -m scripts.benchmark_real_semantic evaluation/results/real_semantic_ci
 
+      - name: Compare lazy and required NLI prewarm on one runner
+        timeout-minutes: 25
+        env:
+          REDIS_URL: redis://localhost:6379/0
+        run: |
+          python -m scripts.benchmark_prewarm_semantic evaluation/results/prewarm_semantic_ci
+
       - name: Upload live benchmark artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -156,6 +163,7 @@ jobs:
           path: |
             evaluation/results/real_semantic_ci/
             evaluation/results/multiworker_redis_ci/
+            evaluation/results/prewarm_semantic_ci/
           retention-days: 7
 
   security-audit:
