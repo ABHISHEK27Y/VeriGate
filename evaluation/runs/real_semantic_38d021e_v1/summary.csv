@@ -1,0 +1,7 @@
+scenario,n,hits,provider_calls,errors,p50_http_complete_ms,p95_http_complete_ms
+cold_first_nli,1,1,0,0,7859.119,7859.119
+cold_miss,3,0,3,0,139.945,140.78
+concurrent_identical,24,0,3,0,145.731,148.285
+exact_hit,3,3,0,0,12.36,48.306
+rejected_candidate,3,0,3,0,242.726,244.693
+valid_semantic,3,3,0,0,11.884,11.99

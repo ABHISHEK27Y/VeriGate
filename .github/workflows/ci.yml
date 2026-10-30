@@ -71,6 +71,7 @@ jobs:
           python -m scripts.export_directional_report evidence-20261029-hash-v3
           python -m scripts.export_answer_policy_report answer_aware_20261029_v6
           python -m scripts.verify_current_pilots
+          python -m scripts.verify_live_runs
           git diff --exit-code -- evaluation/results/checks.json report/generated/ docs/RESULTS_DIRECTIONAL.md docs/RESULTS_ANSWER_AWARE.md
 
       - name: Upload evaluation results

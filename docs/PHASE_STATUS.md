@@ -38,21 +38,21 @@ exists; it does not imply a validated research result or production readiness.
 | Token-diff trades coverage for lower proxy mismatch | [`gold_verifier_policies.csv`](../evaluation/results/gold_verifier_policies.csv) | Historical symmetric NQ labels and overlapping seeds. |
 | Risk selection is reject-all | [`gold_risk.csv`](../evaluation/results/gold_risk.csv) | IID formal guarantee does not apply to correlated mined pairs. |
 | Answer-aware policy trade-off | [immutable run](../evaluation/runs/answer_aware_20261029_v6/manifest.json), [generated report](RESULTS_ANSWER_AWARE.md) | Local authored facts, lexical hash retrieval, warm decision latency only; no production error guarantee. |
-| Test suite status | [`checks.json`](../evaluation/results/checks.json) | Local full suite after answer-policy integration: 103 passed and 4 skipped (107 collected). Exact-revision CI must confirm the final commit; tests do not establish answer quality. |
+| Test suite status | [`checks.json`](../evaluation/results/checks.json) | Current local full suite: 150 passed and 4 skipped (154 collected). Exact-revision CI must confirm the final commit; tests do not establish answer quality. |
 
 The old broad roadmap and [archived results](archive/RESULTS_LOG_HISTORICAL.md)
 are historical context. Keep `CACHE_MATCH_MODE=exact` and the shadow sampler off by default.
 
 ## Next evidence gate
 
-The local `data/answer_review_directional.tsv` contains 350 blank review decisions:
+The optional local `data/answer_review_directional.tsv` contains 350 blank review decisions:
 200 deliberately selected diagnostic cases and 150 randomly selected cases. It is
-gitignored because it contains source question text. Two independent reviewers
-must judge whether the **recorded cached answer** can answer the incoming question,
-mark uncertainty when source context is insufficient, and resolve disagreements.
-Keep both original decisions and the resolution. Until then, Phases 1–6 cannot be
-reported as a completed answer-quality study or a production-ready selective
-policy. The protocol for the subsequent lockbox experiment is in
+gitignored because it contains source question text. For a future independently
+reviewed answer-quality claim, two reviewers would judge whether the **recorded
+cached answer** can answer the incoming question, mark uncertainty when source
+context is insufficient, and resolve disagreements. Blank rows are not evidence.
+Engineering work proceeds without this queue; no production-ready selective-policy
+claim is made. The protocol for the subsequent lockbox experiment is in
 [`EVIDENCE_PROTOCOL.md`](EVIDENCE_PROTOCOL.md).
 
 # Realistic-query pilot checkpoint (NQ-Open dev, MiniLM)
@@ -65,5 +65,8 @@ It has no reliable answer-reuse labels, so no incorrect-acceptance estimate is
 claimed. A versioned v2 run confirms the float32 boundary fix accepts all ten
 exact repeats under the unchanged policy thresholds. The separate
 [`RESULTS_CLOSE_NEIGHBOR.md`](RESULTS_CLOSE_NEIGHBOR.md) diagnostic tests 40
-close NQ dev pairs and retains two accepted reference mismatches. Independent
-answer-quality validation remains open.
+close NQ dev pairs. Policy runtime v4 abstains on both previously accepted
+reference mismatches; this remains a selected proxy result. The
+[`live real-path checkpoint`](RESULTS_LIVE_REAL_PATH.md) records Redis Stack,
+MiniLM/NLI, and two-worker measurements. Independent answer-quality validation
+and a bounded real-provider smoke remain open.

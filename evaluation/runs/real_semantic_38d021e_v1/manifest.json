@@ -1,0 +1,20 @@
+{
+  "schema_version": "real-semantic-live-v1",
+  "source": "evaluation/runs/nq_dev_close_neighbors_v5/decisions.csv",
+  "source_sha256": "14af42ab9121674462e02eb4049e1cd7b41ab153bcb627a9200e116d344f0636",
+  "policy_artifact_sha256": "f9d2365021192fe7a78c54a0d250e1c384f416ad3c1818b084c5b89cd276b6a2",
+  "embedding_model": "all-MiniLM-L6-v2",
+  "embedding_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+  "nli_model": "cross-encoder/nli-deberta-v3-xsmall",
+  "nli_revision": "a150876415327c80daeff35ca6f68f5ed8cf5c24",
+  "trials": 3,
+  "cold_startup_ms": 7535.266,
+  "python": "3.11.17",
+  "platform": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+  "source_code_sha256": "4a7723345d5d1bc7c495f798c281537ef2b05b01a6e6a1f93ac34a702ee5b0df",
+  "outputs": {
+    "requests.csv": "e0bcddb8a64e3ca8ee72745d3b1ddf9f1ef4364cfd8e3c10c324bb5a0ca00876",
+    "summary.csv": "bbd0b629237a91f7c8ecdc7a90d43cda1e55661056a8bf91d2dfe0bdd184ef52"
+  },
+  "limitations": "NQ reference proxy, deterministic mock provider, three trials on one CI runner"
+}

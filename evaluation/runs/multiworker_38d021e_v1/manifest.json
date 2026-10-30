@@ -1,0 +1,14 @@
+{
+  "schema_version": "two-worker-redis-v1",
+  "workers": 2,
+  "cache_mode": "exact",
+  "provider": "delayed deterministic mock",
+  "redis_url_present": true,
+  "python": "3.11.17",
+  "platform": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+  "source_code_sha256": "81ecd085fddda0a081da0b338625af9979d75381722cba970daadf6e92ec4d83",
+  "outputs": {
+    "requests.csv": "c3530772b6c20786672ed4262f0c1f177d2ddf521cdc1888b5db2d4df84a8a2d",
+    "summary.json": "fef3439aabd8faf628e64cadb25970238841e46a28403058eb47a220e39fce11"
+  }
+}

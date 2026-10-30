@@ -44,7 +44,7 @@ This run does not justify relaxing policy thresholds to gain hits. A separate
 independent source with reviewed specific-answer labels is required before
 claiming a useful safe operating point.
 
-## Follow-up: policy runtime v3 (30 October 2026)
+## Follow-up: policy runtime v4 (30 October 2026)
 
 The [new run](../evaluation/runs/nq_dev_close_neighbors_v5/manifest.json) uses the
 same frozen 40 pairs and unchanged policy artifact. It adds general abstentions
@@ -63,7 +63,7 @@ VERIFY because scope changed.
 | Answer-aware runtime | ACCEPT / 40 | VERIFY | REJECT | Accepted reference matches | Accepted reference mismatches |
 |---|---:|---:|---:|---:|---:|
 | v2 historical | 8 | 5 | 27 | 6 | 2 |
-| v3 follow-up | 6 | 10 | 24 | 6 | 0 |
+| v4 follow-up (pilot v5) | 6 | 10 | 24 | 6 | 0 |
 
 The six accepted reference matches are **proxy matches**, not independently
 reviewed correctness. The selection was deliberately balanced 20/20, so zero
