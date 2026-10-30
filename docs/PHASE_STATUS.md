@@ -84,5 +84,8 @@ has 12 stable and 12 volatile authored queries. After the narrower concept rule,
 Unknown intent continues to bypass. NLI now checks complete paired tokenization
 against the model window; [the token-window probe](../evaluation/runs/nli_window_20261030_v2.json)
 shows why byte length alone is insufficient. Required NLI prewarm is opt-in.
-The repeated Redis Stack comparison is scheduled in CI; no new live latency
-claim is made until its saved run completes.
+The [repeated Redis Stack comparison](RESULTS_LIVE_REAL_PATH.md) has now run on
+the same CI runner with 30 observations per warm scenario and mode. It records
+stage timings and actual NLI inference counts. Required prewarm moved the first
+NLI load to startup; it did not materially change warm hit latency. This remains
+a selected-reference, delayed-mock-provider benchmark.

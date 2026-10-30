@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 RUNS = (
     ("real_semantic_38d021e_v1", "scripts/benchmark_real_semantic.py"),
     ("multiworker_38d021e_v1", "scripts/test_multiworker_redis.py"),
+    ("prewarm_semantic_8d79c81_v1", "scripts/benchmark_prewarm_semantic.py"),
 )
 
 
@@ -26,7 +27,7 @@ def verify() -> None:
         for name, expected in manifest["outputs"].items():
             if Path(name).name != name or _sha(folder / name) != expected:
                 raise ValueError(f"Live run output changed: {run_id}/{name}")
-    print("verified saved real-semantic and two-worker CI run hashes")
+    print("verified saved real-semantic, two-worker and prewarm CI run hashes")
 
 
 if __name__ == "__main__":

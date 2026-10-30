@@ -1,11 +1,55 @@
 # Live Redis + MiniLM gateway checkpoint
 
-The 30 October follow-up adds an opt-in required NLI prewarm and a paired-token
-window check. A 30-repetition-per-warm-scenario lazy-versus-prewarm comparison
-is configured in CI using the same Redis Stack runner, pinned MiniLM/NLI, and
-delayed mock provider. Its artifact will separate gateway startup, first NLI
-request, warm HTTP latency, stage timings, and actual NLI inference counts.
-Results are pending; the measurements below remain the earlier checkpoint.
+## 30 October prewarm and repeated path check
+
+The [new manifest](../evaluation/runs/prewarm_semantic_8d79c81_v1/manifest.json),
+[request rows](../evaluation/runs/prewarm_semantic_8d79c81_v1/requests.csv), and
+[summary](../evaluation/runs/prewarm_semantic_8d79c81_v1/summary.csv) came from
+[CI run 41002074179](https://github.com/ABHISHEK27Y/VeriGate/actions/runs/41002074179)
+at commit `8d79c81`. Two gateway processes ran sequentially on one GitHub runner
+against Redis Stack, pinned MiniLM and NLI, and a delayed deterministic mock
+provider. Each warm scenario has 30 observations per mode. This is descriptive
+single-runner timing, not a production latency distribution.
+
+| Scenario | Lazy p50 / p95 | Prewarm p50 / p95 | Provider calls in each mode | NLI inference calls in each mode |
+|---|---:|---:|---:|---:|
+| First semantic NLI hit (one observation) | 1,334.897 / 1,334.897 ms | 59.196 / 59.196 ms | 0 | 1 |
+| Same-query hit in semantic mode (30 trials) | 12.648 / 19.735 ms | 12.540 / 19.201 ms | 0 | 1 |
+| Valid semantic reference hit (30 trials) | 12.418 / 17.251 ms | 12.296 / 14.601 ms | 0 | 0 |
+| Answer-mentioned candidate sent to provider (30 trials) | 248.141 / 252.138 ms | 247.514 / 249.161 ms | 30 | 0 |
+| Cold miss (30 trials) | 164.049 / 169.511 ms | 164.183 / 168.212 ms | 30 | 0 |
+| Eight simultaneous identical misses | 160.423 / 161.447 ms | 151.702 / 152.502 ms | 1 | 0 |
+
+The same-query hit is in **semantic mode**, so it reaches the answer policy; one
+new assertion pair invoked NLI on the first warm trial and later trials used the
+verifier's pair cache. The 30 valid semantic trials likewise reused a previously
+scored pair. The answer-mentioned guard declined all 30 selected candidates
+before NLI. All 258 HTTP rows returned 200. The source queries are selected NQ
+diagnostic references, not independently reviewed answer-quality labels.
+
+Gateway startup to `/health` was 5,031.857 ms with lazy NLI and 6,025.790 ms
+with required prewarm. Prewarm spent 1,209.471 ms loading the NLI model during
+startup. In the lazy first request, NLI model load took 1,253.493 ms and NLI
+inference 65.333 ms; in the prewarmed first request, inference took 44.362 ms.
+Startup plus first request was 6,366.754 ms lazy versus 6,084.986 ms prewarmed
+in this one sequential comparison. This does not establish a total speedup;
+prewarm primarily moves work before readiness. The earlier 7.859 s cold request
+included a different runner's download/load conditions and is preserved below.
+
+Enable only for the optional semantic answer policy:
+
+```powershell
+$env:CACHE_MATCH_MODE = "semantic"
+$env:ANSWER_POLICY_ARTIFACT = "app/cache/artifacts/answer_policy_v1.json"
+$env:ANSWER_POLICY_PREWARM = "true"
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+```
+
+The app becomes ready after model initialization succeeds. Leave
+`ANSWER_POLICY_PREWARM=false` for the default lazy behavior; exact matching
+remains the gateway default.
+
+## Earlier live checkpoint
 
 This is a software benchmark of VeriGate's live HTTP path, not an independent
 answer-quality evaluation. It ran on GitHub Actions [run 40997695780](https://github.com/ABHISHEK27Y/VeriGate/actions/runs/40997695780),
