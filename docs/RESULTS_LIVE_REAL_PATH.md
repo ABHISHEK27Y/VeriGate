@@ -99,12 +99,15 @@ before adding one.
 ## Real-provider smoke prerequisite
 
 `python -m scripts.smoke_real_provider` is a zero-call preflight. The execute
-path tests JSON generation and exact reuse, streaming generation and reuse,
-then clears the smoke cache and closes the app. It allows at most two new
+path tests JSON generation, exact reuse, one answer-aware paraphrase decision
+(reuse or recorded abstention), streaming generation and reuse, then clears the
+smoke cache and closes the app. It allows at most three new
 requests to one configured real provider. It was exercised with the free mock
 provider; **no paid provider call was made**.
 
-To execute against a real provider, provide a disposable `REDIS_URL`, a
+To execute against a real provider, provide a disposable Redis Stack `REDIS_URL`
+using database 0,
+the answer-policy artifact, pinned MiniLM/RediSearch settings, a
 configured and verified real provider/model and key, non-demo `API_KEYS`, an
 externally enforced account spending cap, and set
 `VERIGATE_SMOKE_ACCOUNT_HARD_CAP_CONFIRMED=1` and

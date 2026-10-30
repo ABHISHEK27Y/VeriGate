@@ -24,13 +24,16 @@ Readiness must show `cache_match_mode=semantic`, `embedding_backend=minilm`,
 `vector_backend=redisearch`, a non-null `answer_policy_version`,
 `answer_policy_prewarm=true`, and `providers=["mock"]`. Seeding clears only the
 `demo-key-123` tenant. Run it again whenever you want a clean demonstration;
-the dashboard's Clear cache button removes these fixtures too.
+the dashboard's **Restore demo fixtures** button performs the same reset through
+a development-only route. It appears only in the explicit mock semantic demo.
+**Clear cache** removes entries without restoring the factual fixtures.
 
 ## Exact queries for the demo
 
 Open <http://127.0.0.1:8000/ui>, enter `demo-key-123`, and click the semantic
 example chips or paste these questions. The banner must say **Answer-aware
-semantic cache** and **Real MiniLM + NLI · prewarmed · provider: mock**.
+semantic cache** and **minilm embeddings + NLI · prewarmed · provider: mock**.
+The mode banner reads the actual embedding backend and provider from `/health`.
 
 | Seeded question → factual answer | Incoming question | Expected decision |
 |---|---|---|
@@ -43,9 +46,12 @@ semantic cache** and **Real MiniLM + NLI · prewarmed · provider: mock**.
 
 The mock provider returns a visible `[mock:mock] Answer to: ...` placeholder
 on a MISS. That placeholder is not a factual answer. A MISS can be stored, so
-reseed before repeating the sequence or changing its order. Response `note`
+repeating the question may HIT its newly cached mock placeholder. Restore the
+fixtures before repeating the sequence or changing its order. Response `note`
 explains the policy decision, and `latency_ms` is the gateway's measured request
-time. A high similarity score is not by itself permission to reuse an answer.
+time; the dashboard also shows browser HTTP time. The dashboard labels fixture
+matches and mock responses, and its counters cover only that browser tab. A
+high similarity score is not by itself permission to reuse an answer.
 
 For a direct API check:
 
@@ -57,3 +63,18 @@ Invoke-RestMethod http://127.0.0.1:8000/v1/chat -Method Post -Headers $headers -
 
 This setup makes no paid-provider calls. Do not interpret these authored demo
 cases as human-reviewed accuracy or a production safety guarantee.
+
+## Beyond the dashboard chips
+
+The [12-case exploratory probe](../evaluation/runs/semantic_demo_probe_20261030_v1/rows.csv)
+uses six new paraphrases and six changed-entity, role, number or attribute
+questions. It restores the demo fixtures before each request and after the run.
+With the existing policy artifact and thresholds unchanged, all six authored
+valid cases were reused and all six authored unsafe cases were declined. There
+were zero observed unnecessary rejections or suspected incorrect accepts **in
+these 12 authored cases**. This is a small development probe, not an error-rate
+estimate. Its [manifest](../evaluation/runs/semantic_demo_probe_20261030_v1/manifest.json)
+records input and output hashes. To repeat it, use
+`python -m scripts.probe_semantic_demo <new-output-directory>` while the local
+mock semantic gateway is running. The probe restores the fixture tenant at
+the end.

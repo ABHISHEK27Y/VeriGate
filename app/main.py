@@ -21,6 +21,7 @@ from prometheus_client import CONTENT_TYPE_LATEST
 from . import __version__
 from .budget import check_and_count as budget_check_and_count
 from .cache import redisearch_store as rs
+from .cache.demo_fixtures import DEMO_API_KEY, FACTS, demo_enabled
 from .cache.namespace import POLICY_VERSION
 from .cache.semantic_cache import LookupResult, SemanticCache
 from .config import Settings, _runtime, get_settings, snapshot
@@ -296,6 +297,20 @@ async def clear_cache(request: Request, x_api_key: str | None = Header(default=N
     return {"status": "cleared"}
 
 
+@app.post("/admin/demo/restore")
+async def restore_demo_fixtures(request: Request, x_api_key: str | None = Header(default=None)):
+    """Reset only the named local demo tenant, then store labelled factual fixtures."""
+    api_key = _auth(x_api_key)
+    if not demo_enabled(get_settings()) or not hmac.compare_digest(api_key, DEMO_API_KEY):
+        raise HTTPException(status_code=404, detail="demo restoration unavailable")
+    tenant = _tenant(api_key)
+    cache = request.app.state.semantic_cache
+    await cache.clear(tenant)
+    for question, answer in FACTS:
+        await cache.store(question, answer, tenant)
+    return {"status": "restored", "tenant": "designated-demo", "fixtures": len(FACTS)}
+
+
 @app.get("/live")
 async def live():
     return {"status": "alive"}
@@ -341,6 +356,7 @@ async def _health_details(request: Request) -> dict:
             else None
         ),
         "answer_policy_prewarm": get_settings().answer_policy_prewarm,
+        "demo_restore_available": demo_enabled(get_settings()),
         "verifier_nli_enabled": get_settings().verifier_nli,
         "provider_health": "configuration_only",
         "providers": (
