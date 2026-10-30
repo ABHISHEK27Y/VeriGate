@@ -83,6 +83,8 @@ def run(output: Path, settings: Settings) -> dict:
         streamed.raise_for_status()
         stream_hit = client.post("/v1/chat/stream", json={"prompt": stream_prompt}, headers=headers)
         stream_hit.raise_for_status()
+        cleared = client.post("/admin/cache/clear", headers=headers)
+        cleared.raise_for_status()
     checks = {
         "json_generated": first_body["cache"] == "MISS" and bool(first_body["answer"].strip()),
         "json_cached": second_body["cache"] == "HIT"
@@ -90,7 +92,8 @@ def run(output: Path, settings: Settings) -> dict:
         "stream_completed": "data: [DONE]" in streamed.text and "event: error" not in streamed.text,
         "stream_cached": stream_hit.headers.get("x-provider") == "cache"
         and "data: [DONE]" in stream_hit.text,
-        "context_cleanup": True,  # TestClient lifespan exited without exception.
+        "cache_cleanup": cleared.json().get("status") == "cleared",
+        "connection_cleanup": True,  # TestClient lifespan exited without exception.
     }
     result = {
         "schema_version": "real-provider-smoke-v1",

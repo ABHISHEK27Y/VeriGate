@@ -9,7 +9,7 @@ from scripts import smoke_real_provider
 
 
 def test_preflight_requires_real_key_redis_and_external_cap() -> None:
-    settings = Settings(_env_file=None)
+    settings = Settings(_env_file=None, redis_url="", llm_provider="mock", api_keys="demo-key-123")
     missing = smoke_real_provider.prerequisites(settings, {})
     assert "REDIS_URL for a disposable Redis instance" in missing
     assert "LLM_PROVIDER=openai or gemini" in missing
@@ -26,7 +26,9 @@ def test_smoke_refuses_execution_before_creating_app(
         lambda _settings: pytest.fail("gateway must not start before prerequisites"),
     )
     with pytest.raises(RuntimeError, match="Smoke prerequisites missing"):
-        smoke_real_provider.run(tmp_path / "smoke.json", Settings(_env_file=None))
+        smoke_real_provider.run(
+            tmp_path / "smoke.json", Settings(_env_file=None, redis_url="", llm_provider="mock")
+        )
     assert not (tmp_path / "smoke.json").exists()
 
 

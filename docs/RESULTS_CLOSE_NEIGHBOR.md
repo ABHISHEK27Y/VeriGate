@@ -46,7 +46,7 @@ claiming a useful safe operating point.
 
 ## Follow-up: policy runtime v3 (30 October 2026)
 
-The [new run](../evaluation/runs/nq_dev_close_neighbors_v4/manifest.json) uses the
+The [new run](../evaluation/runs/nq_dev_close_neighbors_v5/manifest.json) uses the
 same frozen 40 pairs and unchanged policy artifact. It adds general abstentions
 when the proposed answer appears in the incoming question, and when a question
 adds or drops an ordinal/superlative scope. The old v2 run above is preserved.

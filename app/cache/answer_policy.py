@@ -83,7 +83,11 @@ class AnswerPolicy:
         answer_tokens = tokenize(answer)
         # A proposed answer repeated in the new question may play a different
         # grammatical role (e.g. an object becoming the subject). Abstain.
-        if answer_tokens and len("".join(answer_tokens)) >= _MIN_ANSWER_CHARS_FOR_MENTION:
+        if (
+            incoming_tokens != stored_tokens
+            and answer_tokens
+            and len("".join(answer_tokens)) >= _MIN_ANSWER_CHARS_FOR_MENTION
+        ):
             width = len(answer_tokens)
             if any(
                 incoming_tokens[index : index + width] == answer_tokens

@@ -30,7 +30,7 @@ from app.redis_client import close_redis, create_redis
 
 ROOT = Path(__file__).resolve().parents[1]
 POLICY = ROOT / "app" / "cache" / "artifacts" / "answer_policy_v1.json"
-SOURCE = ROOT / "evaluation" / "runs" / "nq_dev_close_neighbors_v4" / "decisions.csv"
+SOURCE = ROOT / "evaluation" / "runs" / "nq_dev_close_neighbors_v5" / "decisions.csv"
 KEY = "semantic-benchmark-key"
 VALID = "nq-dev:1511:2705"
 REJECTED = "nq-dev:1702:3418"

@@ -131,6 +131,14 @@ def test_scope_and_answer_guards_allow_unaffected_paraphrase() -> None:
     assert result.action == "ACCEPT"
 
 
+def test_answer_mentioned_in_exact_repeat_does_not_force_abstention() -> None:
+    question = "Who did Bob marry?"
+    result = AnswerPolicy.load(ARTIFACT).decide(
+        question, question, "Bob", 1.0, ControlledVerifier()
+    )
+    assert result.action == "ACCEPT"
+
+
 @pytest.mark.parametrize(
     ("incoming", "stored", "answer", "reason"),
     [
