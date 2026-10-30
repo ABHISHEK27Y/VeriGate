@@ -23,7 +23,9 @@ def test_frozen_workload_integrity() -> None:
     freeze = json.loads((WORKLOAD / "freeze.json").read_text(encoding="utf-8"))
     assert digest(WORKLOAD / "workload.csv") == freeze["workload_sha256"]
     assert digest(WORKLOAD / "provider_answers.json") == freeze["provider_answers_sha256"]
-    assert digest(ROOT / freeze["policy_artifact"]) == freeze["policy_sha256"]
+    # The frozen run was created on Windows; its relative path must resolve on Linux CI too.
+    policy_path = Path(freeze["policy_artifact"].replace("\\", "/"))
+    assert digest(ROOT / policy_path) == freeze["policy_sha256"]
     with (WORKLOAD / "workload.csv").open(encoding="utf-8", newline="") as stream:
         rows = list(csv.DictReader(stream))
     assert len(rows) == REQUESTS
