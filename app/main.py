@@ -400,7 +400,9 @@ async def chat(req: ChatRequest, request: Request, x_api_key: str | None = Heade
     t0 = time.perf_counter()
     cache_tenant = _cache_tenant(request, prompt, tenant)
     intended_provider = request.app.state.provider_registry.intended_route(prompt)
+    lookup_started = time.perf_counter()
     result = await _cache_lookup(request, prompt, cache_tenant, req.cache_bypass)
+    stage_ms = {"cache_lookup": round((time.perf_counter() - lookup_started) * 1000, 3)}
     _count_candidate_decision(result)
 
     if result.status == "HIT":
@@ -422,19 +424,37 @@ async def chat(req: ChatRequest, request: Request, x_api_key: str | None = Heade
             threshold=result.threshold,
             similarity=result.similarity,
             note=result.reason,
+            selected_cached_query=result.cached_query
+            if get_settings().llm_provider == "controlled-eval"
+            else None,
+            nli_score=result.nli_score
+            if get_settings().llm_provider == "controlled-eval"
+            else None,
+            verifier_invoked=result.verifier_invoked
+            if get_settings().llm_provider == "controlled-eval"
+            else None,
+            stage_latency_ms=stage_ms if get_settings().llm_provider == "controlled-eval" else None,
         )
 
+    admission_started = time.perf_counter()
     await _check_budget(api_key, request)  # only miss/bypass reach a provider — hits are free
+    stage_ms["admission"] = round((time.perf_counter() - admission_started) * 1000, 3)
     path = "bypass" if result.status == "BYPASS" else "miss"
 
     async def generate_and_store() -> tuple[str, str]:
+        provider_started = time.perf_counter()
         provider_name, answer = await _generate_answer(prompt, request)
+        stage_ms["provider"] = round((time.perf_counter() - provider_started) * 1000, 3)
         if provider_name == intended_provider:
+            write_started = time.perf_counter()
             await _cache_store(request, prompt, answer, cache_tenant)
+            stage_ms["cache_write"] = round((time.perf_counter() - write_started) * 1000, 3)
         return provider_name, answer
 
     if result.status == "BYPASS":
+        provider_started = time.perf_counter()
         provider_name, answer = await _generate_answer(prompt, request)
+        stage_ms["provider"] = round((time.perf_counter() - provider_started) * 1000, 3)
         joined = False
     else:
         try:
@@ -462,6 +482,14 @@ async def chat(req: ChatRequest, request: Request, x_api_key: str | None = Heade
         threshold=result.threshold,
         similarity=result.similarity,
         note=f"coalesced:{result.reason}" if joined else result.reason,
+        selected_cached_query=result.cached_query
+        if get_settings().llm_provider == "controlled-eval"
+        else None,
+        nli_score=result.nli_score if get_settings().llm_provider == "controlled-eval" else None,
+        verifier_invoked=result.verifier_invoked
+        if get_settings().llm_provider == "controlled-eval"
+        else None,
+        stage_latency_ms=stage_ms if get_settings().llm_provider == "controlled-eval" else None,
     )
 
 

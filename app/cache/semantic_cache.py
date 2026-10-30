@@ -50,6 +50,8 @@ class LookupResult:
     similarity: float | None = None
     reason: str | None = None
     cached_query: str | None = None  # needed to audit answer reuse on a HIT
+    nli_score: float | None = None
+    verifier_invoked: bool = False
 
 
 class SemanticCache:
@@ -64,6 +66,8 @@ class SemanticCache:
         self._inference_gate = asyncio.Semaphore(1)
         self._versions: dict[str, str | None] = {}
         self._policy = CachePolicy(
+            use_adaptive=not get_settings().cache_policy_static,
+            use_verifier=not get_settings().cache_policy_static,
             static_threshold=get_settings().cache_similarity_base,
             use_nli=get_settings().verifier_nli,
             verifier=NliVerifier(),
@@ -269,13 +273,31 @@ class SemanticCache:
             hit = decision.action == "ACCEPT"
             reason = f"answer_{decision.action.lower()}:{decision.reason}"
             threshold = self._answer_policy.min_similarity
+            nli_score = decision.score
+            verifier_invoked = decision.reason in {
+                "answer_entailment",
+                "answer_contradiction_or_irrelevance",
+                "uncertain_answer",
+                "verifier_unavailable",
+                "context_too_long",
+            }
         else:
             hit, reason, threshold = await self._infer(
                 self._policy.decide, query, best["query"], sim, density
             )
+            nli_score = None
+            verifier_invoked = get_settings().verifier_nli and "nli" in reason
         STAGE_LATENCY.labels(stage="policy_decision").observe(time.perf_counter() - stage_started)
         if not hit:
-            return LookupResult(status="MISS", threshold=threshold, similarity=sim, reason=reason)
+            return LookupResult(
+                status="MISS",
+                threshold=threshold,
+                similarity=sim,
+                reason=reason,
+                cached_query=best["query"],
+                nli_score=nli_score,
+                verifier_invoked=verifier_invoked,
+            )
         stage_started = time.perf_counter()
         if get_settings().vector_backend == "redisearch":
             candidate_row = await rs.read_candidate(best["key"], tenant)
@@ -300,6 +322,8 @@ class SemanticCache:
             similarity=sim,
             reason=reason,
             cached_query=best["query"],
+            nli_score=nli_score,
+            verifier_invoked=verifier_invoked,
         )
 
     async def store(self, query: str, answer: str, tenant: str) -> None:

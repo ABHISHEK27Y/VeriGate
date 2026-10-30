@@ -27,6 +27,12 @@ VERIFY and REJECT both call the upstream provider. The [controlled comparison](d
 reports what that policy did on authored factoid cases, including its latency and limits.
 For a free, seeded factual demonstration with real MiniLM/NLI, follow the
 [local semantic demo](docs/SEMANTIC_DEMO.md).
+
+The [1,000-question controlled-answer HTTP stress evaluation](docs/STRESS_EVALUATION.md)
+tests 200 NQ-derived song-writer families with real Redis Stack, MiniLM, and
+answer-aware NLI. It records both useful reuse and suspected wrong cached
+answers. The authored controls are not human-reviewed production-traffic labels.
+
 The [NQ-Open dev MiniLM pilot](docs/RESULTS_REALISTIC_PILOT.md) records decisions
 on independent public queries without claiming answer correctness.
 See [production configuration](docs/PRODUCTION_CONFIGURATION.md) and the
@@ -87,7 +93,7 @@ accounted for end to end.
 | **Problem** | How much valid answer reuse is possible while controlling incorrect reuse and verification cost? |
 | **Already built** | An exact default, opt-in heuristic semantic policy, query-only verifier, volatility rules, and gateway infrastructure. |
 | **Research direction** | Test answer-aware selective verification against fairly tuned baselines. Adaptive thresholds and verification already exist in prior work; see [related work](docs/RESEARCH_BASELINE.md). |
-| **Current evidence** | A development smoke fixture; five overlapping splits of public pair-label and NQ reference-string proxies; a simulated chronological replay; and an unreviewed answer queue. None independently establishes response correctness. See [evaluation](evaluation/README.md) and [phase status](docs/PHASE_STATUS.md). |
+| **Current evidence** | Authored demo cases, public pair-label and NQ reference-string proxies, simulated replay, and a 1,000-question controlled-answer HTTP run. The stress run found useful reuse and suspected wrong cached answers; NQ references are not independently reviewed truth. See [stress evaluation](docs/STRESS_EVALUATION.md) and [phase status](docs/PHASE_STATUS.md). |
 
 ---
 

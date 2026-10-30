@@ -63,6 +63,8 @@ Invoke-RestMethod http://127.0.0.1:8000/v1/chat -Method Post -Headers $headers -
 
 This setup makes no paid-provider calls. Do not interpret these authored demo
 cases as human-reviewed accuracy or a production safety guarantee.
+The broader [1,000-question controlled-answer HTTP evaluation](STRESS_EVALUATION.md)
+found suspected incorrect semantic reuse despite the six demo chips working.
 
 ## Beyond the dashboard chips
 

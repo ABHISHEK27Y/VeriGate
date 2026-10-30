@@ -38,6 +38,8 @@ def namespace() -> str:
         "cache_epoch",
     )
     selected = {key: config[key] for key in fields}
+    if config["cache_policy_static"]:
+        selected["cache_policy_static"] = True
     if artifact := config["answer_policy_artifact"]:
         selected["answer_policy_sha256"] = hashlib.sha256(Path(artifact).read_bytes()).hexdigest()
         selected["answer_policy_runtime_version"] = ANSWER_POLICY_RUNTIME_VERSION

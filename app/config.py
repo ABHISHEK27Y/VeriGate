@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     # Base threshold T_base. Calibrated for the "minilm" backend (semantic scores sit
     # lower than lexical ones). The adaptive logic raises it for risky queries.
     cache_similarity_base: float = 0.72
+    cache_policy_static: bool = False  # evaluation baseline; default stays adaptive
 
     # Embeddings
     #   "minilm" -> real semantic embeddings via sentence-transformers (default)
@@ -98,6 +99,7 @@ class Settings(BaseSettings):
     # Upstream LLM provider: "mock" (free, default), "openai", or "gemini".
     # Mock is used only when explicitly selected; keys come from the environment.
     llm_provider: str = "mock"
+    evaluation_answers_path: str = ""  # development-only controlled HTTP evaluation
     openai_api_key: str = ""
     openai_base_url: str = "https://api.openai.com/v1"
     openai_model: str = "gpt-4o-mini"
@@ -124,7 +126,7 @@ class Settings(BaseSettings):
             raise ValueError("Production requires API_KEY_SALT of at least 32 characters")
         if "*" in self.cors_origins:
             raise ValueError("Production CORS must use explicit origins")
-        if self.llm_provider == "mock":
+        if self.llm_provider in {"mock", "controlled-eval"}:
             raise ValueError("Production requires a real provider")
 
     @property

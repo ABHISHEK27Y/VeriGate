@@ -19,6 +19,7 @@ from ..config import get_settings
 from ..redis_client import create_redis
 from . import breaker
 from .base import Provider
+from .evaluation import ControlledEvaluationProvider
 from .mock import MockProvider
 from .openai_compat import OpenAICompatibleProvider
 
@@ -65,6 +66,11 @@ class ProviderRegistry:
             )
         if get_settings().llm_provider == "mock":
             provs.append(MockProvider())
+        elif get_settings().llm_provider == "controlled-eval":
+            config = get_settings()
+            if config.environment != "development" or not config.evaluation_answers_path:
+                raise ValueError("Controlled evaluation requires development and an answer file")
+            provs.append(ControlledEvaluationProvider(config.evaluation_answers_path))
         elif not provs:
             raise ValueError("Configured provider is unsupported or missing its API key")
 

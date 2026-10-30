@@ -47,3 +47,7 @@ class ChatResponse(BaseModel):
     threshold: float | None = None
     similarity: float | None = None
     note: str | None = None
+    selected_cached_query: str | None = None
+    nli_score: float | None = None
+    verifier_invoked: bool | None = None
+    stage_latency_ms: dict[str, float] | None = None
