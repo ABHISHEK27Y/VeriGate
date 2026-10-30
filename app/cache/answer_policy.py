@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Literal
 
 from ..embeddings import tokenize
+from .subject_identity import conflicting_named_work
 from .verifier import NliVerifier, _negation_flag, _numbers
 
 Action = Literal["ACCEPT", "VERIFY", "REJECT"]
@@ -77,13 +78,14 @@ class AnswerPolicy:
         terms = tuple(str(term).casefold() for term in raw["ambiguity_terms"])
         return cls(raw["model"], raw["revision"], accept, reject, minimum, version, terms)
 
-    def decide(  # noqa: PLR0911, PLR0912 - distinct fail-closed outcomes
+    def decide(  # noqa: PLR0911, PLR0912, PLR0913, PLR0917 - shared live/replay decision
         self,
         incoming: str,
         stored: str,
         answer: str,
         similarity: float,
         verifier: NliVerifier,
+        subject_guard: bool = True,
     ) -> AnswerDecision:
         if (
             not answer.strip()
@@ -99,6 +101,8 @@ class AnswerPolicy:
             return AnswerDecision("REJECT", "number_mismatch", None)
         if _negation_flag(incoming) != _negation_flag(stored):
             return AnswerDecision("REJECT", "negation_mismatch", None)
+        if subject_guard and conflicting_named_work(incoming, stored):
+            return AnswerDecision("REJECT", "subject_identity_conflict", None)
         incoming_tokens, stored_tokens = tokenize(incoming), tokenize(stored)
         answer_tokens = tokenize(answer)
         # A proposed answer repeated in the new question may play a different

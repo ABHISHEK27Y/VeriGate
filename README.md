@@ -32,6 +32,9 @@ The [1,000-question controlled-answer HTTP stress evaluation](docs/STRESS_EVALUA
 tests 200 NQ-derived song-writer families with real Redis Stack, MiniLM, and
 answer-aware NLI. It records both useful reuse and suspected wrong cached
 answers. The authored controls are not human-reviewed production-traffic labels.
+The [named-work safeguard evaluation](docs/SUBJECT_GUARD_EVALUATION.md) audits
+all 54 suspected accepts and measures the fix on a separate four-domain set;
+semantic mode remains experimental.
 
 The [NQ-Open dev MiniLM pilot](docs/RESULTS_REALISTIC_PILOT.md) records decisions
 on independent public queries without claiming answer correctness.

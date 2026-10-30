@@ -1,0 +1,17 @@
+{
+  "policy": "answer_aware",
+  "capacity": "unchanged",
+  "requests": 120,
+  "completed": 120,
+  "failed": 0,
+  "outcomes": {
+    "cold_miss": 28,
+    "bypass": 8,
+    "correct_hit": 83,
+    "verifier_false_rejection": 1
+  },
+  "reuse_opportunities": 84,
+  "successful_reuse_per_opportunity": 0.9880952380952381,
+  "provider_calls": 37,
+  "startup_ms": 37788.765
+}

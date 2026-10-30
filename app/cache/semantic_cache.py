@@ -269,6 +269,7 @@ class SemanticCache:
                 best["answer"],
                 sim,
                 self._policy.verifier,
+                get_settings().answer_policy_subject_guard,
             )
             hit = decision.action == "ACCEPT"
             reason = f"answer_{decision.action.lower()}:{decision.reason}"

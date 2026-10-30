@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     # lower than lexical ones). The adaptive logic raises it for risky queries.
     cache_similarity_base: float = 0.72
     cache_policy_static: bool = False  # evaluation baseline; default stays adaptive
+    answer_policy_subject_guard: bool = True  # opt-in policy's named-work identity check
 
     # Embeddings
     #   "minilm" -> real semantic embeddings via sentence-transformers (default)

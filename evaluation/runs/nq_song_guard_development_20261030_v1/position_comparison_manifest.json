@@ -1,0 +1,67 @@
+{
+  "old_requests_sha256": "447e436b469dfeb3d2c834ecfaf98df1ac5ead385a1eb090683208e2544b3182",
+  "guarded_requests_sha256": "7ea5c45cc735da7fe2b553b91f6bef8cc318bfa50eaef0dd3ea1ca3f15d06785",
+  "comparison_sha256": "3c5e93531cee7643beab5a3e7467e928e1b657aec2f9254f4a3d84f4d944a612",
+  "transitions": [
+    {
+      "old": "bypass",
+      "guarded": "bypass",
+      "count": 15
+    },
+    {
+      "old": "cold_miss",
+      "guarded": "cold_miss",
+      "count": 176
+    },
+    {
+      "old": "cold_miss",
+      "guarded": "correct_hit",
+      "count": 14
+    },
+    {
+      "old": "cold_miss",
+      "guarded": "correct_rejection_unsuitable_candidate",
+      "count": 1
+    },
+    {
+      "old": "correct_hit",
+      "guarded": "correct_hit",
+      "count": 679
+    },
+    {
+      "old": "correct_hit",
+      "guarded": "correct_rejection_unsuitable_candidate",
+      "count": 1
+    },
+    {
+      "old": "correct_hit",
+      "guarded": "verifier_false_rejection",
+      "count": 2
+    },
+    {
+      "old": "incorrect_acceptance",
+      "guarded": "cold_miss",
+      "count": 21
+    },
+    {
+      "old": "incorrect_acceptance",
+      "guarded": "correct_hit",
+      "count": 31
+    },
+    {
+      "old": "incorrect_acceptance",
+      "guarded": "verifier_false_rejection",
+      "count": 2
+    },
+    {
+      "old": "verifier_false_rejection",
+      "guarded": "correct_hit",
+      "count": 2
+    },
+    {
+      "old": "verifier_false_rejection",
+      "guarded": "verifier_false_rejection",
+      "count": 56
+    }
+  ]
+}
