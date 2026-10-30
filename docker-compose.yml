@@ -30,6 +30,9 @@ services:
       EMBEDDING_BACKEND: minilm
       # Explicit opt-in: a local .env LLM_PROVIDER must not turn the free demo into paid calls.
       LLM_PROVIDER: ${VERIGATE_COMPOSE_PROVIDER:-mock}
+      CACHE_MATCH_MODE: ${VERIGATE_COMPOSE_CACHE_MATCH_MODE:-exact}
+      ANSWER_POLICY_ARTIFACT: ${VERIGATE_COMPOSE_ANSWER_POLICY_ARTIFACT:-}
+      ANSWER_POLICY_PREWARM: ${VERIGATE_COMPOSE_ANSWER_POLICY_PREWARM:-false}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
     depends_on:

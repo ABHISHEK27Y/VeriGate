@@ -53,6 +53,14 @@ nav a.link:hover{color:var(--text)}
   letter-spacing:-.03em;margin:20px 0 22px;max-width:15ch}
 .hero h1 em{font-style:normal;color:var(--muted)}
 .hero p{color:var(--muted);font-size:17px;max-width:56ch;margin:0 0 32px}
+.mode-banner{display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  margin:0 0 28px;padding:15px 18px;border:1px solid var(--line2);
+  border-radius:var(--r);background:var(--surface)}
+.mode-banner.semantic{border-color:rgba(87,217,138,.55);background:var(--accent-soft)}
+.mode-banner .label{font:11px 'JetBrains Mono',monospace;color:var(--muted);
+  letter-spacing:.12em;text-transform:uppercase}
+.mode-banner strong{font-size:16px;color:var(--text)}
+.mode-banner .detail{color:var(--muted);font-size:13px}
 .actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
 .btn{cursor:pointer;font-family:inherit;font-size:14px;font-weight:500;border-radius:8px;
   padding:11px 18px;transition:.15s;border:1px solid transparent}
@@ -183,9 +191,13 @@ footer{border-top:1px solid var(--line);padding:34px 0 60px;color:var(--faint);f
 <header class="hero"><div class="wrap">
   <div class="eyebrow">B.Tech Major Project — LLM Gateway</div>
   <h1>An LLM gateway with an <em>experimental answer cache.</em></h1>
-  <p>Exact-prompt reuse is the default. Opt-in semantic matching can reuse nearby questions,
-     but its query-only checks can accept a wrong answer or reject a valid paraphrase.
-     The playground below shows the configured mode and each request's decision reason.</p>
+  <p>Exact-prompt reuse is the default. Opt-in answer-aware semantic matching examines
+     a nearby question and its specific cached answer before reuse. It can still accept
+     a wrong answer or reject a valid paraphrase. Each request shows its decision reason.</p>
+  <div class="mode-banner" id="mode-banner" role="status" aria-live="polite">
+    <span class="label">Running now</span><strong id="mode-label">Checking gateway…</strong>
+    <span class="detail" id="mode-detail"></span>
+  </div>
   <div class="actions">
     <a class="btn pri" href="#playground">Open playground</a>
     <a class="btn sec" href="#results">View results</a>
@@ -202,8 +214,9 @@ footer{border-top:1px solid var(--line);padding:34px 0 60px;color:var(--faint);f
       <p>Match strictness is computed per query from entities, numbers, length and neighbourhood
          density — not one global constant.</p></div>
     <div class="item"><div class="n">B</div><h3>Self-verifier</h3>
-      <p>Token-difference checks filter some changed numbers, roles, scope and tense.
-         Optional question-to-question NLI adds a model check; neither verifies the actual answer.</p></div>
+      <p>Structural checks filter some changed numbers, roles, scope and tense.
+         The opt-in answer-aware policy evaluates the cached answer with pinned NLI,
+         while uncertain candidates go to the provider.</p></div>
     <div class="item"><div class="n">C</div><h3>Staleness detection</h3>
       <p>A keyword rule bypasses some time-sensitive queries. Coverage is incomplete,
          so other cached answers can become stale.</p></div>
@@ -249,6 +262,9 @@ footer{border-top:1px solid var(--line);padding:34px 0 60px;color:var(--faint);f
         <button class="btn sec sm" id="reset">Reset stats</button>
       </div>
       <div class="chips" id="chips"></div>
+      <div class="hint" id="demo-note" hidden>Local factual fixtures: Jane Austen, 1969, and Mars.
+        These examples demonstrate decisions with seeded answers; they are not an accuracy study.
+        Clearing the cache also removes these fixtures.</div>
       <div class="err" id="err"></div>
       <div class="result" id="result">
         <span class="rbadge" id="rbadge">—</span>
@@ -294,7 +310,7 @@ footer{border-top:1px solid var(--line);padding:34px 0 60px;color:var(--faint);f
     <div class="step"><div class="n">01</div><h4>Auth · rate limit</h4><p>API key + Redis token bucket.</p></div>
     <div class="step"><div class="n">02</div><h4>Staleness</h4><p>Volatile query → skip cache.</p></div>
     <div class="step"><div class="n">03</div><h4>Embed · KNN</h4><p>MiniLM vector → nearest match.</p></div>
-    <div class="step"><div class="n">04</div><h4>Adapt · verify</h4><p>Per-query threshold, then verifier.</p></div>
+    <div class="step"><div class="n">04</div><h4>Decide · verify</h4><p>Configured policy checks each candidate.</p></div>
     <div class="step"><div class="n">05</div><h4>Hit or LLM</h4><p>Serve cache, else provider + failover.</p></div>
   </div>
   <div class="stack">
@@ -317,17 +333,33 @@ const EX=[
   {t:"what is the capital of Australia",d:"look-alike"},
   {t:"what is the weather today",d:"→ BYPASS"},
 ];
-$("chips").innerHTML="";EX.forEach(e=>{const c=document.createElement("div");c.className="chip";
+const SEMANTIC_EX=[
+  {t:"Who is the author of the novel Pride and Prejudice?",d:"valid paraphrase"},
+  {t:"Who wrote the screenplay for the film Pride and Prejudice?",d:"different role"},
+  {t:"What year did Apollo 11 land on the Moon?",d:"valid paraphrase"},
+  {t:"In what year did Apollo 12 land on the Moon?",d:"different mission"},
+  {t:"Which planet is nicknamed the Red Planet?",d:"valid paraphrase"},
+  {t:"Which planet is known as the Blue Planet?",d:"different planet"},
+];
+function showChips(examples){$("chips").innerHTML="";examples.forEach(e=>{const c=document.createElement("div");c.className="chip";
   c.innerHTML=`${e.t}<small>${e.d}</small>`;c.onclick=()=>{$("query").value=e.t;ask();};$("chips").appendChild(c);});
+}
+showChips(EX);
 
 async function health(){try{const r=await fetch("/health");if(!r.ok)throw new Error("Unavailable");let h=await r.json();
   if(!h.cache_match_mode&&$("apikey").value){const detail=await fetch("/admin/config",{headers:{"x-api-key":$("apikey").value}});if(detail.ok)h=await detail.json();}
-  if(!h.cache_match_mode){$("cfg").textContent="Enter an API key to view configuration.";$("stat").textContent="ready · configuration private";return;}
+  if(!h.cache_match_mode){$("cfg").textContent="Enter an API key to view configuration.";$("stat").textContent="ready · configuration private";$("mode-label").textContent="Configuration private";return;}
+  const answerAware=h.cache_match_mode==="semantic"&&Boolean(h.answer_policy_version);
+  showChips(answerAware?SEMANTIC_EX:EX);
+  $("demo-note").hidden=!answerAware;
+  $("mode-banner").classList.toggle("semantic",answerAware);
+  $("mode-label").textContent=answerAware?"Answer-aware semantic cache":h.cache_match_mode==="semantic"?"Semantic cache":"Exact cache";
+  $("mode-detail").textContent=answerAware?"Real MiniLM + NLI · "+(h.answer_policy_prewarm?"prewarmed":"lazy NLI")+" · provider: "+(h.providers||[]).join(", "):"Provider: "+(h.providers||[]).join(", ");
   $("cfg").innerHTML=[["matching",h.cache_match_mode],["policy",h.answer_policy_version||h.cache_policy_version],
-    ["NLI enabled",String(h.verifier_nli_enabled)],["redis",h.redis],["vector index",h.vector_backend],["embeddings",h.embedding_backend],
+    ["answer-aware NLI",answerAware?"enabled":"off"],["NLI prewarm",h.answer_policy_prewarm?"ready":"off"],["redis",h.redis],["vector index",h.vector_backend],["embeddings",h.embedding_backend],
     ["provider",(h.providers||[]).join(", ")]].map(([k,v])=>`<div class="c"><div class="k">${k}</div><div class="v">${v}</div></div>`).join("");
-  $("stat").textContent=h.vector_backend+" · "+(h.providers||[]).join(",");
-}catch(e){$("stat").textContent="offline";}}
+  $("stat").textContent=h.cache_match_mode+" · "+(h.providers||[]).join(",");
+}catch(e){$("stat").textContent="offline";$("mode-label").textContent="Gateway offline";}}
 
 function setS(){$("s-total").textContent=s.total;const d=s.hits+s.miss;
   $("s-rate").textContent=d?Math.round(100*s.hits/d)+"%":"0%";

@@ -340,6 +340,7 @@ async def _health_details(request: Request) -> dict:
             if request.app.state.semantic_cache._answer_policy
             else None
         ),
+        "answer_policy_prewarm": get_settings().answer_policy_prewarm,
         "verifier_nli_enabled": get_settings().verifier_nli,
         "provider_health": "configuration_only",
         "providers": (

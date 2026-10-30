@@ -32,7 +32,10 @@ def test_required_prewarm_completes_before_readiness(monkeypatch: pytest.MonkeyP
     monkeypatch.setattr(NliVerifier, "prewarm", lambda _self: calls.append("ready"))
     with TestClient(create_app(_settings())) as client:
         assert calls == ["ready"]
-        assert client.get("/ready").status_code == HTTP_OK
+        ready = client.get("/ready")
+        assert ready.status_code == HTTP_OK
+        assert ready.json()["answer_policy_prewarm"] is True
+        assert ready.json()["answer_policy_version"]
 
 
 def test_failed_required_prewarm_prevents_startup(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -56,4 +59,6 @@ def test_default_does_not_load_nli_at_startup(monkeypatch: pytest.MonkeyPatch) -
     with TestClient(
         create_app(_settings().model_copy(update={"answer_policy_prewarm": False}))
     ) as client:
-        assert client.get("/ready").status_code == HTTP_OK
+        ready = client.get("/ready")
+        assert ready.status_code == HTTP_OK
+        assert ready.json()["answer_policy_prewarm"] is False
