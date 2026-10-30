@@ -1,0 +1,101 @@
+[
+  {
+    "domain": "song",
+    "seed_title": "The Northbound Letter",
+    "declared_alias": "Northbound Letter",
+    "different_title": "Northbound Letters",
+    "seed_answer": "Mira Vale",
+    "different_answer": "Elias Reed",
+    "evidence": "fictional authored catalog"
+  },
+  {
+    "domain": "song",
+    "seed_title": "Glass Harbor",
+    "declared_alias": "Glass Harbor",
+    "different_title": "The Glass Harbors",
+    "seed_answer": "Nora Flint",
+    "different_answer": "Ilan Moss",
+    "evidence": "fictional authored catalog"
+  },
+  {
+    "domain": "book",
+    "seed_title": "The Silver Orchard",
+    "declared_alias": "Silver Orchard",
+    "different_title": "Silver Orchards",
+    "seed_answer": "Tessa Rowe",
+    "different_answer": "Damon Pike",
+    "evidence": "fictional authored catalog"
+  },
+  {
+    "domain": "book",
+    "seed_title": "A Lantern in Winter",
+    "declared_alias": "Lantern in Winter",
+    "different_title": "Lanterns in Winter",
+    "seed_answer": "Rhea Stone",
+    "different_answer": "Caleb Voss",
+    "evidence": "fictional authored catalog"
+  },
+  {
+    "domain": "film",
+    "seed_title": "The Last Crossing",
+    "declared_alias": "Last Crossing",
+    "different_title": "The Last Crossings",
+    "seed_answer": "Uma Grey",
+    "different_answer": "Felix Shore",
+    "evidence": "fictional authored catalog"
+  },
+  {
+    "domain": "film",
+    "seed_title": "Quiet Horizon",
+    "declared_alias": "Quiet Horizon",
+    "different_title": "The Quiet Horizons",
+    "seed_answer": "Lena Hart",
+    "different_answer": "Otto Finch",
+    "evidence": "fictional authored catalog"
+  },
+  {
+    "domain": "poem",
+    "seed_title": "The Blue Window",
+    "declared_alias": "Blue Window",
+    "different_title": "Blue Windows",
+    "seed_answer": "Ada Fenn",
+    "different_answer": "Jules North",
+    "evidence": "fictional authored catalog"
+  },
+  {
+    "domain": "poem",
+    "seed_title": "Beyond the River",
+    "declared_alias": "Beyond the River",
+    "different_title": "Beyond the Rivers",
+    "seed_answer": "Cora Hale",
+    "different_answer": "Niko Ash",
+    "evidence": "fictional authored catalog"
+  },
+  {
+    "domain": "person",
+    "seed_question": "Who founded the town of Eastmere?",
+    "paraphrase": "Who established Eastmere?",
+    "different_question": "Who founded the town of Westmere?",
+    "seed_answer": "Sana Bell",
+    "different_answer": "Pavel Rios",
+    "evidence": "fictional authored catalog; outside named-work syntax"
+  },
+  {
+    "domain": "place",
+    "seed_question": "Where was the explorer Tavi Ren born?",
+    "paraphrase": "What is Tavi Ren's birthplace?",
+    "different_question": "Where was the explorer Tavi Ryn born?",
+    "seed_answer": "Dunvale",
+    "different_answer": "Marshport",
+    "evidence": "fictional authored catalog; outside named-work syntax"
+  },
+  {
+    "domain": "date",
+    "seed_question": "When did the Cedar Bridge open?",
+    "paraphrase": "What was the opening year of Cedar Bridge?",
+    "different_question": "When did the Cedar Tunnel open?",
+    "seed_answer": "1984",
+    "different_answer": "1987",
+    "evidence": "fictional authored catalog; outside named-work syntax"
+  }
+]

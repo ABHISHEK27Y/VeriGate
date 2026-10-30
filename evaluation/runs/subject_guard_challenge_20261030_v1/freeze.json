@@ -1,0 +1,29 @@
+{
+  "requests": 41,
+  "workload_sha256": "e52ff01d05ca08ba307da97a8a8d650b29f4e6dd523679aa7b92d000551a4dca",
+  "provider_answers_sha256": "e49595d9df3a994f65cacfb4854cc58bf03e6b0817a0924823ebcd3debf22582",
+  "catalog_sha256": "d53700d8308f4496f7ae64cb695d22d8aaa3633622a9e0b37a814cac4571f47a",
+  "policy_sha256": "f9d2365021192fe7a78c54a0d250e1c384f416ad3c1818b084c5b89cd276b6a2",
+  "policy_artifact": "app/cache/artifacts/answer_policy_v1.json",
+  "comparison": {
+    "unchanged": false,
+    "guarded": true
+  },
+  "settings": {
+    "unchanged": {
+      "cache_ttl_sec": 86400,
+      "max_cache_entries_per_tenant": 256
+    },
+    "guarded": {
+      "cache_ttl_sec": 86400,
+      "max_cache_entries_per_tenant": 256
+    }
+  },
+  "source": "fictional authored controlled catalog",
+  "selection": "8 named-work families (song, book, film, poem), 3 out-of-scope families (person, place, date); one seed, valid wording/title variation, and different-identity near match per family",
+  "label_limit": "Author-stipulated fictional answers; no independent human or real-world correctness labels",
+  "embedding_model": "all-MiniLM-L6-v2",
+  "embedding_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+  "nli_model": "cross-encoder/nli-deberta-v3-xsmall",
+  "nli_revision": "a150876415327c80daeff35ca6f68f5ed8cf5c24"
+}
