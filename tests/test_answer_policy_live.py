@@ -93,9 +93,69 @@ def test_long_context_abstains_before_nli() -> None:
             raise AssertionError("NLI should not see truncated context")
 
     query = "Explain the unusual historical record " + "detail " * 90
-    result = AnswerPolicy.load(ARTIFACT).decide(query, query, "record", 0.9, NoModelVerifier())
+    result = AnswerPolicy.load(ARTIFACT).decide(query, query, "the archive", 0.9, NoModelVerifier())
     assert result.action == "VERIFY"
     assert result.reason == "context_too_long"
+
+
+def test_answer_mentioned_in_incoming_question_abstains_on_role_reversal() -> None:
+    policy = AnswerPolicy.load(ARTIFACT)
+    result = policy.decide(
+        "Who did Bob marry?", "Who did Alice marry?", "Bob", 0.9, ControlledVerifier()
+    )
+    assert result.action == "VERIFY"
+    assert result.reason == "answer_mentioned_in_question"
+
+
+def test_changed_scope_abstains_without_nli() -> None:
+    policy = AnswerPolicy.load(ARTIFACT)
+    result = policy.decide(
+        "When did the team reach the final?",
+        "When was the last year the team reached the final?",
+        "2018",
+        0.9,
+        ControlledVerifier(),
+    )
+    assert result.action == "VERIFY"
+    assert result.reason == "scope_changed"
+
+
+def test_scope_and_answer_guards_allow_unaffected_paraphrase() -> None:
+    result = AnswerPolicy.load(ARTIFACT).decide(
+        "Name the capital city of France.",
+        "What is France's capital?",
+        "Paris",
+        0.9,
+        ControlledVerifier(),
+    )
+    assert result.action == "ACCEPT"
+
+
+@pytest.mark.parametrize(
+    ("incoming", "stored", "answer", "reason"),
+    [
+        (
+            "who does betty end up with on riverdale",
+            "does archie end up with betty or veronica in riverdale",
+            "Betty",
+            "answer_mentioned_in_question",
+        ),
+        (
+            "when did the eagles play in the superbowl",
+            "when was the last year the eagles went to the superbowl",
+            "following the 2017 season",
+            "scope_changed",
+        ),
+    ],
+)
+def test_close_neighbor_suspicious_cases_abstain(
+    incoming: str, stored: str, answer: str, reason: str
+) -> None:
+    result = AnswerPolicy.load(ARTIFACT).decide(
+        incoming, stored, answer, 0.95, ControlledVerifier()
+    )
+    assert result.action == "VERIFY"
+    assert result.reason == reason
 
 
 def test_live_gateway_and_replay_accept_same_valid_answer(client) -> None:

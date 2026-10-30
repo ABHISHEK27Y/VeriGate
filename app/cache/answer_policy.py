@@ -19,6 +19,7 @@ from .verifier import NliVerifier, _negation_flag, _numbers
 Action = Literal["ACCEPT", "VERIFY", "REJECT"]
 _COSINE_ROUNDING_TOLERANCE = 0.0001
 _MAX_ASSERTION_BYTES = 384  # conservative bound below the NLI model's 512-token window
+_MIN_ANSWER_CHARS_FOR_MENTION = 3
 
 
 @dataclass(frozen=True)
@@ -56,7 +57,7 @@ class AnswerPolicy:
         terms = tuple(str(term).casefold() for term in raw["ambiguity_terms"])
         return cls(raw["model"], raw["revision"], accept, reject, minimum, version, terms)
 
-    def decide(  # noqa: PLR0911 - distinct fail-closed outcomes
+    def decide(  # noqa: PLR0911, PLR0912 - distinct fail-closed outcomes
         self,
         incoming: str,
         stored: str,
@@ -78,8 +79,23 @@ class AnswerPolicy:
             return AnswerDecision("REJECT", "number_mismatch", None)
         if _negation_flag(incoming) != _negation_flag(stored):
             return AnswerDecision("REJECT", "negation_mismatch", None)
-        yes_no_openers = {"is", "are", "was", "were", "do", "does", "did", "can", "has"}
         incoming_tokens, stored_tokens = tokenize(incoming), tokenize(stored)
+        answer_tokens = tokenize(answer)
+        # A proposed answer repeated in the new question may play a different
+        # grammatical role (e.g. an object becoming the subject). Abstain.
+        if answer_tokens and len("".join(answer_tokens)) >= _MIN_ANSWER_CHARS_FOR_MENTION:
+            width = len(answer_tokens)
+            if any(
+                incoming_tokens[index : index + width] == answer_tokens
+                for index in range(len(incoming_tokens) - width + 1)
+            ):
+                return AnswerDecision("VERIFY", "answer_mentioned_in_question", None)
+        # A fact scoped by an ordinal/superlative is not automatically a complete
+        # answer to an unscoped question, or the reverse.
+        scope = {"first", "last", "most", "least", "only"}
+        if (set(incoming_tokens) & scope) != (set(stored_tokens) & scope):
+            return AnswerDecision("VERIFY", "scope_changed", None)
+        yes_no_openers = {"is", "are", "was", "were", "do", "does", "did", "can", "has"}
         if (
             incoming_tokens
             and incoming_tokens[0] in yes_no_openers

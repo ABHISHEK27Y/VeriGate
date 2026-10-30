@@ -7,7 +7,7 @@ from pathlib import Path
 from ..config import get_settings
 
 POLICY_VERSION = "token-diff-v2"
-ANSWER_POLICY_RUNTIME_VERSION = "2"
+ANSWER_POLICY_RUNTIME_VERSION = "3"
 
 
 def namespace() -> str:

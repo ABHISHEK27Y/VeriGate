@@ -43,3 +43,28 @@ Redis, HTTP, and provider generation.
 This run does not justify relaxing policy thresholds to gain hits. A separate
 independent source with reviewed specific-answer labels is required before
 claiming a useful safe operating point.
+
+## Follow-up: policy runtime v3 (30 October 2026)
+
+The [new run](../evaluation/runs/nq_dev_close_neighbors_v4/manifest.json) uses the
+same frozen 40 pairs and unchanged policy artifact. It adds general abstentions
+when the proposed answer appears in the incoming question, and when a question
+adds or drops an ordinal/superlative scope. The old v2 run above is preserved.
+
+The Betty pair is a confirmed direction error under the recorded references:
+the cached answer to whom **Archie** ends up with was `Betty`, while the incoming
+question asks whom **Betty** ends up with and lists `Archie Andrews` as its NQ
+reference. The new policy returns VERIFY. For the Eagles, NQ lists `February 6,
+2005` for an unscoped “when did they play” question, while the cached answer is
+“following the 2017 season” for the **last** appearance. The latter might also
+be a valid occurrence; the reference alone cannot decide. The new policy returns
+VERIFY because scope changed.
+
+| Answer-aware runtime | ACCEPT / 40 | VERIFY | REJECT | Accepted reference matches | Accepted reference mismatches |
+|---|---:|---:|---:|---:|---:|
+| v2 historical | 8 | 5 | 27 | 6 | 2 |
+| v3 follow-up | 6 | 10 | 24 | 6 | 0 |
+
+The six accepted reference matches are **proxy matches**, not independently
+reviewed correctness. The selection was deliberately balanced 20/20, so zero
+accepted mismatches here is neither a traffic error rate nor a safety guarantee.

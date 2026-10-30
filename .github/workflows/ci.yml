@@ -127,11 +127,34 @@ jobs:
         run: |
           python -m scripts.benchmark_live_gateway evaluation/results/live_http_redis_ci
 
+      - name: Two-worker shared Redis checks
+        env:
+          REDIS_URL: redis://localhost:6379/0
+        run: |
+          python -m scripts.test_multiworker_redis evaluation/results/multiworker_redis_ci
+
+      - name: Real MiniLM and NLI live HTTP benchmark
+        timeout-minutes: 25
+        env:
+          REDIS_URL: redis://localhost:6379/0
+        run: |
+          python -m scripts.benchmark_real_semantic evaluation/results/real_semantic_ci
+
       - name: Upload live benchmark artifacts
         uses: actions/upload-artifact@v4
         with:
           name: live-http-redis-benchmark
           path: evaluation/results/live_http_redis_ci/
+          retention-days: 7
+
+      - name: Upload real semantic and multi-worker artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: real-semantic-and-multiworker
+          path: |
+            evaluation/results/real_semantic_ci/
+            evaluation/results/multiworker_redis_ci/
           retention-days: 7
 
   security-audit:
