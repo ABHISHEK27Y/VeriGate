@@ -27,15 +27,10 @@ Before designing VeriGate, existing semantic-caching and gateway solutions were 
     \item \textbf{Development environment:}
     \begin{itemize}
         \item \textbf{Processor:} Intel Core i5 / AMD Ryzen 5 or better.
-        \item \textbf{RAM:} 8~GB minimum; the sentence-transformer model and the in-process vector matrix are the main consumers.
+        \item \textbf{RAM:} 8~GB is a practical development recommendation for running the sentence-transformer model, tests, and container tooling together; it is not a measured minimum.
         \item \textbf{Storage:} SSD recommended for fast model load and container builds.
     \end{itemize}
-    \item \textbf{Production server (minimum):}
-    \begin{itemize}
-        \item \textbf{CPU:} 2 virtual cores.
-        \item \textbf{RAM:} $\sim$1~GB for the lexical-embedding lite mode; $\sim$1.5--2~GB when the MiniLM model is loaded.
-        \item \textbf{Storage:} 20~GB block storage for the container image and model cache.
-    \end{itemize}
+    \item \textbf{Deployment sizing:} No production minimum is claimed. CPU, memory, storage, concurrency, and Redis capacity must be sized from the selected embedding/vector backend and measured workload.
 \end{itemize}
 
 \subsection{Software Requirements}
@@ -44,7 +39,7 @@ The stack is uniformly Python-based to keep the caching layer and the web server
     \item \textbf{Operating System:} Agnostic (Windows~11 during development; Linux containers for deployment).
     \item \textbf{Language:} Python 3.11+ (the reference environment is Python 3.13).
     \item \textbf{Web framework:} \texttt{FastAPI} + \texttt{uvicorn} (ASGI) for asynchronous request handling and streaming (Server-Sent Events) \cite{fastapi}.
-    \item \textbf{Embeddings:} \texttt{sentence-transformers} with \texttt{all-MiniLM-L6-v2} \cite{sentencetransformers}; \texttt{torch} (CPU build) as the backend; a hash-based lexical embedder as a dependency-free fallback for tests.
+    \item \textbf{Embeddings:} \texttt{sentence-transformers} with \texttt{all-MiniLM-L6-v2} \cite{sentencetransformers}; \texttt{torch} (CPU build) as the backend; a deterministic hash-based embedder for lightweight tests.
     \item \textbf{Verifier:} a compact NLI cross-encoder (\texttt{cross-encoder/nli-deberta-v3-xsmall}) \cite{he2021deberta} for the optional Tier-2 check.
     \item \textbf{Cache / state:} \texttt{redis} (with \texttt{fakeredis} as an in-process default for development and tests); Redis Stack for the RediSearch/HNSW vector backend \cite{redis_stack}.
     \item \textbf{Observability:} \texttt{prometheus-client} for metrics; Prometheus + Grafana for scraping and dashboards \cite{prometheus}.
@@ -56,7 +51,7 @@ The stack is uniformly Python-based to keep the caching layer and the web server
     \item \textbf{Authenticated chat endpoint.} The gateway must accept a chat request bearing a valid API key and return a completion; requests without a valid key must be rejected with HTTP~401.
     \item \textbf{Streaming.} The gateway must support token streaming (SSE) as well as a non-streaming JSON response.
     \item \textbf{Cache lookup modes.} The default exact mode reuses only an identical UTF-8 prompt within the caller's tenant and cache namespace. When semantic mode is explicitly enabled, the system embeds the query, retrieves a tenant-scoped nearest neighbour, and applies the configured cache policy before reusing an answer.
-    \item \textbf{Adaptive threshold.} The effective similarity threshold must be adjusted per query as a function of neighbourhood density, rather than being a single global constant.
+    \item \textbf{Adaptive threshold.} In semantic mode, the effective similarity threshold is computed per query from hand-designed features (entity density, numbers, shortness, and neighbourhood density), rather than from a single global constant.
     \item \textbf{Self-verification.} Before serving a candidate hit, the system must run a Tier-1 structural verifier (numbers, negation, named entities) and, when enabled, a Tier-2 NLI verifier; a candidate that fails verification must be rejected as a false hit and treated as a MISS.
     \item \textbf{Volatility bypass.} Queries classified as time-sensitive must bypass the cache (never served from and never written to it).
     \item \textbf{Fast lookup.} The cache-hit path must use a vectorised index (in-process or RediSearch) so that lookup remains far faster than a provider call as the cache grows.
@@ -73,8 +68,8 @@ The stack is uniformly Python-based to keep the caching layer and the web server
     \item \textbf{Correctness (primary).} Semantic reuse must be conservative and evaluated on labelled positive and negative pairs. The checked-in curated benchmark currently records zero accepted negative pairs out of 15 for adaptive plus Tier-1 verification; this is an observed result on a small dataset, not a correctness guarantee for unseen queries.
     \item \textbf{Cache-hit latency.} Cache-hit latency must be measured separately by mode, embedding backend, vector backend, and cache size. The local semantic-mode measurement is reported in Chapter~6; the 800~ms hosted-model comparison is an illustrative reference, not a measured provider baseline.
     \item \textbf{Verification overhead.} Tier-1 verification must impose negligible overhead ($<$1~ms) on the hit path so that safety is effectively free; the cost of Tier-2 must be quantified and its use made optional.
-    \item \textbf{Scalability.} Lookup latency must remain sub-linear in cache size (near-flat and sub-millisecond to at least several thousand entries for the in-process index).
+    \item \textbf{Scalability.} In-process lookup uses a vectorised matrix operation whose work grows with the number of entries; the optional RediSearch/HNSW backend is intended for shared vector search. Scaling claims must be supported by measurements at the target tenant and corpus sizes.
     \item \textbf{Security.} API-key authentication, opaque tenant identifiers, tenant-scoped cache access, bounded request/cache resources, protected metrics, and secret configuration are required. The daily admission counter does not replace provider-side financial controls.
-    \item \textbf{Reliability.} A failing provider must be skipped quickly by a circuit breaker rather than retried on every request; the cache must fail open (a cache error degrades to a provider call rather than an error).
+    \item \textbf{Reliability.} Provider circuit breakers should prevent repeated calls to unhealthy configured providers. Cache-backend failures must be surfaced and monitored; the current implementation is not described as universally fail-open.
     \item \textbf{Reproducibility.} The evaluation harness must share the exact \texttt{CachePolicy} used by the live gateway, so that measured results equal shipped behaviour; all figures and tables must be regenerable from the repository.
 \end{enumerate}
