@@ -298,7 +298,9 @@ def test_changed_redisearch_answer_after_policy_decision_is_miss(client, monkeyp
         return [(stored, "Paris", 0.8, key)]
 
     async def changed_candidate(_key, _tenant):
-        assert _key == key and _tenant == tenant
+        assert _tenant == tenant
+        if _key != key:
+            return None  # deterministic exact fast path has no entry for this paraphrase
         return {"query": stored, "answer": "Berlin"}
 
     monkeypatch.setattr(rs, "knn", fake_knn)
@@ -337,7 +339,9 @@ def test_expired_redisearch_candidate_after_policy_decision_is_miss(client, monk
         return [(stored, "Paris", 0.8, key)]
 
     async def expired_candidate(_key, _tenant):
-        assert _key == key and _tenant == tenant
+        assert _tenant == tenant
+        if _key != key:
+            return None  # no exact entry for this paraphrase
 
     monkeypatch.setattr(rs, "knn", fake_knn)
     monkeypatch.setattr(rs, "read_candidate", expired_candidate)

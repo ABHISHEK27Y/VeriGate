@@ -11,6 +11,7 @@ from ..config import get_settings
 from .namespace import namespace as current_namespace
 
 _SCOPED_PARTS = 3
+_EXPIRY_RECONCILE_BATCH = 256
 
 
 def keys(tenant: str, namespace: str | None = None) -> tuple[str, str, str]:
@@ -26,6 +27,10 @@ def _org_keys(tenant: str, namespace: str) -> tuple[str, str, str]:
     organization = tenant.split("_", 2)[1]
     prefix = f"{namespace}:org:{organization}"
     return f"{prefix}:lru", f"{prefix}:sizes", f"{prefix}:bytes"
+
+
+def _org_expiry(tenant: str, namespace: str) -> str:
+    return f"{namespace}:org:{tenant.split('_', 2)[1]}:expires"
 
 
 def _limits(tenant: str) -> tuple[int, int]:
@@ -49,30 +54,101 @@ async def _put_scoped(  # noqa: PLR0912, PLR0913, PLR0915, PLR0917 - atomic quot
     ids, lru, prefix = keys(tenant, namespace)
     sizes, bytes_key = f"{namespace}:sizes:{tenant}", f"{namespace}:bytes:{tenant}"
     org_lru, org_sizes, org_bytes = _org_keys(tenant, namespace)
+    org_expires = _org_expiry(tenant, namespace)
     member = f"{tenant}|{eid}"
     ttl = config.cache_ttl_sec
     for _ in range(100):
         try:
             async with r.pipeline(transaction=True) as pipe:
-                await pipe.watch(ids, lru, sizes, bytes_key, org_lru, org_sizes, org_bytes)
+                await pipe.watch(
+                    ids, lru, sizes, bytes_key, org_lru, org_sizes, org_bytes, org_expires
+                )
+                stale = [
+                    _text(value)
+                    for value in await pipe.zrangebyscore(
+                        org_expires, "-inf", time.time(), start=0, num=_EXPIRY_RECONCILE_BATCH
+                    )
+                ]
+                more_stale = len(stale) == _EXPIRY_RECONCILE_BATCH
+                stale_sizes = {
+                    member: int(float(await pipe.zscore(org_sizes, member) or 0))
+                    for member in stale
+                }
                 existing_size = float(await pipe.zscore(sizes, eid) or 0)
-                existed = await pipe.zscore(lru, eid) is not None
-                scope_count = int(await pipe.zcard(lru)) + (not existed)
-                scope_bytes = int(await pipe.get(bytes_key) or 0) - int(existing_size) + size
-                org_count = int(await pipe.zcard(org_lru)) + (not existed)
-                org_total = int(await pipe.get(org_bytes) or 0) - int(existing_size) + size
-                victims: list[tuple[str, str, int]] = []
-                selected: set[str] = set()
+                existed = await pipe.zscore(lru, eid) is not None and member not in stale_sizes
+                if member in stale_sizes:
+                    existing_size = 0
+                stale_here = [
+                    (member.rsplit("|", 1)[1], amount)
+                    for member, amount in stale_sizes.items()
+                    if member.startswith(f"{tenant}|")
+                ]
+                scope_count = int(await pipe.zcard(lru)) - len(stale_here) + (not existed)
+                scope_bytes = (
+                    int(await pipe.get(bytes_key) or 0)
+                    - sum(amount for _, amount in stale_here)
+                    - int(existing_size)
+                    + size
+                )
+                org_count = int(await pipe.zcard(org_lru)) - len(stale) + (not existed)
+                org_total = (
+                    int(await pipe.get(org_bytes) or 0)
+                    - sum(stale_sizes.values())
+                    - int(existing_size)
+                    + size
+                )
+                victims: list[tuple[str, str, int]] = [
+                    (member.rsplit("|", 1)[0], member.rsplit("|", 1)[1], amount)
+                    for member, amount in stale_sizes.items()
+                ]
+                selected: set[str] = set(stale)
+                if more_stale:
+                    # Clean one bounded batch atomically, then retry quota selection.
+                    affected = {scope for scope, _, _ in victims}
+                    for other in affected - {tenant}:
+                        await pipe.watch(
+                            f"{namespace}:ids:{other}",
+                            f"{namespace}:lru:{other}",
+                            f"{namespace}:sizes:{other}",
+                            f"{namespace}:bytes:{other}",
+                        )
+                    remaining = {
+                        other: max(
+                            0,
+                            int(await pipe.get(f"{namespace}:bytes:{other}") or 0)
+                            - sum(amount for scope, _, amount in victims if scope == other),
+                        )
+                        for other in affected
+                    }
+                    remaining_org = max(
+                        0, int(await pipe.get(org_bytes) or 0) - sum(stale_sizes.values())
+                    )
+                    pipe.multi()
+                    for other, victim, _amount in victims:
+                        victim_ids, victim_lru, victim_prefix = keys(other, namespace)
+                        pipe.delete(victim_prefix + victim)
+                        pipe.srem(victim_ids, victim)
+                        pipe.zrem(victim_lru, victim)
+                        pipe.zrem(f"{namespace}:sizes:{other}", victim)
+                        pipe.zrem(org_lru, f"{other}|{victim}")
+                        pipe.zrem(org_sizes, f"{other}|{victim}")
+                        pipe.zrem(org_expires, f"{other}|{victim}")
+                    for other, total in remaining.items():
+                        pipe.set(f"{namespace}:bytes:{other}", total, ex=ttl)
+                        pipe.set(f"{namespace}:version:{other}", uuid.uuid4().hex, ex=ttl)
+                    pipe.set(org_bytes, remaining_org, ex=ttl)
+                    await pipe.execute()
+                    continue
                 scope_candidates = (
                     await pipe.zrange(lru, 0, -1)
-                    if scope_count > count_limit or scope_bytes > byte_limit
+                    if not more_stale and (scope_count > count_limit or scope_bytes > byte_limit)
                     else []
                 )
                 for candidate in scope_candidates:
                     victim = _text(candidate)
                     if scope_count <= count_limit and scope_bytes <= byte_limit:
                         break
-                    if victim == eid:
+                    if victim == eid or f"{tenant}|{victim}" in selected:
                         continue
                     victim_size = int(float(await pipe.zscore(sizes, victim) or 0))
                     victims.append((tenant, victim, victim_size))
@@ -83,8 +159,11 @@ async def _put_scoped(  # noqa: PLR0912, PLR0913, PLR0915, PLR0917 - atomic quot
                     org_total -= victim_size
                 org_candidates = (
                     await pipe.zrange(org_lru, 0, -1)
-                    if org_count > config.organization_cache_entry_limit
-                    or org_total > config.organization_cache_byte_limit
+                    if not more_stale
+                    and (
+                        org_count > config.organization_cache_entry_limit
+                        or org_total > config.organization_cache_byte_limit
+                    )
                     else []
                 )
                 for candidate in org_candidates:
@@ -105,7 +184,7 @@ async def _put_scoped(  # noqa: PLR0912, PLR0913, PLR0915, PLR0917 - atomic quot
                     if victim_tenant == tenant:
                         scope_count -= 1
                         scope_bytes -= victim_size
-                if (
+                if not more_stale and (
                     scope_count > count_limit
                     or scope_bytes > byte_limit
                     or org_count > config.organization_cache_entry_limit
@@ -138,14 +217,20 @@ async def _put_scoped(  # noqa: PLR0912, PLR0913, PLR0915, PLR0917 - atomic quot
                     pipe.zrem(f"{namespace}:sizes:{victim_tenant}", victim)
                     pipe.zrem(org_lru, f"{victim_tenant}|{victim}")
                     pipe.zrem(org_sizes, f"{victim_tenant}|{victim}")
+                    pipe.zrem(org_expires, f"{victim_tenant}|{victim}")
                     if victim_tenant != tenant:
                         pipe.set(f"{namespace}:version:{victim_tenant}", uuid.uuid4().hex, ex=ttl)
                 for victim_tenant, remaining_bytes in other_bytes.items():
                     pipe.set(f"{namespace}:bytes:{victim_tenant}", remaining_bytes, ex=ttl)
-                for victim_tenant in {scope for scope, _, _ in victims}:
+                evicted = [
+                    (scope, victim)
+                    for scope, victim, _amount in victims
+                    if f"{scope}|{victim}" not in stale_sizes
+                ]
+                for victim_tenant in {scope for scope, _victim in evicted}:
                     pipe.incrby(
                         f"{namespace}:evictions:{victim_tenant}",
-                        sum(scope == victim_tenant for scope, _, _ in victims),
+                        sum(scope == victim_tenant for scope, _victim in evicted),
                     )
                     pipe.expire(f"{namespace}:evictions:{victim_tenant}", ttl)
                 pipe.hset(prefix + eid, mapping=mapping)
@@ -155,10 +240,11 @@ async def _put_scoped(  # noqa: PLR0912, PLR0913, PLR0915, PLR0917 - atomic quot
                 pipe.zadd(sizes, {eid: size})
                 pipe.zadd(org_lru, {member: time.time()})
                 pipe.zadd(org_sizes, {member: size})
+                pipe.zadd(org_expires, {member: time.time() + ttl})
                 pipe.set(bytes_key, max(0, scope_bytes), ex=ttl)
                 pipe.set(org_bytes, max(0, org_total), ex=ttl)
                 pipe.set(f"{namespace}:version:{tenant}", uuid.uuid4().hex, ex=ttl)
-                for metadata in (ids, lru, sizes, org_lru, org_sizes):
+                for metadata in (ids, lru, sizes, org_lru, org_sizes, org_expires):
                     pipe.expire(metadata, ttl)
                 await pipe.execute()
                 return True
@@ -261,10 +347,13 @@ async def _clear_scoped(r, tenant: str, namespace: str) -> None:
     ids, lru, prefix = keys(tenant, namespace)
     sizes, bytes_key = f"{namespace}:sizes:{tenant}", f"{namespace}:bytes:{tenant}"
     org_lru, org_sizes, org_bytes = _org_keys(tenant, namespace)
+    org_expires = _org_expiry(tenant, namespace)
     for _ in range(100):
         try:
             async with r.pipeline(transaction=True) as pipe:
-                await pipe.watch(ids, lru, sizes, bytes_key, org_lru, org_sizes, org_bytes)
+                await pipe.watch(
+                    ids, lru, sizes, bytes_key, org_lru, org_sizes, org_bytes, org_expires
+                )
                 members = await pipe.smembers(ids)
                 org_members = [
                     _text(value)
@@ -282,6 +371,7 @@ async def _clear_scoped(r, tenant: str, namespace: str) -> None:
                 for member in org_members:
                     pipe.zrem(org_lru, member)
                     pipe.zrem(org_sizes, member)
+                    pipe.zrem(org_expires, member)
                 pipe.set(org_bytes, org_total, ex=get_settings().cache_ttl_sec)
                 pipe.set(
                     f"{namespace}:version:{tenant}",

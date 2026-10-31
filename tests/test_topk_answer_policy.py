@@ -5,6 +5,8 @@ from __future__ import annotations
 import asyncio
 from pathlib import Path
 
+import numpy as np
+
 from app.cache import redisearch_store as rs
 from app.cache import storage
 from app.cache.semantic_cache import SemanticCache
@@ -62,6 +64,134 @@ async def set_candidates(cache: SemanticCache, entries: list[tuple[str, str, flo
 
 def cache_config(cache: SemanticCache):
     return cache._test_config
+
+
+def test_expired_inprocess_candidate_does_not_hide_live_later_candidate(client) -> None:
+    class FixedEmbedder:
+        def embed(self, text: str):
+            return np.array([1.0, 0.0] if "expired" in text else [0.9, 0.1], dtype=np.float32)
+
+    async def exercise():
+        token = _runtime.set(client.app.state.config)
+        try:
+            cache = SemanticCache(client.app.state.redis, FixedEmbedder())
+            cache._policy.verifier = AlwaysEntails()
+            assert await cache.store("expired item", "expired answer", TENANT)
+            assert await cache.store("second item", "second answer", TENANT)
+            await cache._ensure(TENANT)
+            ids = await cache.redis.smembers(cache._ids_key(TENANT))
+            for eid in ids:
+                key = cache._entry_key(TENANT, eid)
+                if await cache.redis.hget(key, "query") == "expired item":
+                    await cache.redis.delete(key)
+            result = await cache.lookup("expired item paraphrase", TENANT)
+            assert result.status == "HIT", result.reason
+            assert result.answer == "second answer"
+            assert result.candidate_count == 1
+        finally:
+            _runtime.reset(token)
+
+    client.portal.call(exercise)
+
+
+test_expired_inprocess_candidate_does_not_hide_live_later_candidate.config_overrides = {
+    "cache_match_mode": "semantic",
+    "answer_policy_artifact": str(ARTIFACT),
+    "vector_backend": "inproc",
+}
+
+
+def test_repeated_semantic_question_replaces_one_entry(client) -> None:
+    async def exercise():
+        token = _runtime.set(client.app.state.config)
+        try:
+            cache = client.app.state.semantic_cache
+            assert await cache.store("Explain SQL joins.", "first answer", TENANT)
+            assert await cache.store("Explain SQL joins.", "revised answer", TENANT)
+            if get_settings().vector_backend == "redisearch":
+                async with rs._client() as redis_client:
+                    members = await redis_client.smembers(f"{rs._namespace()}:ids:{TENANT}")
+            else:
+                members = await cache.redis.smembers(cache._ids_key(TENANT))
+            assert len(members) == 1
+            result = await cache.lookup("Explain SQL joins.", TENANT)
+            assert result.status == "HIT"
+            assert result.answer == "revised answer"
+        finally:
+            _runtime.reset(token)
+
+    client.portal.call(exercise)
+
+
+test_repeated_semantic_question_replaces_one_entry.config_overrides = {
+    "cache_match_mode": "semantic",
+    "answer_policy_artifact": str(ARTIFACT),
+}
+
+
+def test_semantic_exact_hit_does_not_invoke_embedding(client) -> None:
+    async def exercise():
+        token = _runtime.set(client.app.state.config)
+        try:
+            cache = client.app.state.semantic_cache
+            query = "Explain a Redis transaction."
+            assert await cache.store(query, "It groups commands atomically.", TENANT)
+
+            def fail_embedding(_query):
+                raise AssertionError("Exact semantic hit must skip embedding")
+
+            cache.embedder.embed = fail_embedding
+            result = await cache.lookup(query, TENANT)
+            assert result.status == "HIT"
+            assert result.reason == "exact_match"
+            assert result.answer == "It groups commands atomically."
+        finally:
+            _runtime.reset(token)
+
+    client.portal.call(exercise)
+
+
+test_semantic_exact_hit_does_not_invoke_embedding.config_overrides = {
+    "cache_match_mode": "semantic",
+    "answer_policy_artifact": str(ARTIFACT),
+}
+
+
+def test_semantic_exact_hit_refuses_entry_removed_during_touch(client, monkeypatch) -> None:
+    async def exercise():
+        token = _runtime.set(client.app.state.config)
+        try:
+            cache = client.app.state.semantic_cache
+            query = "Explain a Redis transaction."
+            assert await cache.store(query, "It groups commands atomically.", TENANT)
+
+            if get_settings().vector_backend == "redisearch":
+
+                async def remove_redisearch(key, _tenant):
+                    async with rs._client() as redis_client:
+                        await redis_client.delete(key)
+
+                monkeypatch.setattr(rs, "touch_candidate", remove_redisearch)
+            else:
+
+                async def remove_on_touch(redis_client, tenant, eid, *, namespace=None):
+                    del namespace
+                    await redis_client.delete(cache._entry_key(tenant, eid))
+
+                monkeypatch.setattr(storage, "touch", remove_on_touch)
+            result = await cache.lookup(query, TENANT)
+            assert result.status == "MISS"
+            assert result.reason == "exact_candidate_changed"
+        finally:
+            _runtime.reset(token)
+
+    client.portal.call(exercise)
+
+
+test_semantic_exact_hit_refuses_entry_removed_during_touch.config_overrides = {
+    "cache_match_mode": "semantic",
+    "answer_policy_artifact": str(ARTIFACT),
+}
 
 
 def test_later_valid_candidate_wins(client) -> None:

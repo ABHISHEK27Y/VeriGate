@@ -22,7 +22,7 @@ class ChatRequest(BaseModel):
     prompt: str | None = Field(default=None, max_length=16000)
     messages: list[UserMessage] | None = Field(default=None, min_length=1, max_length=1)
     cache_bypass: bool = False
-    cache_scope: Literal["private", "workspace"] = "private"
+    cache_scope: Literal["private", "workspace", "none"] | None = None
     workspace: str | None = Field(default=None, max_length=64)
 
     @model_validator(mode="after")
@@ -45,6 +45,9 @@ class ChatResponse(BaseModel):
     answer: str
     cache: str = Field(description="HIT | MISS | BYPASS")
     provider: str
+    provider_model: str | None = None
+    finish_reason: str | None = None
+    provider_usage: dict[str, int] | None = None
     intended_provider: str | None = None
     fallback_used: bool = False
     latency_ms: float
@@ -58,6 +61,9 @@ class ChatResponse(BaseModel):
     organization_id: str | None = None
     subject_id: str | None = None
     cache_scope: str | None = None
+    scope_reason: str | None = None
+    scope_policy_version: str | None = None
+    storage_eligibility: str | None = None
     provider_profile: str | None = None
     candidate_count: int | None = None
     selected_rank: int | None = None

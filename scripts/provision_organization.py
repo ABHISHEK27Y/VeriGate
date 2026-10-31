@@ -41,6 +41,7 @@ def init_demo(path: Path) -> None:
         "organizations": {
             "example": {
                 "default_profile": "example-mock",
+                "application_defaults": {"developer-tool": "engineering"},
                 "workspaces": {
                     "engineering": {
                         "members": ["alice", "carol"],
@@ -73,6 +74,30 @@ def init_demo(path: Path) -> None:
     _write(path, directory)
 
 
+def ensure_demo_default(path: Path) -> None:
+    """Migrate only the known public mock demo directory, without touching cache data."""
+    if (
+        path.name != "organizations-demo.json"
+        or os.environ.get("ENVIRONMENT", "development") != "development"
+    ):
+        raise ValueError("Only the local development demo directory may be migrated")
+    directory = json.loads(path.read_text(encoding="utf-8"))
+    org = directory["organizations"]["example"]
+    workspace = org["workspaces"]["engineering"]
+    if (
+        directory.get("schema_version") != 1
+        or directory["provider_profiles"]["example-mock"]["provider"] != "mock"
+        or sorted(workspace["members"]) != ["alice", "carol"]
+        or "developer-tool" not in workspace["trusted_applications"]
+        or org.get("application_defaults", {}).get("developer-tool") not in {None, "engineering"}
+    ):
+        raise ValueError("Existing directory is not the expected mock demo; leave it unchanged")
+    if org.get("application_defaults", {}).get("developer-tool") == "engineering":
+        return
+    org.setdefault("application_defaults", {})["developer-tool"] = "engineering"
+    _write(path, directory)
+
+
 def rotate(path: Path) -> None:
     directory = json.loads(path.read_text(encoding="utf-8"))
     old, new = _digest("VERIGATE_OLD_GATEWAY_KEY"), _digest("VERIGATE_NEW_GATEWAY_KEY")
@@ -99,13 +124,15 @@ def revoke(path: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("action", choices=("init-demo", "rotate", "revoke"))
+    parser.add_argument("action", choices=("init-demo", "ensure-demo-default", "rotate", "revoke"))
     parser.add_argument("path", type=Path)
     args = parser.parse_args()
     token = _runtime.set(Settings())
     try:
         if args.action == "init-demo":
             init_demo(args.path)
+        elif args.action == "ensure-demo-default":
+            ensure_demo_default(args.path)
         elif args.action == "rotate":
             rotate(args.path)
         else:

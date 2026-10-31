@@ -20,14 +20,13 @@ import hashlib
 import logging
 import math
 import time
-import uuid
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from pathlib import Path
 
 import numpy as np
 
-from ..config import get_settings
+from ..config import RuntimeSettings, get_settings
 from ..embeddings import Embedder
 from ..metrics import STAGE_LATENCY
 from ..redis_client import create_redis, hash_fields, remove_member, set_members
@@ -77,7 +76,11 @@ class SemanticCache:
             verifier=NliVerifier(),
         )
         artifact = get_settings().answer_policy_artifact
-        self._answer_policy = AnswerPolicy.load(Path(artifact)) if artifact else None
+        policy_bytes = Path(artifact).read_bytes() if artifact else None
+        self._answer_policy = AnswerPolicy.load_bytes(policy_bytes) if policy_bytes else None
+        runtime = get_settings()
+        if isinstance(runtime, RuntimeSettings) and policy_bytes is not None:
+            runtime._answer_policy_sha256 = hashlib.sha256(policy_bytes).hexdigest()
         if self._answer_policy and (
             self._answer_policy.model != get_settings().nli_model
             or self._answer_policy.revision != get_settings().nli_revision
@@ -207,7 +210,7 @@ class SemanticCache:
         return self._nearest_inproc(qvec, tenant)
 
     async def _ranked(
-        self, qvec: np.ndarray, tenant: str
+        self, qvec: np.ndarray, tenant: str, *, refilled: bool = False
     ) -> tuple[list[tuple[dict, float]], float]:
         """Retrieve a stable, scope-filtered shortlist using one request embedding."""
         k = get_settings().semantic_retrieval_k
@@ -230,6 +233,16 @@ class SemanticCache:
                     t["ids"][index],
                 ),
             )[:k]
+            if not refilled and ranked:
+                async with self.redis.pipeline(transaction=False) as pipe:
+                    for index in ranked:
+                        pipe.exists(self._entry_key(tenant, t["ids"][index]))
+                    live = await pipe.execute()
+                if not all(live):
+                    # Natural expiry need not change the Redis version marker.
+                    # Rebuild from live hashes once so stale top-k slots refill.
+                    await self._build_index(tenant)
+                    return await self._ranked(qvec, tenant, refilled=True)
             candidates = [
                 (
                     {
@@ -307,6 +320,47 @@ class SemanticCache:
                 )
             return LookupResult(
                 status="MISS", reason="exact_match_required", stage_latency_ms=stage_ms
+            )
+
+        # Semantic mode still serves an identical question without embedding or NLI.
+        # The deterministic ID is scope-local; reread after touching so a concurrent
+        # replacement or expiry cannot serve an earlier generation of the entry.
+        eid = hashlib.sha256(query.encode("utf-8")).hexdigest()
+        exact_started = time.perf_counter()
+        current: dict[str, str] | None
+        if get_settings().vector_backend == "redisearch":
+            key = f"{rs._namespace()}:entry:{tenant}:{eid}"
+            semantic_row = await rs.read_candidate(key, tenant)
+            if semantic_row and semantic_row["query"] == query:
+                await rs.touch_candidate(key, tenant)
+                current = await rs.read_candidate(key, tenant)
+            else:
+                current = None
+        else:
+            key = self._entry_key(tenant, eid)
+            semantic_row = await hash_fields(self.redis, key)
+            if semantic_row and semantic_row.get("query") == query:
+                await storage.touch(self.redis, tenant, eid)
+                current = await hash_fields(self.redis, key)
+            else:
+                current = None
+        elapsed = time.perf_counter() - exact_started
+        STAGE_LATENCY.labels(stage="exact_lookup").observe(elapsed)
+        stage_ms["exact_lookup"] = round(elapsed * 1000, 3)
+        if current and current.get("query") == query:
+            return LookupResult(
+                status="HIT",
+                answer=current["answer"],
+                similarity=1.0,
+                reason="exact_match",
+                cached_query=query,
+                candidate_count=1,
+                selected_rank=1,
+                stage_latency_ms=stage_ms,
+            )
+        if semantic_row and semantic_row.get("query") == query:
+            return LookupResult(
+                status="MISS", reason="exact_candidate_changed", stage_latency_ms=stage_ms
             )
 
         # Ensure index is built from Redis before searching
@@ -490,7 +544,7 @@ class SemanticCache:
             await rs.ensure_index(len(vec))
             return bool(await rs.add(query, answer, vec, tenant))
 
-        eid = uuid.uuid4().hex
+        eid = hashlib.sha256(query.encode("utf-8")).hexdigest()
         stored = await storage.put(
             self.redis,
             tenant,

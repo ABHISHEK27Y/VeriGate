@@ -29,7 +29,12 @@ def _settings() -> Settings:
 
 def test_required_prewarm_completes_before_readiness(monkeypatch: pytest.MonkeyPatch) -> None:
     calls = []
-    monkeypatch.setattr(NliVerifier, "prewarm", lambda _self: calls.append("ready"))
+
+    def complete_prewarm(verifier: NliVerifier) -> None:
+        calls.append("ready")
+        verifier.prewarmed = True
+
+    monkeypatch.setattr(NliVerifier, "prewarm", complete_prewarm)
     with TestClient(create_app(_settings())) as client:
         assert calls == ["ready"]
         ready = client.get("/ready")

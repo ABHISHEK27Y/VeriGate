@@ -64,7 +64,11 @@ class AnswerPolicy:
 
     @classmethod
     def load(cls, path: Path) -> AnswerPolicy:
-        raw = json.loads(path.read_text(encoding="utf-8"))
+        return cls.load_bytes(path.read_bytes())
+
+    @classmethod
+    def load_bytes(cls, source: bytes) -> AnswerPolicy:
+        raw = json.loads(source)
         version = raw.pop("version")
         digest = hashlib.sha256(json.dumps(raw, sort_keys=True).encode()).hexdigest()
         if version != digest or raw.get("schema_version") != "answer-policy-v1":

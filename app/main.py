@@ -45,7 +45,8 @@ from .metrics import (
     STAGE_LATENCY,
     render_metrics,
 )
-from .organization import OrganizationDirectory, Principal, response_shareable
+from .organization import OrganizationDirectory, Principal, ScopeDecision, content_eligibility
+from .providers.base import ProviderEvent
 from .providers.registry import ProviderRegistry
 from .rate_limit import RateLimiter
 from .redis_client import close_redis, create_redis, redis_backend_name
@@ -210,6 +211,14 @@ def _principal(request: Request, api_key: str | None) -> Principal:
     return principal
 
 
+def _still_authorized(request: Request, api_key: str, original: Principal) -> bool:
+    """An in-flight generation may finish, but cannot publish after revocation."""
+    try:
+        return _principal(request, api_key) == original
+    except HTTPException:
+        return False
+
+
 def _registry_for(request: Request, principal: Principal) -> ProviderRegistry:
     if principal.legacy:
         if request.app.state.provider_registry is None:
@@ -225,19 +234,17 @@ def _cache_tenant(  # noqa: PLR0913, PLR0917 - authorization context is explicit
     request: Request,
     prompt: str,
     principal: Principal,
-    cache_scope: str,
+    cache_scope: str | None,
     workspace: str | None,
     registry: ProviderRegistry,
-) -> tuple[str, str]:
+) -> tuple[str, ScopeDecision]:
     directory: OrganizationDirectory = request.app.state.organization_directory
     try:
-        effective, authorized_workspace = directory.effective_scope(
-            principal, cache_scope, workspace, prompt
-        )
+        decision = directory.scope_decision(principal, cache_scope, workspace, prompt)
     except PermissionError as exc:
         raise HTTPException(status_code=403, detail=str(exc)) from exc
     route = registry.intended_route(prompt) if not principal.legacy or registry.cascade else ""
-    return directory.scoped_tenant(principal, effective, authorized_workspace, route), effective
+    return directory.scoped_tenant(principal, decision.scope, decision.workspace, route), decision
 
 
 async def _check_rate_limit(api_key: str, request: Request) -> None:
@@ -317,25 +324,35 @@ class ResponseTooLargeError(Exception):
 
 async def _generate_answer(
     prompt: str, request: Request, registry: ProviderRegistry | None = None
-) -> tuple[str, str]:
+) -> tuple[str, str, ProviderEvent]:
     """Call the provider (with failover) and assemble the full answer."""
     stream = None
     generation_started = time.perf_counter()
-    try:
+    try:  # noqa: TRY301 - streaming event validation belongs to this stateful loop
         async with asyncio.timeout(get_settings().provider_timeout):
             route_started = time.perf_counter()
             provider_name, stream = await (
                 registry or request.app.state.provider_registry
-            ).route_stream(prompt)
+            ).route_events(prompt)
             STAGE_LATENCY.labels(stage="provider_first_token").observe(
                 time.perf_counter() - route_started
             )
             chunks = []
             length = 0
-            async for chunk in stream:
-                length += len(chunk)
-                _check_response_length(length)
-                chunks.append(chunk)
+            completion = None
+            async for event in stream:
+                if event.kind == "complete":
+                    if completion is not None:
+                        raise RuntimeError("Duplicate provider completion")  # noqa: TRY301
+                    completion = event
+                elif event.kind == "content":
+                    if completion is not None:
+                        raise RuntimeError("Content after provider completion")  # noqa: TRY301
+                    length += len(event.content)
+                    _check_response_length(length)
+                    chunks.append(event.content)
+            if completion is None or completion.finish_reason != "stop":
+                raise RuntimeError("Provider answer did not finish normally")  # noqa: TRY301
     except TimeoutError as exc:
         log.warning("upstream_timeout")
         raise HTTPException(status_code=504, detail="upstream timeout") from exc
@@ -354,7 +371,7 @@ async def _generate_answer(
     answer = "".join(chunks).strip()
     if not answer:
         raise HTTPException(status_code=502, detail="empty upstream answer")
-    return provider_name, answer
+    return provider_name, answer, completion
 
 
 _UI_FILE = Path(__file__).parent / "static" / "dashboard.html"
@@ -493,6 +510,12 @@ async def _health_details(request: Request) -> dict:
     )
     if missing_profiles:
         raise HTTPException(status_code=503, detail="provider profile unavailable")
+    answer_verifier = request.app.state.semantic_cache._policy.verifier
+    if request.app.state.semantic_cache._answer_policy and (
+        answer_verifier.unavailable
+        or (get_settings().answer_policy_prewarm and not answer_verifier.prewarmed)
+    ):
+        raise HTTPException(status_code=503, detail="answer verifier unavailable")
     return {
         "status": "ok",
         "version": __version__,
@@ -508,7 +531,15 @@ async def _health_details(request: Request) -> dict:
             if request.app.state.semantic_cache._answer_policy
             else None
         ),
-        "answer_policy_prewarm": get_settings().answer_policy_prewarm,
+        "answer_policy_prewarm": answer_verifier.prewarmed,
+        "answer_verifier_state": (
+            "unavailable"
+            if answer_verifier.unavailable
+            else "loaded"
+            if answer_verifier.model is not None
+            else "lazy"
+        ),
+        "answer_verifier_failure": answer_verifier.last_failure_category,
         "demo_restore_available": demo_enabled(get_settings()),
         "organization_demo_available": (
             get_settings().environment == "development"
@@ -567,12 +598,17 @@ async def chat(  # noqa: PLR0915 - main gateway request path
         raise HTTPException(status_code=400, detail="empty prompt")
 
     t0 = time.perf_counter()
-    cache_tenant, effective_scope = _cache_tenant(
+    cache_tenant, scope_decision = _cache_tenant(
         request, prompt, principal, req.cache_scope, req.workspace, registry
     )
+    effective_scope = scope_decision.scope
     intended_provider = registry.intended_route(prompt)
     lookup_started = time.perf_counter()
-    result = await _cache_lookup(request, prompt, cache_tenant, req.cache_bypass)
+    result = (
+        LookupResult(status="BYPASS", reason="no_store_request")
+        if scope_decision.eligibility == "no_store"
+        else await _cache_lookup(request, prompt, cache_tenant, req.cache_bypass)
+    )
     stage_ms = {"cache_lookup": round((time.perf_counter() - lookup_started) * 1000, 3)}
     _count_candidate_decision(result)
 
@@ -608,6 +644,9 @@ async def chat(  # noqa: PLR0915 - main gateway request path
             organization_id=None if principal.legacy else principal.organization_id,
             subject_id=None if principal.legacy else principal.subject_id,
             cache_scope=effective_scope,
+            scope_reason=scope_decision.reason,
+            scope_policy_version=scope_decision.policy_version,
+            storage_eligibility=scope_decision.eligibility,
             provider_profile=None if principal.legacy else principal.provider_profile,
             candidate_count=result.candidate_count,
             selected_rank=result.selected_rank,
@@ -615,37 +654,49 @@ async def chat(  # noqa: PLR0915 - main gateway request path
         )
 
     admission_started = time.perf_counter()
+    if _principal(request, api_key) != principal:
+        raise HTTPException(status_code=401, detail="credential changed during request")
     await _check_budget(admission_identity, request)  # only miss/bypass reach provider
     stage_ms["admission"] = round((time.perf_counter() - admission_started) * 1000, 3)
     path = "bypass" if result.status == "BYPASS" else "miss"
 
     storage_outcome = "not_attempted"
 
-    async def generate_and_store() -> tuple[str, str]:
+    async def generate_and_store() -> tuple[str, str, ProviderEvent]:
         nonlocal storage_outcome
         provider_started = time.perf_counter()
-        provider_name, answer = await _generate_answer(prompt, request, registry)
+        provider_name, answer, completion = await _generate_answer(prompt, request, registry)
         stage_ms["provider"] = round((time.perf_counter() - provider_started) * 1000, 3)
-        if provider_name == intended_provider and (principal.legacy or response_shareable(answer)):
+        response_eligibility = content_eligibility(answer)
+        if not _still_authorized(request, api_key, principal):
+            storage_outcome = "credential_changed_no_store"
+        elif provider_name == intended_provider and response_eligibility != "no_store":
+            write_tenant = cache_tenant
+            if not principal.legacy and response_eligibility == "private_only":
+                route = registry.intended_route(prompt)
+                write_tenant = request.app.state.organization_directory.scoped_tenant(
+                    principal, "private", "", route
+                )
             write_started = time.perf_counter()
-            storage_outcome = await _cache_store(request, prompt, answer, cache_tenant)
+            storage_outcome = await _cache_store(request, prompt, answer, write_tenant)
             stage_ms["cache_write"] = round((time.perf_counter() - write_started) * 1000, 3)
-        elif not principal.legacy and not response_shareable(answer):
+        elif response_eligibility == "no_store":
             storage_outcome = "response_ineligible"
         else:
             storage_outcome = "fallback_not_cached"
-        return provider_name, answer
+        return provider_name, answer, completion
 
     if result.status == "BYPASS":
         provider_started = time.perf_counter()
-        provider_name, answer = await _generate_answer(prompt, request, registry)
+        provider_name, answer, completion = await _generate_answer(prompt, request, registry)
         stage_ms["provider"] = round((time.perf_counter() - provider_started) * 1000, 3)
         joined = False
         storage_outcome = "bypassed"
     else:
         try:
-            (provider_name, answer), joined = await request.app.state.singleflight.run(
-                f"{cache_tenant}\x00{prompt}",
+            flight_key = f"{cache_tenant}\x00{principal.subject_id}\x00{prompt}"
+            (provider_name, answer, completion), joined = await request.app.state.singleflight.run(
+                flight_key,
                 generate_and_store,
                 get_settings().provider_timeout + 2,
             )
@@ -662,6 +713,9 @@ async def chat(  # noqa: PLR0915 - main gateway request path
         answer=answer,
         cache=result.status,
         provider=provider_name,
+        provider_model=completion.model,
+        finish_reason=completion.finish_reason,
+        provider_usage=completion.usage,
         intended_provider=intended_provider,
         fallback_used=provider_name != intended_provider,
         latency_ms=round((time.perf_counter() - t0) * 1000, 2),
@@ -677,6 +731,9 @@ async def chat(  # noqa: PLR0915 - main gateway request path
         organization_id=None if principal.legacy else principal.organization_id,
         subject_id=None if principal.legacy else principal.subject_id,
         cache_scope=effective_scope,
+        scope_reason=scope_decision.reason,
+        scope_policy_version=scope_decision.policy_version,
+        storage_eligibility=scope_decision.eligibility,
         provider_profile=None if principal.legacy else principal.provider_profile,
         candidate_count=result.candidate_count,
         selected_rank=result.selected_rank,
@@ -685,7 +742,7 @@ async def chat(  # noqa: PLR0915 - main gateway request path
 
 
 @app.post("/v1/chat/stream")
-async def chat_stream(  # noqa: PLR0915
+async def chat_stream(  # noqa: PLR0915, PLR0912 - streaming state machine
     req: ChatRequest, request: Request, x_api_key: str | None = Header(default=None)
 ):
     """Streaming endpoint (Server-Sent Events). Cache hits stream instantly."""
@@ -701,20 +758,27 @@ async def chat_stream(  # noqa: PLR0915
     if not prompt:
         raise HTTPException(status_code=400, detail="empty prompt")
 
-    cache_tenant, effective_scope = _cache_tenant(
+    cache_tenant, scope_decision = _cache_tenant(
         request, prompt, principal, req.cache_scope, req.workspace, registry
     )
+    effective_scope = scope_decision.scope
     intended_provider = registry.intended_route(prompt)
-    result = await _cache_lookup(request, prompt, cache_tenant, req.cache_bypass)
+    result = (
+        LookupResult(status="BYPASS", reason="no_store_request")
+        if scope_decision.eligibility == "no_store"
+        else await _cache_lookup(request, prompt, cache_tenant, req.cache_bypass)
+    )
     _count_candidate_decision(result)
     if result.status == "HIT" and _principal(request, api_key) != principal:
         raise HTTPException(status_code=401, detail="credential changed during request")
     if result.status != "HIT":
+        if _principal(request, api_key) != principal:
+            raise HTTPException(status_code=401, detail="credential changed during request")
         await _check_budget(admission_identity, request)  # charge before streaming starts
-        try:
+        try:  # noqa: TRY301 - completion must be validated in the streaming state machine
             async with asyncio.timeout_at(deadline):
                 route_started = time.perf_counter()
-                provider_name, source = await registry.route_stream(prompt)
+                provider_name, source = await registry.route_events(prompt)
                 STAGE_LATENCY.labels(stage="provider_first_token").observe(
                     time.perf_counter() - route_started
                 )
@@ -723,7 +787,7 @@ async def chat_stream(  # noqa: PLR0915
         except Exception as exc:
             raise HTTPException(status_code=502, detail="upstream unavailable") from exc
 
-    async def event_gen():
+    async def event_gen():  # noqa: PLR0912, PLR0915 - stream completion state machine
         if result.status == "HIT":
             if principal.legacy:
                 request.app.state.shadow_auditor.maybe_schedule(
@@ -737,14 +801,24 @@ async def chat_stream(  # noqa: PLR0915
             return
         buf = []
         length = 0
+        completion = None
         generation_started = time.perf_counter()
-        try:
+        try:  # noqa: TRY301 - completion validation is part of this stream state machine
             async with asyncio.timeout_at(deadline):
-                async for chunk in source:
-                    length += len(chunk)
-                    _check_response_length(length)
-                    buf.append(chunk)
-                    yield f"data: {json.dumps(chunk)}\n\n"
+                async for event in source:
+                    if event.kind == "complete":
+                        if completion is not None:
+                            raise RuntimeError("Duplicate provider completion")  # noqa: TRY301
+                        completion = event
+                    elif event.kind == "content":
+                        if completion is not None:
+                            raise RuntimeError("Content after provider completion")  # noqa: TRY301
+                        length += len(event.content)
+                        _check_response_length(length)
+                        buf.append(event.content)
+                        yield f"data: {json.dumps(event.content)}\n\n"
+                if completion is None or completion.finish_reason != "stop":
+                    raise RuntimeError("Provider answer did not finish normally")  # noqa: TRY301
         except Exception as exc:
             log.warning("upstream_stream_failed")
             REQUESTS.labels(outcome="stream_error").inc()
@@ -770,12 +844,19 @@ async def chat_stream(  # noqa: PLR0915
             LATENCY.labels(path="stream_error").observe(time.perf_counter() - started)
             yield 'event: error\ndata: {"error":"empty upstream answer"}\n\n'
             return
-        if (
-            result.status != "BYPASS"
-            and provider_name == intended_provider
-            and (principal.legacy or response_shareable(answer))
-        ):
-            await _cache_store(request, prompt, answer, cache_tenant)
+        if result.status != "BYPASS" and provider_name == intended_provider:
+            response_eligibility = content_eligibility(answer)
+            if (
+                _still_authorized(request, api_key, principal)
+                and response_eligibility != "no_store"
+            ):
+                write_tenant = cache_tenant
+                if not principal.legacy and response_eligibility == "private_only":
+                    route = registry.intended_route(prompt)
+                    write_tenant = request.app.state.organization_directory.scoped_tenant(
+                        principal, "private", "", route
+                    )
+                await _cache_store(request, prompt, answer, write_tenant)
         path = "bypass" if result.status == "BYPASS" else "miss"
         CACHE.labels(result=path).inc()
         REQUESTS.labels(outcome=path).inc()
@@ -789,6 +870,8 @@ async def chat_stream(  # noqa: PLR0915
             "X-Provider": "cache" if result.status == "HIT" else provider_name,
             "X-Intended-Provider": intended_provider,
             "X-Cache-Scope": effective_scope,
+            "X-Scope-Reason": scope_decision.reason,
+            "X-Scope-Policy-Version": scope_decision.policy_version,
         },
     )
 

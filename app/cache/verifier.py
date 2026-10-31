@@ -290,6 +290,8 @@ class NliVerifier:
     def __init__(self):
         self.model = None
         self.unavailable = False
+        self.prewarmed = False
+        self.last_failure_category: str | None = None
         self.lock = threading.Lock()
         self.cache: OrderedDict[tuple[str, str, str], NliAssessment] = OrderedDict()
 
@@ -298,6 +300,7 @@ class NliVerifier:
         result = self.assess("A short test answer is available.", "A test answer is available.")
         if result.status != "ok":
             raise RuntimeError("Pinned NLI model failed startup prewarm")
+        self.prewarmed = True
 
     def assess(self, premise: str, hypothesis: str) -> NliAssessment:
         """Score only when the complete paired input fits the model window."""
@@ -354,9 +357,10 @@ class NliVerifier:
                     raise ValueError("NLI model must identify its entailment label")  # noqa: TRY301
                 probs = np.exp(logits - logits.max())
                 result = NliAssessment(float(probs[entail] / probs.sum()), "ok", count)
-            except Exception:
+            except Exception as exc:
                 log.exception("NLI unavailable; rejecting semantic reuse")
                 self.unavailable = True
+                self.last_failure_category = type(exc).__name__
                 return NliAssessment(None, "unavailable", None)
             self.cache[key] = result
             if len(self.cache) > _MAX_NLI_PAIRS:

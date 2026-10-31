@@ -1,5 +1,66 @@
 # VeriGate software progress — 31 October 2026
 
+## Source-review implementation checkpoint (local verification)
+
+Rechecked the 31 October source review on branch `codex/evaluation-integrity`
+at `91a2da2f207e56044f48d39a4f451624596d206d` before editing. Its
+automatic-scope, shared/private/no-store, provider-completion, expiry metadata,
+stale in-process shortlist, duplicate-question storage, policy-identity, and
+readiness findings still applied. The final candidate identity recheck, bounded
+top-k budget, profile-based routing, and separate namespace isolation already
+existed and were preserved. Broad inference locks, deadline differences, full
+candidate traces, cross-worker coalescing, and full HTTP replay parity remain
+separate open work; this checkpoint does not claim them complete.
+
+Implemented a server-owned application default workspace, explicit scope
+decision fields, separate request/response eligibility, and a normal dashboard
+request that sends only the prompt and credential. Explicit private/no-store
+requests remain restrictive. The demo directory migrator checks only the known
+public mock configuration; it does not reset Redis. JSON and streaming now
+distinguish a personal password question (private cache) from a supplied
+password value (no-store); this remains heuristic content screening. They
+require a normal provider finish event before caching. The OpenAI-compatible
+adapter preserves reported model, finish reason, and usage where supplied,
+rejects malformed/tool events, and sends a configured output-token limit.
+Returned text from a revoked in-flight request is not published to shared
+cache. Real-provider completion and usage are still unverified without paid
+authorization.
+
+Scoped quota writes reconcile bounded expired memberships and byte totals
+before choosing live eviction victims; reads do not extend entry TTL. The
+in-process shortlist rebuilds when an expired top result is found, and
+RedisSearch uses bounded overfetch. Exact question bytes now determine the
+semantic entry ID, so repeated writes replace one entry and reset its TTL.
+In semantic mode, an exact scope-local question is checked before embedding
+and NLI, then reread after its recency update; a vanished entry returns a
+miss. Explicit no-store requests also bypass legacy private caching.
+The namespace is pinned to the exact policy bytes loaded by the process;
+restarting is required to adopt an edited artifact. Readiness now fails if an
+enabled answer verifier becomes unavailable or required prewarming did not
+complete. The local suite passed 243 tests with five Redis-only skips. The
+isolated Redis Stack configuration passed 248 tests. Ruff lint/format and
+MyPy passed. These tests do not verify real-provider billing, broad semantic
+accuracy, or the remaining phases below.
+
+The documented `scripts/start_org_demo.ps1` rebuilt the local gateway and
+returned ready with real Redis/RedisSearch, MiniLM, semantic mode, the pinned
+answer policy, loaded/prewarmed NLI, and mock provider profiles. A Carol HTTP
+request with no scope fields reused the labelled decorator fixture from the
+shared engineering workspace (HIT, rank 1, `answer_accept:answer_entailment`,
+provider `cache`). The first request before explicit fixture seeding was a
+MISS and generated a mock placeholder; the designated workspace was then
+reset and reseeded with the documented factual fixture. No paid provider call
+was made. Browser rendering and real-provider generation remain unverified.
+
+The verifier experiment remains unchanged: current assertion input reused
+6/10 authored valid cases, accepted 1/10 authored invalid, and accepted 4/10
+ambiguous; question-only input reused 8/10, accepted 2/10 invalid, and accepted
+8/10 ambiguous. These fixed-candidate authored results are not overall
+accuracy. The current invalid Terraform plan/apply acceptance and ambiguous
+missing-context acceptances are development cases. Any verifier change needs
+a fresh disjoint evaluation. The three earlier valid misses were full-length
+NLI inputs, not truncation; long-answer handling is a separate limitation.
+
 ## Technical verifier input comparison — 31 October 2026
 
 The current checkout was confirmed at `69c6e683acaa94a4b02ab0eebd70168623cd2678`

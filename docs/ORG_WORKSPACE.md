@@ -14,7 +14,8 @@ From the repository root on Windows PowerShell, with Python and Docker available
 powershell -File scripts/start_org_demo.ps1
 ```
 
-The script creates an ignored **digest-only** local directory once, then starts
+The script creates an ignored **digest-only** local directory once, validates
+the known mock demo's `developer-tool` default `engineering` workspace, then starts
 Redis Stack and the gateway with pinned MiniLM, the pinned NLI policy,
 prewarming, and a mock provider. It preserves Redis data across restarts. The
 first startup downloads model files; the Docker volume persists them. Check
@@ -30,18 +31,17 @@ docker exec -e PYTHONPATH=/app -w /app verigate-gateway-1 python /tmp/seed_org_d
 
 Normal startup never clears or reseeds Redis. The fixture is a controlled
 answer, not mock generation or production answer-quality evidence. After
-seeding, `python -m scripts.verify_org_http
-evaluation/runs/<new-id>/observations.json` repeats the HTTP isolation,
+seeding, `python -m scripts.verify_org_http evaluation/runs/<new-id>/observations.json`
+repeats the HTTP isolation,
 routing, deletion, and rotation checks. It clears only the three demo
 subjects' private scopes and restores the credential directory afterward.
 
 The development fixture keys are `example-alice-key-12345`,
 `example-carol-key-12345`, and `other-dave-key-123456`. They are public demo
 credentials, never live secrets. Enter one in the dashboard. For a shared
-technical request, select **Authorized workspace**, enter `engineering`, and
-ask `Explain how Python decorators work.` as Carol after the explicit fixture
+technical request, ask `Explain how Python decorators work.` as Carol after the explicit fixture
 seed. The saved HTTP run returned a HIT with the labelled Python answer. For a
-private request, select **Private** and ask
+private request, open the development scope override, select **Private**, and ask
 the same question with Alice, then Carol: Carol cannot see Alice's private
 entry. Dave belongs to a different organization and cannot request
 `engineering`. The mock provider's text is a placeholder, not a factual answer.
@@ -51,12 +51,13 @@ For exact HTTP requests:
 ```powershell
 $a = @{ 'x-api-key' = 'example-alice-key-12345' }
 $c = @{ 'x-api-key' = 'example-carol-key-12345' }
-$body = @{prompt='Explain Python decorators';cache_scope='workspace';workspace='engineering'} | ConvertTo-Json
+$body = @{prompt='Explain how Python decorators work.'} | ConvertTo-Json
 Invoke-RestMethod http://127.0.0.1:8000/v1/chat -Method Post -Headers $a -ContentType application/json -Body $body
 Invoke-RestMethod http://127.0.0.1:8000/v1/chat -Method Post -Headers $c -ContentType application/json -Body $body
 ```
 
 The result reports the authenticated organization/subject, effective scope,
+scope-policy version/reason, storage eligibility,
 route profile, candidate count, selected rank, model evidence (if invoked),
 cache-write outcome, and measured gateway stages. `/admin/cache/occupancy`
 accepts `scope=private` or an authorized `scope=workspace&workspace=engineering`
@@ -64,6 +65,15 @@ and reports live entry hash memory, estimated-entry count, nearest TTL, stale
 memberships, and evictions. It never lists answer text. Browser counters on
 `/ui` are per tab, not server totals. The displayed TTL is the configured
 value, not the remaining TTL of an individual answer.
+
+An approved application has an administrator-configured default workspace.
+Without one, standard requests remain private; the server does not choose the
+first workspace implicitly. `cache_scope=private` narrows access and
+`cache_scope=none` bypasses lookup and storage. Development scope overrides are
+outside the normal dashboard question flow. An actual credential in a request
+causes no-store. Personal context may be private-only. A private-only response
+is written only to the employee's private namespace. These are conservative
+heuristics, not comprehensive data-loss prevention.
 
 ## Provisioning and rotation
 

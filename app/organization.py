@@ -18,17 +18,15 @@ from .config import Settings
 from .identity import key_allowed
 
 _ID = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}$")
-_TECHNICAL = re.compile(
-    r"\b(?:api|python|java|javascript|sql|database|redis|docker|kubernetes|"
-    r"function|class|code|compile|deploy|server|http|git|typescript|linux|"
-    r"algorithm|bug|exception|schema|query|endpoint|software|cache)\b",
+_ACTUAL_SECRET = re.compile(
+    r"\b(?:sk-[a-zA-Z0-9]{12,}|AKIA[A-Z0-9]{16})\b|"
+    r"\b(?:password|api[_ -]?key|access[_ -]?token|secret)\s*[:=]\s*\S+",
     re.IGNORECASE,
 )
-_SENSITIVE = re.compile(
-    r"\b(?:my|mine|our|account|password|secret|token|credential|private|"
-    r"confidential|customer|patient|salary|employee|internal|restricted)\b|"
-    r"\b[\w.+-]+@[\w.-]+\.[a-zA-Z]{2,}\b|"
-    r"\b(?:sk-[a-zA-Z0-9]{12,}|AKIA[A-Z0-9]{16})\b",
+_PRIVATE_CONTEXT = re.compile(
+    r"\b(?:my|mine|our)\s+(?:\w+\s+){0,3}"
+    r"(?:account|customer|patient|salary|employee|internal|private|password|credential)\b|"
+    r"\b[\w.+-]+@[\w.-]+\.[a-zA-Z]{2,}\b",
     re.IGNORECASE,
 )
 
@@ -43,6 +41,7 @@ class Principal:
     provider_profile: str
     status: str
     legacy_tenant: str | None = None
+    default_workspace: str | None = None
 
     @property
     def legacy(self) -> bool:
@@ -56,6 +55,24 @@ class ProviderProfile:
     model: str
     base_url: str
     secret_env: str
+
+
+@dataclass(frozen=True, slots=True)
+class ScopeDecision:
+    scope: str
+    workspace: str
+    eligibility: str
+    reason: str
+    policy_version: str
+
+
+def content_eligibility(text: str) -> str:
+    """Conservative storage class; this is not a comprehensive DLP system."""
+    if _ACTUAL_SECRET.search(text):
+        return "no_store"
+    if _PRIVATE_CONTEXT.search(text):
+        return "private_only"
+    return "shared_eligible"
 
 
 class OrganizationDirectory:
@@ -106,6 +123,10 @@ class OrganizationDirectory:
                     workspace.get("trusted_applications", []), list
                 ):
                     raise TypeError("Workspace membership must be configured server-side")
+            for application_id, workspace_id in org.get("application_defaults", {}).items():
+                self._identifier(application_id)
+                if workspace_id not in org.get("workspaces", {}):
+                    raise ValueError("Application default references unknown workspace")
             self.organizations[org_id] = org
         for profile_id, profile in raw.get("provider_profiles", {}).items():
             self._identifier(profile_id)
@@ -172,6 +193,9 @@ class OrganizationDirectory:
                 if subject_id in workspace["members"]
                 and application_id in workspace["trusted_applications"]
             )
+            default_workspace = org.get("application_defaults", {}).get(application_id)
+            if default_workspace not in workspaces:
+                default_workspace = None
             principal = Principal(
                 org_id,
                 subject_id,
@@ -180,6 +204,7 @@ class OrganizationDirectory:
                 workspaces,
                 profile,
                 status,
+                default_workspace=default_workspace,
             )
             # Two active credentials may represent one stable employee during rotation.
             self.credentials[digest] = principal
@@ -249,23 +274,46 @@ class OrganizationDirectory:
         return f"{prefix}_{organization}_{opaque}"
 
     def effective_scope(
-        self, principal: Principal, requested: str, workspace: str | None, prompt: str
+        self, principal: Principal, requested: str | None, workspace: str | None, prompt: str
     ) -> tuple[str, str]:
+        decision = self.scope_decision(principal, requested, workspace, prompt)
+        return decision.scope, decision.workspace
+
+    def scope_decision(  # noqa: PLR0911 - explicit authorization outcomes
+        self, principal: Principal, requested: str | None, workspace: str | None, prompt: str
+    ) -> ScopeDecision:
+        version = hashlib.sha256(
+            json.dumps(
+                self.organizations.get(principal.organization_id, {}), sort_keys=True
+            ).encode()
+        ).hexdigest()[:12]
+        eligibility = content_eligibility(prompt)
+        if requested == "none" or eligibility == "no_store":
+            return ScopeDecision("private", "", "no_store", "sensitive_or_disabled", version)
         if principal.legacy:
-            return "private", ""
-        if requested != "workspace":
-            return "private", ""
-        if (
-            not workspace
-            or workspace not in principal.workspaces
-            or "cache:shared" not in principal.permissions
-        ):
+            return ScopeDecision("private", "", "private_only", "legacy_private", version)
+        if requested == "private":
+            return ScopeDecision("private", "", "private_only", "explicit_private", version)
+        selected = workspace if requested == "workspace" else principal.default_workspace
+        if selected is None:
+            return ScopeDecision("private", "", "private_only", "no_default_workspace", version)
+        if selected not in principal.workspaces or "cache:shared" not in principal.permissions:
+            if requested is None:
+                return ScopeDecision(
+                    "private", "", "private_only", "shared_not_authorized", version
+                )
             raise PermissionError("Workspace cache access not authorized")
-        if not _TECHNICAL.search(prompt) or _SENSITIVE.search(prompt):
-            return "private", ""
-        return "workspace", workspace
+        if eligibility == "private_only":
+            return ScopeDecision("private", "", "private_only", "private_context", version)
+        return ScopeDecision(
+            "workspace",
+            selected,
+            "shared_eligible",
+            "authorized_default" if requested is None else "authorized_explicit",
+            version,
+        )
 
 
 def response_shareable(answer: str) -> bool:
     """Detection can only restrict an authorized shared write, never grant one."""
-    return not _SENSITIVE.search(answer)
+    return content_eligibility(answer) == "shared_eligible"

@@ -256,11 +256,13 @@ footer{border-top:1px solid var(--line);padding:34px 0 60px;color:var(--faint);f
       </div>
       <label>Query</label>
       <textarea id="query" placeholder="how do I reset my password"></textarea>
-      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px">
-        <div><label for="scope">Requested scope</label><select id="scope"><option value="private">Private</option><option value="workspace">Authorized workspace</option></select></div>
-        <div><label for="workspace">Workspace</label><input id="workspace" placeholder="engineering" autocomplete="off"></div>
-      </div>
-      <div class="hint">The gateway derives organization, user, and workspace access from the key. Requesting a workspace does not grant access.</div>
+      <details id="dev-overrides" hidden><summary>Development scope override</summary>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px">
+          <div><label for="scope">Requested scope</label><select id="scope"><option value="auto">Automatic</option><option value="private">Private</option><option value="workspace">Authorized workspace</option><option value="none">No store</option></select></div>
+          <div><label for="workspace">Workspace</label><input id="workspace" placeholder="engineering" autocomplete="off"></div>
+        </div>
+      </details>
+      <div class="hint">The gateway derives organization, user, and authorized workspace from the key and server policy. The displayed effective scope comes from the response.</div>
       <div class="actions" style="margin-top:12px">
         <button class="btn pri sm" id="ask">Ask</button>
         <button class="btn sec sm" id="clear">Clear cache</button>
@@ -274,7 +276,7 @@ footer{border-top:1px solid var(--line);padding:34px 0 60px;color:var(--faint);f
         may HIT its mock placeholder. Restore fixtures to reset this demo tenant; Clear cache
         removes all fixtures without restoring them.</div>
       <div class="hint" id="org-demo-note" hidden>Organization mock demo: the Python decorator answer is a labelled factual fixture,
-        not mock generation. Select the engineering workspace for shared queries. Mock MISS responses are placeholders and may be cached;
+        not mock generation. Authorized employees share the engineering workspace automatically. Mock MISS responses are placeholders and may be cached;
         repeating a MISS can therefore HIT that placeholder. The legacy Restore fixtures button does not reset this workspace.</div>
       <div class="err" id="err"></div>
       <div class="result" id="result">
@@ -367,12 +369,12 @@ const SEMANTIC_EX=[
   {t:"Which planet is known as the Blue Planet?",d:"different planet"},
 ];
 const ORG_EX=[
-  {t:"Explain how Python decorators work.",d:"shared factual fixture",scope:"workspace",workspace:"engineering"},
-  {t:"How do Python generators work?",d:"misleading near-match",scope:"workspace",workspace:"engineering"},
+  {t:"Explain how Python decorators work.",d:"shared factual fixture"},
+  {t:"How do Python generators work?",d:"misleading near-match"},
   {t:"Explain Python functions.",d:"private isolation",scope:"private"},
 ];
 function showChips(examples){$("chips").innerHTML="";examples.forEach(e=>{const c=document.createElement("div");c.className="chip";
-  c.innerHTML=`${e.t}<small>${e.d}</small>`;c.onclick=()=>{$("query").value=e.t;if(e.scope){$("scope").value=e.scope;$("workspace").value=e.workspace||"";}ask();};$("chips").appendChild(c);});
+  c.innerHTML=`${e.t}<small>${e.d}</small>`;c.onclick=()=>{$("query").value=e.t;$("scope").value=e.scope||"auto";$("workspace").value=e.workspace||"";ask();};$("chips").appendChild(c);});
 }
 showChips(EX);
 
@@ -382,6 +384,7 @@ async function health(){try{const r=await fetch("/health");if(!r.ok)throw new Er
   const answerAware=h.cache_match_mode==="semantic"&&Boolean(h.answer_policy_version);
   configuredTtl=h.cache_ttl_sec??null;
   $("restore").hidden=!h.demo_restore_available;
+  $("dev-overrides").hidden=!(h.organization_demo_available||h.demo_restore_available);
   showChips(h.organization_demo_available?ORG_EX:h.demo_restore_available?SEMANTIC_EX:EX);
   $("demo-note").hidden=!h.demo_restore_available;
   $("org-demo-note").hidden=!h.organization_demo_available;
@@ -399,7 +402,7 @@ function setS(){$("s-total").textContent=s.total;const d=s.hits+s.miss;
   $("s-hits").textContent=s.hits;$("s-miss").textContent=s.miss;$("s-bypass").textContent=s.bypass;$("s-declined").textContent=s.declined;$("s-errors").textContent=s.errors;}
 
 async function ask(){const q=$("query").value.trim();if(!q)return;$("ask").disabled=true;$("err").textContent="";s.total++;const started=performance.now();
-  try{const r=await fetch("/v1/chat",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":$("apikey").value},body:JSON.stringify({prompt:q,cache_scope:$("scope").value,workspace:$("scope").value==="workspace"?$("workspace").value.trim():null})});
+  try{const payload={prompt:q};if($("dev-overrides").open&&$("scope").value!=="auto"){payload.cache_scope=$("scope").value;if(payload.cache_scope==="workspace")payload.workspace=$("workspace").value.trim();}const r=await fetch("/v1/chat",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":$("apikey").value},body:JSON.stringify(payload)});
     if(r.status===429){s.errors++;$("err").textContent="Rate limited (429).";return;}
     if(r.status===401){s.errors++;$("err").textContent="Invalid API key (401).";return;}
     if(!r.ok)throw new Error("Gateway returned HTTP "+r.status);

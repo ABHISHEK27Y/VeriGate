@@ -12,14 +12,14 @@ import asyncio
 from collections.abc import AsyncIterator, Mapping
 from dataclasses import dataclass, field
 from types import MappingProxyType
-from typing import Any
+from typing import Any, cast
 
 from ..complexity import is_hard
 from ..config import get_settings
 from ..organization import OrganizationDirectory, ProviderProfile
 from ..redis_client import create_redis
 from . import breaker
-from .base import Provider
+from .base import Provider, ProviderEvent
 from .evaluation import ControlledEvaluationProvider
 from .mock import MockProvider
 from .openai_compat import OpenAICompatibleProvider
@@ -153,7 +153,15 @@ class ProviderRegistry:
             return tuple(provider.name for provider in self.cascade.values())
         return ()
 
-    async def route_stream(self, prompt: str) -> tuple[str, AsyncIterator[str]]:  # noqa: PLR0915
+    async def route_stream(self, prompt: str) -> tuple[str, AsyncIterator[str]]:
+        name, stream = await self._route(prompt, events=False)
+        return name, cast(AsyncIterator[str], stream)
+
+    async def route_events(self, prompt: str) -> tuple[str, AsyncIterator[ProviderEvent]]:
+        name, stream = await self._route(prompt, events=True)
+        return name, cast(AsyncIterator[ProviderEvent], stream)
+
+    async def _route(self, prompt: str, *, events: bool) -> tuple[str, AsyncIterator]:  # noqa: PLR0915
         """Pick a provider (cascade + circuit-breaker + failover) -> (name, token_stream)."""
         last_err: Exception | None = None
         order = self._order_for(prompt)
@@ -168,7 +176,7 @@ class ProviderRegistry:
                 continue
             agen = None
             try:
-                agen = p.stream(prompt)
+                agen = p.stream_events(prompt) if events else p.stream(prompt)
                 async with asyncio.timeout(first_timeout):
                     first = await agen.__anext__()
 

@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import re
-import uuid
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
 
@@ -114,7 +114,7 @@ async def validate_index(dim: int) -> None:
 
 
 async def add(query: str, answer: str, vec: np.ndarray, tenant: str) -> str | None:
-    eid = uuid.uuid4().hex
+    eid = hashlib.sha256(query.encode("utf-8")).hexdigest()
     async with _client() as r:
         stored = await storage.put(
             r,
@@ -145,7 +145,10 @@ async def clear(tenant: str | None = None) -> None:
 async def knn(vec: np.ndarray, tenant: str, k: int = 1, *, include_key: bool = False):
     # Escape TAG syntax even for callers outside the authenticated gateway.
     escaped = re.sub(r"([^a-zA-Z0-9_])", lambda m: "\\" + m[0], tenant)
-    q = f"(@tenant:{{{escaped}}})=>[KNN {k} @vec $BLOB AS score]"
+    # A hash can expire between FT.SEARCH and validation; bounded overfetch
+    # lets a live later result fill that shortlist slot.
+    search_k = min(max(k, 1) * 4, 64)
+    q = f"(@tenant:{{{escaped}}})=>[KNN {search_k} @vec $BLOB AS score]"
     async with _client() as r:
         res = await r.execute_command(
             "FT.SEARCH",
@@ -164,7 +167,7 @@ async def knn(vec: np.ndarray, tenant: str, k: int = 1, *, include_key: bool = F
             "score",
             "LIMIT",
             0,
-            k,
+            search_k,
             "DIALECT",
             2,
         )
@@ -191,6 +194,8 @@ async def knn(vec: np.ndarray, tenant: str, k: int = 1, *, include_key: bool = F
                 1.0 - float(values.get(b"score", b"1")),
             )
             out.append((*hit, key.decode()) if include_key else hit)
+            if len(out) >= k:
+                break
         return out
 
 

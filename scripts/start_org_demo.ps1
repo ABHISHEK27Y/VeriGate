@@ -5,6 +5,8 @@ if (-not (Test-Path -LiteralPath $directory)) {
     python -m scripts.provision_organization init-demo $directory
     if ($LASTEXITCODE -ne 0) { throw "Organization demo provisioning failed" }
 }
+python -m scripts.provision_organization ensure-demo-default $directory
+if ($LASTEXITCODE -ne 0) { throw "Organization demo default-scope validation failed" }
 docker compose -f docker-compose.yml -f docker-compose.org-demo.yml up -d --build
 if ($LASTEXITCODE -ne 0) { throw "Docker startup failed" }
 $ready = $null

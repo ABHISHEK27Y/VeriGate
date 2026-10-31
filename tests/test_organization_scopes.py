@@ -11,6 +11,7 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
+import app.main as gateway_main
 from app.config import Settings
 from app.main import create_app
 from app.organization import OrganizationDirectory
@@ -130,12 +131,110 @@ def test_shared_private_cross_org_and_forged_scope(tmp_path: Path) -> None:
             ask(client, CAROL, prompt, cache_scope="workspace", workspace="forged").status_code
             == HTTPStatus.FORBIDDEN
         )
-        # Sensitive or unknown content is private even for a member requesting a workspace.
+        # A personal password question is private, while an actual secret value is no-store.
         sensitive = ask(client, ALICE, "Explain my Redis password", **shared).json()
         assert sensitive["cache_scope"] == "private"
-        assert sensitive["storage_outcome"] == "response_ineligible"
-        assert ask(client, ALICE, "Explain my Redis password", **shared).json()["cache"] == "MISS"
+        assert sensitive["cache"] == "MISS"
+        assert sensitive["storage_eligibility"] == "private_only"
+        assert sensitive["storage_outcome"] == "stored"
+        assert ask(client, ALICE, "Explain my Redis password", **shared).json()["cache"] == "HIT"
         assert ask(client, CAROL, "Explain my Redis password", **shared).json()["cache"] == "MISS"
+        actual_secret = ask(client, ALICE, "password=SuperSecret123", **shared).json()
+        assert actual_secret["cache"] == "BYPASS"
+        assert actual_secret["storage_eligibility"] == "no_store"
+
+
+def test_server_default_shares_generic_technical_requests_without_scope_fields(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "organizations.json"
+    config = settings_for(path, "automatic-scope-test-salt")
+    directory_file(path, config.api_key_salt)
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    raw["organizations"]["example"]["application_defaults"] = {"developer-tool": "engineering"}
+    path.write_text(json.dumps(raw), encoding="utf-8")
+    with TestClient(create_app(config)) as client:
+        prompt = "Explain why a token bucket limits request bursts."
+        first = ask(client, ALICE, prompt).json()
+        assert first["cache_scope"] == "workspace"
+        assert first["scope_reason"] == "authorized_default"
+        assert first["storage_eligibility"] == "shared_eligible"
+        assert first["storage_outcome"] == "stored"
+        assert first["scope_policy_version"]
+        reused = ask(client, CAROL, prompt).json()
+        assert reused["cache"] == "HIT"
+        assert reused["answer"] == first["answer"]
+        assert ask(client, DAVE, prompt).json()["cache"] == "MISS"
+        assert ask(client, ALICE, prompt, cache_scope="private").json()["cache"] == "MISS"
+        assert ask(client, CAROL, prompt, cache_scope="private").json()["cache"] == "MISS"
+        assert ask(client, ALICE, prompt, cache_scope="none").json()["cache"] == "BYPASS"
+
+
+def test_application_default_never_grants_missing_shared_permission(tmp_path: Path) -> None:
+    path = tmp_path / "organizations.json"
+    config = settings_for(path, "default-without-permission-salt")
+    directory_file(path, config.api_key_salt)
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    raw["organizations"]["example"]["application_defaults"] = {"developer-tool": "engineering"}
+    raw["credentials"][0]["permissions"] = []
+    path.write_text(json.dumps(raw), encoding="utf-8")
+    with TestClient(create_app(config)) as client:
+        prompt = "Explain Redis cache eviction."
+        private = ask(client, ALICE, prompt)
+        assert private.status_code == HTTPStatus.OK
+        assert private.json()["cache_scope"] == "private"
+        assert private.json()["scope_reason"] == "shared_not_authorized"
+        assert ask(client, CAROL, prompt).json()["cache"] == "MISS"
+        assert (
+            ask(client, ALICE, prompt, cache_scope="workspace", workspace="engineering").status_code
+            == HTTPStatus.FORBIDDEN
+        )
+
+
+def test_private_only_response_stores_only_in_employee_scope(tmp_path: Path) -> None:
+    path = tmp_path / "organizations.json"
+    config = settings_for(path, "private-response-test-salt")
+    directory_file(path, config.api_key_salt)
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    raw["organizations"]["example"]["application_defaults"] = {"developer-tool": "engineering"}
+    path.write_text(json.dumps(raw), encoding="utf-8")
+    with TestClient(create_app(config)) as client:
+        prompt = "Explain our account settings."
+        first = ask(client, ALICE, prompt).json()
+        assert first["cache_scope"] == "private"
+        assert first["storage_outcome"] == "stored"
+        assert ask(client, ALICE, prompt).json()["cache"] == "HIT"
+        assert ask(client, CAROL, prompt).json()["cache"] == "MISS"
+
+
+def test_legacy_no_store_request_cannot_be_cached(client) -> None:
+    headers = {"x-api-key": "demo-key-123"}
+    for _ in range(2):
+        response = client.post(
+            "/v1/chat",
+            headers=headers,
+            json={"prompt": "Explain token buckets", "cache_scope": "none"},
+        )
+        assert response.status_code == HTTPStatus.OK
+        assert response.json()["cache"] == "BYPASS"
+        assert response.json()["storage_eligibility"] == "no_store"
+
+
+def test_multiple_authorized_workspaces_without_default_remain_private(tmp_path: Path) -> None:
+    path = tmp_path / "organizations.json"
+    config = settings_for(path, "ambiguous-workspace-test-salt")
+    directory_file(path, config.api_key_salt)
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    raw["organizations"]["example"]["workspaces"]["operations"] = {
+        "members": ["alice", "carol"],
+        "trusted_applications": ["developer-tool"],
+    }
+    path.write_text(json.dumps(raw), encoding="utf-8")
+    with TestClient(create_app(config)) as client:
+        result = ask(client, ALICE, "Explain retry backoff.").json()
+        assert result["cache_scope"] == "private"
+        assert result["scope_reason"] == "no_default_workspace"
+        assert ask(client, CAROL, "Explain retry backoff.").json()["cache"] == "MISS"
 
 
 def test_rotation_and_revocation_preserve_subject_scope(tmp_path: Path) -> None:
@@ -211,6 +310,36 @@ def test_revocation_during_hit_lookup_prevents_serve(tmp_path: Path) -> None:
         client.app.state.semantic_cache.lookup = revoke_after_lookup
         response = ask(client, ALICE, "Explain Python decorators")
         assert response.status_code == HTTPStatus.UNAUTHORIZED
+
+
+def test_revocation_after_generation_prevents_shared_write(tmp_path: Path, monkeypatch) -> None:
+    path = tmp_path / "organizations.json"
+    config = settings_for(path, "generation-revocation-test-salt")
+    directory_file(path, config.api_key_salt)
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    raw["organizations"]["example"]["application_defaults"] = {"developer-tool": "engineering"}
+    path.write_text(json.dumps(raw), encoding="utf-8")
+    original = gateway_main._generate_answer
+
+    async def revoke_after_generation(prompt, request, registry):
+        generated = await original(prompt, request, registry)
+        updated = json.loads(path.read_text(encoding="utf-8"))
+        updated["credentials"][0]["status"] = "revoked"
+        replacement = tmp_path / "revoked-after-generation.json"
+        replacement.write_text(json.dumps(updated), encoding="utf-8")
+        replacement.replace(path)
+        return generated
+
+    with TestClient(create_app(config)) as client:
+        monkeypatch.setattr(gateway_main, "_generate_answer", revoke_after_generation)
+        result = ask(client, ALICE, "Explain deterministic retries.")
+        assert result.status_code == HTTPStatus.OK
+        assert result.json()["storage_outcome"] == "credential_changed_no_store"
+        assert (
+            ask(client, ALICE, "Explain deterministic retries.").status_code
+            == HTTPStatus.UNAUTHORIZED
+        )
+        assert ask(client, CAROL, "Explain deterministic retries.").json()["cache"] == "MISS"
 
 
 def test_concurrent_profiles_are_isolated(tmp_path: Path) -> None:

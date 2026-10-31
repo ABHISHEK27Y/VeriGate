@@ -5,7 +5,7 @@ from __future__ import annotations
 from contextvars import ContextVar
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, PrivateAttr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _MIN_SALT_LENGTH = 32
@@ -115,6 +115,7 @@ class Settings(BaseSettings):
     openai_api_key: str = ""
     openai_base_url: str = "https://api.openai.com/v1"
     openai_model: str = "gpt-4o-mini"
+    provider_max_completion_tokens: int = Field(default=2048, ge=1, le=32768)
     gemini_api_key: str = ""
     gemini_base_url: str = "https://generativelanguage.googleapis.com/v1beta/openai"
     gemini_model: str = "gemini-flash-lite-latest"
@@ -150,6 +151,8 @@ class Settings(BaseSettings):
 
 class RuntimeSettings(Settings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore", frozen=True)
+    _answer_policy_sha256: str | None = PrivateAttr(default=None)
+    _namespace_snapshot: str | None = PrivateAttr(default=None)
 
 
 settings = Settings()

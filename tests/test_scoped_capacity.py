@@ -95,3 +95,36 @@ async def test_served_hit_refreshes_scope_and_organization_lru() -> None:
     finally:
         _runtime.reset(token)
         await r.aclose()
+
+
+@pytest.mark.asyncio
+async def test_expired_recently_touched_entry_does_not_evict_live_entry() -> None:
+    config = Settings(
+        _env_file=None,
+        shared_cache_entry_limit=2,
+        organization_cache_entry_limit=2,
+    )
+    token = _runtime.set(config)
+    r = fakeredis.aioredis.FakeRedis(decode_responses=True)
+    tenant = "s_dddddddddddddddd_engineering"
+    try:
+        assert await storage.put(r, tenant, "expired", {"query": "old", "answer": "old"})
+        assert await storage.put(r, tenant, "live", {"query": "live", "answer": "live"})
+        await storage.touch(r, tenant, "expired")
+        namespace = storage.current_namespace()
+        await r.zadd(storage._org_expiry(tenant, namespace), {f"{tenant}|expired": 1})
+        await r.delete(storage.keys(tenant)[2] + "expired")
+        assert await storage.put(r, tenant, "new", {"query": "new", "answer": "new"})
+        assert await r.exists(storage.keys(tenant)[2] + "live") == 1
+        assert await r.exists(storage.keys(tenant)[2] + "new") == 1
+        assert await r.zscore(storage._org_keys(tenant, namespace)[0], f"{tenant}|expired") is None
+        assert (await storage.occupancy(r, tenant))["entries"] == SCOPE_LIMIT
+        assert (await storage.occupancy(r, tenant))["evictions"] == 0
+        expected = sum(
+            sum(len(str(value).encode()) for value in row.values())
+            for row in ({"query": "live", "answer": "live"}, {"query": "new", "answer": "new"})
+        )
+        assert int(await r.get(f"{namespace}:bytes:{tenant}")) == expected
+    finally:
+        _runtime.reset(token)
+        await r.aclose()
