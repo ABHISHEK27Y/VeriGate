@@ -391,12 +391,13 @@ Table~\ref{tab:datamodel} lists the namespaced keys. The in-process index is a d
     \begin{tabular}{|l|l|l|}
     \hline
     \textbf{Purpose} & \textbf{Key pattern} & \textbf{Notes} \\ \hline
-    Cache entry ids & \texttt{cache:ids:<tenant>} & set of entry ids for the tenant \\ \hline
-    Cache entry & \texttt{cache:entry:<tenant>:<id>} & stored query, answer, vector; optional TTL \\ \hline
-    Rate-limit bucket & \texttt{ratelimit:<api\_key>} & token-bucket state (atomic) \\ \hline
-    Daily admission counter & per-key UTC-day counter & admitted cache misses and bypasses; not token or monetary spend \\ \hline
-    Circuit breaker & \texttt{breaker:open:<provider>} & open/closed state + failure count \\ \hline
-    RediSearch doc & \texttt{vec:<tenant>:<id>} & HNSW-indexed vector with \texttt{tenant} TAG \\ \hline
+    Cache entry ids & \texttt{<cache\_namespace>:ids:<tenant>} & set of entry ids for the tenant \\ \hline
+    Cache entry & \texttt{<cache\_namespace>:entry:<tenant>:<id>} & stored query, answer, vector; finite TTL \\ \hline
+    LRU metadata & \texttt{<cache\_namespace>:lru:<tenant>} & per-tenant recency scores \\ \hline
+    Rate-limit bucket & \texttt{ratelimit:<api\_key\_digest>} & token-bucket state (atomic) \\ \hline
+    Daily admission counter & \texttt{budget:<api\_key\_digest>:<UTC\_day>} & admitted cache misses and bypasses; not token or monetary spend \\ \hline
+    Circuit breaker & \texttt{<cache\_namespace>:breaker:*:<provider>} & generation, failure, open, and probe state \\ \hline
+    RediSearch doc & namespaced vector record & HNSW vector with a tenant TAG; optional backend \\ \hline
     \end{tabular}
     }
     \caption{Redis state namespaces. Cache and vector records are tenant-scoped; rate-limit and admission counters are keyed by API-key digest, and breaker state is keyed by provider.}
