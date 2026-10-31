@@ -22,11 +22,15 @@ class ChatRequest(BaseModel):
     prompt: str | None = Field(default=None, max_length=16000)
     messages: list[UserMessage] | None = Field(default=None, min_length=1, max_length=1)
     cache_bypass: bool = False
+    cache_scope: Literal["private", "workspace"] = "private"
+    workspace: str | None = Field(default=None, max_length=64)
 
     @model_validator(mode="after")
     def one_input(self):
         if self.prompt is not None and self.messages is not None:
             raise ValueError("Supply prompt or one user message, not both")
+        if self.workspace and self.cache_scope != "workspace":
+            raise ValueError("Workspace requires workspace cache scope")
         return self
 
     def as_prompt(self) -> str:
@@ -51,3 +55,10 @@ class ChatResponse(BaseModel):
     nli_score: float | None = None
     verifier_invoked: bool | None = None
     stage_latency_ms: dict[str, float] | None = None
+    organization_id: str | None = None
+    subject_id: str | None = None
+    cache_scope: str | None = None
+    provider_profile: str | None = None
+    candidate_count: int | None = None
+    selected_rank: int | None = None
+    storage_outcome: str | None = None

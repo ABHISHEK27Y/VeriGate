@@ -1,0 +1,166 @@
+"""Measure Redis Stack capacity with generated fixtures, never answer-quality labels.
+
+The isolated tenant is cleared after measurement. Existing demo tenants are untouched.
+Run with REDIS_URL set and a semantic/RedisSearch configuration.
+"""
+
+from __future__ import annotations
+
+import argparse
+import asyncio
+import hashlib
+import json
+import platform
+import statistics
+import time
+from pathlib import Path
+
+import numpy as np
+import redis.asyncio as redis
+
+from app.cache import redisearch_store as rs
+from app.cache import storage
+from app.config import Settings, _runtime
+
+CHECKPOINTS = (0, 100, 500, 1000, 2500, 5000)
+DIMENSION = 384
+MAX_FIXTURES = 5000
+
+
+async def measure(output: Path, count: int) -> None:  # noqa: PLR0915
+    if output.exists():
+        raise FileExistsError(output)
+    config = Settings(
+        cache_match_mode="semantic",
+        vector_backend="redisearch",
+        cache_ttl_sec=3600,
+        shared_cache_entry_limit=max(count, MAX_FIXTURES),
+        organization_cache_entry_limit=max(count, MAX_FIXTURES),
+        shared_cache_byte_limit=64_000_000,
+        organization_cache_byte_limit=256_000_000,
+    )
+    if not config.redis_url:
+        raise ValueError("Set REDIS_URL to a Redis Stack instance")
+    run_id = hashlib.sha256(f"{time.time_ns()}:{count}".encode()).hexdigest()[:16]
+    tenant = f"s_{run_id}_capacity"
+    client = redis.from_url(config.redis_url, decode_responses=False)
+    token = _runtime.set(config)
+    pool_token = rs.active_client.set(client)
+    checkpoints = sorted({item for item in CHECKPOINTS if item <= count} | {count})
+    rows = []
+    write_failures = 0
+    write_error = None
+    fixture_bytes = 0
+    try:
+        await rs.ensure_index(DIMENSION)
+        for index in range(count + 1):
+            if index:
+                query = f"How does generated Python function capacity_{index:05d} handle input?"
+                answer = f"Generated fixture {index}: " + "A" * 160
+                vector = np.zeros(DIMENSION, dtype=np.float32)
+                vector[index % DIMENSION] = 1.0
+                fixture_bytes = sum(
+                    len(value)
+                    for value in (
+                        tenant.encode(),
+                        query.encode(),
+                        answer.encode(),
+                        vector.tobytes(),
+                    )
+                )
+                try:
+                    stored = await rs.add(query, answer, vector, tenant)
+                except Exception as exc:  # a failed write is part of the measurement
+                    write_failures += 1
+                    write_error = f"entry {index}: {type(exc).__name__}"
+                    break
+                if not stored:
+                    write_failures += 1
+                    write_error = f"entry {index}: quota or entry limit"
+                    break
+            if index in checkpoints:
+                memory = await client.info("memory")
+                occupancy = await rs.occupancy(tenant)
+                info = await client.execute_command("FT.INFO", rs._index())
+                index_info = dict(zip(info[::2], info[1::2], strict=True))
+                latencies = []
+                if index:
+                    for _ in range(20):
+                        started = time.perf_counter_ns()
+                        await rs.knn(vector, tenant, k=5)
+                        latencies.append((time.perf_counter_ns() - started) / 1_000_000)
+                rows.append(
+                    {
+                        "entries_requested": index,
+                        "entries_live": occupancy["entries"],
+                        "redis_used_memory_bytes": int(memory["used_memory"]),
+                        "tenant_hash_memory_bytes": occupancy["redis_entry_bytes"],
+                        "index_vector_memory_bytes": int(
+                            float(index_info.get(b"vector_index_sz_mb", 0)) * 1024 * 1024
+                        ),
+                        "index_documents": int(index_info.get(b"num_docs", 0)),
+                        "lookup_samples": len(latencies),
+                        "lookup_median_ms": round(statistics.median(latencies), 3)
+                        if latencies
+                        else None,
+                        "lookup_p95_ms": round(sorted(latencies)[18], 3) if latencies else None,
+                        "evictions": occupancy["evictions"],
+                        "write_failures": write_failures,
+                    }
+                )
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(
+            json.dumps(
+                {
+                    "run_id": run_id,
+                    "kind": "generated_capacity_fixture_not_answer_evidence",
+                    "environment": {
+                        "platform": platform.platform(),
+                        "python": platform.python_version(),
+                    },
+                    "redis_version": (await client.info("server"))["redis_version"],
+                    "dimension": DIMENSION,
+                    "answer_bytes": len("Generated fixture 5000: " + "A" * 160),
+                    "sample_payload_bytes": fixture_bytes,
+                    "ttl_seconds": config.cache_ttl_sec,
+                    "write_failures": write_failures,
+                    "write_error": write_error,
+                    "script_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+                    "rows": rows,
+                    "note": (
+                        "Redis total memory includes pre-existing data and index overhead; "
+                        "compare deltas within this run. Payload bytes exclude Redis keys, "
+                        "quota metadata, and index overhead. Lookup times are 20 warm "
+                        "queries per nonzero checkpoint."
+                    ),
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+    finally:
+        await rs.clear(tenant)
+        _, _, org_bytes = storage._org_keys(tenant, rs._namespace())
+        await client.delete(
+            org_bytes,
+            f"{rs._namespace()}:version:{tenant}",
+            f"{rs._namespace()}:evictions:{tenant}",
+        )
+        rs.active_client.reset(pool_token)
+        _runtime.reset(token)
+        await client.aclose()
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("output", type=Path)
+    parser.add_argument("--count", type=int, default=5000)
+    args = parser.parse_args()
+    if not 1 <= args.count <= MAX_FIXTURES:
+        parser.error("count must be between 1 and 5000")
+    asyncio.run(measure(args.output, args.count))
+
+
+if __name__ == "__main__":
+    main()

@@ -19,7 +19,7 @@ class RequestLimitsMiddleware:
         self.owner = owner
         self.active = 0
 
-    async def __call__(self, scope, receive, send):
+    async def __call__(self, scope, receive, send):  # noqa: PLR0911, PLR0915
         if scope["type"] != "http":
             return await self.app(scope, receive, send)
         started = time.perf_counter()
@@ -47,7 +47,18 @@ class RequestLimitsMiddleware:
             }:
                 headers = dict(scope.get("headers", []))
                 supplied = headers.get(b"x-api-key", b"").decode("latin-1")
-                if not key_allowed(supplied, config.api_key_set):
+                directory = getattr(self.owner.state, "organization_directory", None)
+                try:
+                    authorized = (
+                        directory.resolve(supplied) is not None
+                        if directory is not None
+                        else key_allowed(supplied, config.api_key_set)
+                    )
+                except (OSError, ValueError, TypeError):
+                    return await JSONResponse({"detail": "identity directory unavailable"}, 503)(
+                        scope, receive, timed_send
+                    )
+                if not authorized:
                     return await JSONResponse({"detail": "invalid or missing API key"}, 401)(
                         scope, receive, timed_send
                     )

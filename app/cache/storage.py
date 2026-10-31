@@ -5,10 +5,12 @@ from __future__ import annotations
 import time
 import uuid
 
-from redis.exceptions import WatchError
+from redis.exceptions import ResponseError, WatchError
 
 from ..config import get_settings
 from .namespace import namespace as current_namespace
+
+_SCOPED_PARTS = 3
 
 
 def keys(tenant: str, namespace: str | None = None) -> tuple[str, str, str]:
@@ -16,14 +18,165 @@ def keys(tenant: str, namespace: str | None = None) -> tuple[str, str, str]:
     return f"{namespace}:ids:{tenant}", f"{namespace}:lru:{tenant}", f"{namespace}:entry:{tenant}:"
 
 
-async def put(r, tenant: str, eid: str, mapping: dict, namespace: str | None = None) -> None:
+def _scoped(tenant: str) -> bool:
+    return tenant.startswith(("s_", "p_")) and len(tenant.split("_", 2)) == _SCOPED_PARTS
+
+
+def _org_keys(tenant: str, namespace: str) -> tuple[str, str, str]:
+    organization = tenant.split("_", 2)[1]
+    prefix = f"{namespace}:org:{organization}"
+    return f"{prefix}:lru", f"{prefix}:sizes", f"{prefix}:bytes"
+
+
+def _limits(tenant: str) -> tuple[int, int]:
+    config = get_settings()
+    if tenant.startswith("s_"):
+        return config.shared_cache_entry_limit, config.shared_cache_byte_limit
+    return config.private_cache_entry_limit, config.private_cache_byte_limit
+
+
+def _text(value) -> str:
+    return value.decode() if isinstance(value, bytes) else value
+
+
+async def _put_scoped(  # noqa: PLR0912, PLR0913, PLR0915, PLR0917 - atomic quota transaction
+    r, tenant: str, eid: str, mapping: dict, size: int, namespace: str
+) -> bool:
+    config = get_settings()
+    count_limit, byte_limit = _limits(tenant)
+    if size > min(byte_limit, config.organization_cache_byte_limit):
+        return False
+    ids, lru, prefix = keys(tenant, namespace)
+    sizes, bytes_key = f"{namespace}:sizes:{tenant}", f"{namespace}:bytes:{tenant}"
+    org_lru, org_sizes, org_bytes = _org_keys(tenant, namespace)
+    member = f"{tenant}|{eid}"
+    ttl = config.cache_ttl_sec
+    for _ in range(100):
+        try:
+            async with r.pipeline(transaction=True) as pipe:
+                await pipe.watch(ids, lru, sizes, bytes_key, org_lru, org_sizes, org_bytes)
+                existing_size = float(await pipe.zscore(sizes, eid) or 0)
+                existed = await pipe.zscore(lru, eid) is not None
+                scope_count = int(await pipe.zcard(lru)) + (not existed)
+                scope_bytes = int(await pipe.get(bytes_key) or 0) - int(existing_size) + size
+                org_count = int(await pipe.zcard(org_lru)) + (not existed)
+                org_total = int(await pipe.get(org_bytes) or 0) - int(existing_size) + size
+                victims: list[tuple[str, str, int]] = []
+                selected: set[str] = set()
+                scope_candidates = (
+                    await pipe.zrange(lru, 0, -1)
+                    if scope_count > count_limit or scope_bytes > byte_limit
+                    else []
+                )
+                for candidate in scope_candidates:
+                    victim = _text(candidate)
+                    if scope_count <= count_limit and scope_bytes <= byte_limit:
+                        break
+                    if victim == eid:
+                        continue
+                    victim_size = int(float(await pipe.zscore(sizes, victim) or 0))
+                    victims.append((tenant, victim, victim_size))
+                    selected.add(f"{tenant}|{victim}")
+                    scope_count -= 1
+                    scope_bytes -= victim_size
+                    org_count -= 1
+                    org_total -= victim_size
+                org_candidates = (
+                    await pipe.zrange(org_lru, 0, -1)
+                    if org_count > config.organization_cache_entry_limit
+                    or org_total > config.organization_cache_byte_limit
+                    else []
+                )
+                for candidate in org_candidates:
+                    if (
+                        org_count <= config.organization_cache_entry_limit
+                        and org_total <= config.organization_cache_byte_limit
+                    ):
+                        break
+                    org_member = _text(candidate)
+                    if org_member == member or org_member in selected:
+                        continue
+                    victim_tenant, victim = org_member.rsplit("|", 1)
+                    victim_size = int(float(await pipe.zscore(org_sizes, org_member) or 0))
+                    victims.append((victim_tenant, victim, victim_size))
+                    selected.add(org_member)
+                    org_count -= 1
+                    org_total -= victim_size
+                    if victim_tenant == tenant:
+                        scope_count -= 1
+                        scope_bytes -= victim_size
+                if (
+                    scope_count > count_limit
+                    or scope_bytes > byte_limit
+                    or org_count > config.organization_cache_entry_limit
+                    or org_total > config.organization_cache_byte_limit
+                ):
+                    return False
+                for victim_tenant, _, _ in victims:
+                    if victim_tenant != tenant:
+                        await pipe.watch(
+                            f"{namespace}:ids:{victim_tenant}",
+                            f"{namespace}:lru:{victim_tenant}",
+                            f"{namespace}:sizes:{victim_tenant}",
+                            f"{namespace}:bytes:{victim_tenant}",
+                        )
+                other_bytes = {
+                    victim_tenant: max(
+                        0,
+                        int(await pipe.get(f"{namespace}:bytes:{victim_tenant}") or 0)
+                        - sum(size for scope, _, size in victims if scope == victim_tenant),
+                    )
+                    for victim_tenant, _, _ in victims
+                    if victim_tenant != tenant
+                }
+                pipe.multi()
+                for victim_tenant, victim, _victim_size in victims:
+                    victim_ids, victim_lru, victim_prefix = keys(victim_tenant, namespace)
+                    pipe.delete(victim_prefix + victim)
+                    pipe.srem(victim_ids, victim)
+                    pipe.zrem(victim_lru, victim)
+                    pipe.zrem(f"{namespace}:sizes:{victim_tenant}", victim)
+                    pipe.zrem(org_lru, f"{victim_tenant}|{victim}")
+                    pipe.zrem(org_sizes, f"{victim_tenant}|{victim}")
+                    if victim_tenant != tenant:
+                        pipe.set(f"{namespace}:version:{victim_tenant}", uuid.uuid4().hex, ex=ttl)
+                for victim_tenant, remaining_bytes in other_bytes.items():
+                    pipe.set(f"{namespace}:bytes:{victim_tenant}", remaining_bytes, ex=ttl)
+                for victim_tenant in {scope for scope, _, _ in victims}:
+                    pipe.incrby(
+                        f"{namespace}:evictions:{victim_tenant}",
+                        sum(scope == victim_tenant for scope, _, _ in victims),
+                    )
+                    pipe.expire(f"{namespace}:evictions:{victim_tenant}", ttl)
+                pipe.hset(prefix + eid, mapping=mapping)
+                pipe.expire(prefix + eid, ttl)
+                pipe.sadd(ids, eid)
+                pipe.zadd(lru, {eid: time.time()})
+                pipe.zadd(sizes, {eid: size})
+                pipe.zadd(org_lru, {member: time.time()})
+                pipe.zadd(org_sizes, {member: size})
+                pipe.set(bytes_key, max(0, scope_bytes), ex=ttl)
+                pipe.set(org_bytes, max(0, org_total), ex=ttl)
+                pipe.set(f"{namespace}:version:{tenant}", uuid.uuid4().hex, ex=ttl)
+                for metadata in (ids, lru, sizes, org_lru, org_sizes):
+                    pipe.expire(metadata, ttl)
+                await pipe.execute()
+                return True
+        except WatchError:
+            continue
+    raise RuntimeError("Scoped cache write contention exceeded retry limit")
+
+
+async def put(r, tenant: str, eid: str, mapping: dict, namespace: str | None = None) -> bool:
     size = sum(
         len(value if isinstance(value, bytes) else str(value).encode("utf-8"))
         for value in mapping.values()
     )
     if size > get_settings().max_cache_entry_bytes:
-        return
+        return False
     namespace = namespace or current_namespace()
+    if _scoped(tenant):
+        return await _put_scoped(r, tenant, eid, mapping, size, namespace)
     ids, lru, prefix = keys(tenant, namespace)
     for _ in range(100):
         try:
@@ -57,14 +210,30 @@ async def put(r, tenant: str, eid: str, mapping: dict, namespace: str | None = N
                     pipe.srem(ids, victim)
                     pipe.zrem(lru, victim)
                 await pipe.execute()
-                return
+                return True
         except WatchError:
             continue
     raise RuntimeError("Cache write contention exceeded retry limit")
 
 
+async def touch(r, tenant: str, eid: str, namespace: str | None = None) -> None:
+    """Refresh recency only for a served hit, in both scoped quota indexes."""
+    namespace = namespace or current_namespace()
+    _, lru, _ = keys(tenant, namespace)
+    score = time.time()
+    async with r.pipeline(transaction=True) as pipe:
+        pipe.zadd(lru, {eid: score}, xx=True)
+        if _scoped(tenant):
+            org_lru, _, _ = _org_keys(tenant, namespace)
+            pipe.zadd(org_lru, {f"{tenant}|{eid}": score}, xx=True)
+        await pipe.execute()
+
+
 async def clear(r, tenant: str, namespace: str | None = None) -> None:
     namespace = namespace or current_namespace()
+    if _scoped(tenant):
+        await _clear_scoped(r, tenant, namespace)
+        return
     ids, lru, prefix = keys(tenant, namespace)
     for _ in range(100):
         try:
@@ -86,3 +255,76 @@ async def clear(r, tenant: str, namespace: str | None = None) -> None:
         except WatchError:
             continue
     raise RuntimeError("Cache clear contention exceeded retry limit")
+
+
+async def _clear_scoped(r, tenant: str, namespace: str) -> None:
+    ids, lru, prefix = keys(tenant, namespace)
+    sizes, bytes_key = f"{namespace}:sizes:{tenant}", f"{namespace}:bytes:{tenant}"
+    org_lru, org_sizes, org_bytes = _org_keys(tenant, namespace)
+    for _ in range(100):
+        try:
+            async with r.pipeline(transaction=True) as pipe:
+                await pipe.watch(ids, lru, sizes, bytes_key, org_lru, org_sizes, org_bytes)
+                members = await pipe.smembers(ids)
+                org_members = [
+                    _text(value)
+                    for value in await pipe.zrange(org_lru, 0, -1)
+                    if _text(value).startswith(f"{tenant}|")
+                ]
+                used = 0
+                for member in org_members:
+                    used += int(float(await pipe.zscore(org_sizes, member) or 0))
+                org_total = max(0, int(await pipe.get(org_bytes) or 0) - used)
+                pipe.multi()
+                for member in members:
+                    pipe.delete(prefix + _text(member))
+                pipe.delete(ids, lru, sizes, bytes_key)
+                for member in org_members:
+                    pipe.zrem(org_lru, member)
+                    pipe.zrem(org_sizes, member)
+                pipe.set(org_bytes, org_total, ex=get_settings().cache_ttl_sec)
+                pipe.set(
+                    f"{namespace}:version:{tenant}",
+                    uuid.uuid4().hex,
+                    ex=get_settings().cache_ttl_sec,
+                )
+                await pipe.execute()
+                return
+        except WatchError:
+            continue
+    raise RuntimeError("Scoped cache clear contention exceeded retry limit")
+
+
+async def occupancy(r, tenant: str, namespace: str | None = None) -> dict[str, int]:
+    """Count live entries and Redis memory without revealing cached content."""
+    namespace = namespace or current_namespace()
+    ids, _, prefix = keys(tenant, namespace)
+    members = await r.smembers(ids)
+    count = 0
+    redis_bytes = 0
+    estimated_entries = 0
+    earliest_ttl = 0
+    for member in members:
+        key = prefix + _text(member)
+        if not await r.exists(key):
+            continue
+        count += 1
+        try:
+            size = await r.memory_usage(key)
+        except ResponseError:
+            row = await r.hgetall(key)
+            size = sum(len(str(value).encode()) for value in row.values())
+            estimated_entries += 1
+        redis_bytes += int(size or 0)
+        ttl = int(await r.ttl(key))
+        if ttl > 0:
+            earliest_ttl = ttl if earliest_ttl == 0 else min(earliest_ttl, ttl)
+    evictions = int(await r.get(f"{namespace}:evictions:{tenant}") or 0)
+    return {
+        "entries": count,
+        "redis_entry_bytes": redis_bytes,
+        "estimated_entries": estimated_entries,
+        "stale_memberships": len(members) - count,
+        "earliest_expiry_seconds": earliest_ttl,
+        "evictions": evictions,
+    }

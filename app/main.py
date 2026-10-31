@@ -9,9 +9,11 @@ from __future__ import annotations
 import asyncio
 import hmac
 import json
+import os
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import cast
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -21,6 +23,7 @@ from prometheus_client import CONTENT_TYPE_LATEST
 from . import __version__
 from .budget import check_and_count as budget_check_and_count
 from .cache import redisearch_store as rs
+from .cache import storage
 from .cache.demo_fixtures import DEMO_API_KEY, FACTS, demo_enabled
 from .cache.namespace import POLICY_VERSION
 from .cache.semantic_cache import LookupResult, SemanticCache
@@ -33,6 +36,7 @@ from .metrics import (
     BUDGET_EXCEEDED,
     CACHE,
     CACHE_FAILURES,
+    CACHE_WRITES,
     CANDIDATE_DECISION,
     CANDIDATE_VERIFIER_REJECTED,
     LATENCY,
@@ -41,6 +45,7 @@ from .metrics import (
     STAGE_LATENCY,
     render_metrics,
 )
+from .organization import OrganizationDirectory, Principal, response_shareable
 from .providers.registry import ProviderRegistry
 from .rate_limit import RateLimiter
 from .redis_client import close_redis, create_redis, redis_backend_name
@@ -81,11 +86,23 @@ async def lifespan(app: FastAPI):  # noqa: PLR0915
         app.state.cache = app.state.semantic_cache
         app.state.index = app.state.cache._index
         app.state.verifier = app.state.cache._policy.verifier
-        app.state.provider_registry = ProviderRegistry.from_settings(app.state.redis)
+        app.state.organization_directory = OrganizationDirectory(get_settings())
+        app.state.provider_registry = (
+            ProviderRegistry.from_settings(app.state.redis) if get_settings().api_key_set else None
+        )
+        app.state.profile_registries = {
+            name: ProviderRegistry.from_profile(
+                profile, app.state.organization_directory, app.state.redis
+            )
+            for name, profile in app.state.organization_directory.profiles.items()
+            if profile.provider == "mock" or bool(os.environ.get(profile.secret_env))
+        }
         app.state.singleflight = SingleFlight()
         app.state.providers = app.state.provider_registry
-        app.state.shadow_auditor = ShadowAuditor(
-            app.state.redis, app.state.provider_registry, app.state.config
+        app.state.shadow_auditor = (
+            ShadowAuditor(app.state.redis, app.state.provider_registry, app.state.config)
+            if app.state.provider_registry is not None
+            else None
         )
         app.state.rate_limiter = RateLimiter(app.state.redis)
         app.state.budget_check = budget_check_and_count
@@ -110,10 +127,12 @@ async def lifespan(app: FastAPI):  # noqa: PLR0915
         yield
     finally:
         log.info("Shutting down VeriGate gateway")
-        if hasattr(app.state, "shadow_auditor"):
+        if getattr(app.state, "shadow_auditor", None) is not None:
             await app.state.shadow_auditor.aclose()
-        if hasattr(app.state, "provider_registry"):
+        if getattr(app.state, "provider_registry", None) is not None:
             await app.state.provider_registry.aclose()
+        for registry in getattr(app.state, "profile_registries", {}).values():
+            await registry.aclose()
         if redis_client is not None:
             await close_redis(redis_client)
         if binary_client is not None:
@@ -149,8 +168,17 @@ app.add_middleware(LoggingMiddleware)
 app.add_middleware(RequestLimitsMiddleware, owner=app)
 
 
-def _auth(api_key: str | None) -> str:
-    if not key_allowed(api_key, get_settings().api_key_set):
+def _auth(api_key: str | None, request: Request | None = None) -> str:
+    directory = getattr(request.app.state, "organization_directory", None) if request else None
+    try:
+        allowed = (
+            directory.resolve(api_key) is not None
+            if directory
+            else key_allowed(api_key, get_settings().api_key_set)
+        )
+    except (OSError, ValueError, TypeError) as exc:
+        raise HTTPException(status_code=503, detail="identity directory unavailable") from exc
+    if not allowed:
         raise HTTPException(status_code=401, detail="invalid or missing API key")
     assert api_key is not None
     return api_key
@@ -162,11 +190,54 @@ def _tenant(api_key: str) -> str:
     return tenant_id(api_key)
 
 
-def _cache_tenant(request: Request, prompt: str, tenant: str) -> str:
-    registry = request.app.state.provider_registry
-    if registry.cascade:
-        return f"{tenant}:{registry.intended_route(prompt)}"
-    return tenant
+def _admission_identity(principal: Principal, api_key: str) -> str:
+    if principal.legacy:
+        return api_key
+    return (
+        f"organization:{principal.organization_id}:"
+        f"subject:{principal.subject_id}:application:{principal.application_id}"
+    )
+
+
+def _principal(request: Request, api_key: str | None) -> Principal:
+    directory: OrganizationDirectory = request.app.state.organization_directory
+    try:
+        principal = directory.resolve(api_key)
+    except (OSError, ValueError, TypeError) as exc:
+        raise HTTPException(status_code=503, detail="identity directory unavailable") from exc
+    if principal is None:
+        raise HTTPException(status_code=401, detail="invalid or missing API key")
+    return principal
+
+
+def _registry_for(request: Request, principal: Principal) -> ProviderRegistry:
+    if principal.legacy:
+        if request.app.state.provider_registry is None:
+            raise HTTPException(status_code=503, detail="legacy provider unavailable")
+        return cast(ProviderRegistry, request.app.state.provider_registry)
+    registry = request.app.state.profile_registries.get(principal.provider_profile)
+    if registry is None:
+        raise HTTPException(status_code=503, detail="organization provider profile unavailable")
+    return cast(ProviderRegistry, registry)
+
+
+def _cache_tenant(  # noqa: PLR0913, PLR0917 - authorization context is explicit
+    request: Request,
+    prompt: str,
+    principal: Principal,
+    cache_scope: str,
+    workspace: str | None,
+    registry: ProviderRegistry,
+) -> tuple[str, str]:
+    directory: OrganizationDirectory = request.app.state.organization_directory
+    try:
+        effective, authorized_workspace = directory.effective_scope(
+            principal, cache_scope, workspace, prompt
+        )
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    route = registry.intended_route(prompt) if not principal.legacy or registry.cascade else ""
+    return directory.scoped_tenant(principal, effective, authorized_workspace, route), effective
 
 
 async def _check_rate_limit(api_key: str, request: Request) -> None:
@@ -208,13 +279,19 @@ async def _cache_lookup(request: Request, prompt: str, tenant: str, bypass: bool
         return result
 
 
-async def _cache_store(request: Request, prompt: str, answer: str, tenant: str) -> None:
+async def _cache_store(request: Request, prompt: str, answer: str, tenant: str) -> str:
     started = time.perf_counter()
     try:
-        await request.app.state.semantic_cache.store(prompt, answer, tenant)
+        stored = await request.app.state.semantic_cache.store(prompt, answer, tenant)
     except Exception:
         CACHE_FAILURES.labels(stage="write").inc()
+        CACHE_WRITES.labels(result="failed").inc()
         log.warning("cache_write_failed", tenant=tenant)
+        return "write_failed"
+    else:
+        outcome = "stored" if stored else "ineligible_or_full"
+        CACHE_WRITES.labels(result=outcome).inc()
+        return outcome
     finally:
         STAGE_LATENCY.labels(stage="cache_write").observe(time.perf_counter() - started)
 
@@ -238,14 +315,18 @@ class ResponseTooLargeError(Exception):
     """The configured upstream response limit was exceeded."""
 
 
-async def _generate_answer(prompt: str, request: Request) -> tuple[str, str]:
+async def _generate_answer(
+    prompt: str, request: Request, registry: ProviderRegistry | None = None
+) -> tuple[str, str]:
     """Call the provider (with failover) and assemble the full answer."""
     stream = None
     generation_started = time.perf_counter()
     try:
         async with asyncio.timeout(get_settings().provider_timeout):
             route_started = time.perf_counter()
-            provider_name, stream = await request.app.state.provider_registry.route_stream(prompt)
+            provider_name, stream = await (
+                registry or request.app.state.provider_registry
+            ).route_stream(prompt)
             STAGE_LATENCY.labels(stage="provider_first_token").observe(
                 time.perf_counter() - route_started
             )
@@ -289,18 +370,84 @@ def dashboard():
 @app.post("/admin/cache/clear")
 async def clear_cache(request: Request, x_api_key: str | None = Header(default=None)):
     """Clear the caller's own tenant cache (requires a valid API key). Used by the dashboard."""
-    api_key = _auth(x_api_key)
-    tenant = _tenant(api_key)
-    await request.app.state.semantic_cache.clear(tenant)
-    for route in request.app.state.provider_registry.cache_scopes():
-        await request.app.state.semantic_cache.clear(f"{tenant}:{route}")
+    api_key = _auth(x_api_key, request)
+    principal = _principal(request, api_key)
+    if principal.legacy:
+        tenant = _tenant(api_key)
+        await request.app.state.semantic_cache.clear(tenant)
+        for route in request.app.state.provider_registry.cache_scopes():
+            await request.app.state.semantic_cache.clear(f"{tenant}:{route}")
+    else:
+        registry = _registry_for(request, principal)
+        # A user-level clear never deletes an authorized workspace's shared answers.
+        for route in registry.cache_scopes() or (registry.providers[0].name,):
+            tenant = request.app.state.organization_directory.scoped_tenant(
+                principal, "private", "", route
+            )
+            await request.app.state.semantic_cache.clear(tenant)
     return {"status": "cleared"}
+
+
+@app.get("/admin/cache/occupancy")
+async def cache_occupancy(
+    request: Request,
+    scope: str = "private",
+    workspace: str | None = None,
+    x_api_key: str | None = Header(default=None),
+):
+    principal = _principal(request, x_api_key)
+    if scope not in {"private", "workspace"}:
+        raise HTTPException(status_code=400, detail="unsupported cache scope")
+    if scope == "workspace" and (
+        principal.legacy
+        or not workspace
+        or workspace not in principal.workspaces
+        or "cache:shared" not in principal.permissions
+    ):
+        raise HTTPException(status_code=403, detail="Workspace cache access not authorized")
+    registry = _registry_for(request, principal)
+    routes = registry.cache_scopes() or (registry.providers[0].name,)
+    if principal.legacy:
+        tenants = [principal.legacy_tenant or ""]
+        tenants += [f"{tenants[0]}:{route}" for route in registry.cache_scopes()]
+    else:
+        tenants = [
+            request.app.state.organization_directory.scoped_tenant(
+                principal, scope, workspace or "", route
+            )
+            for route in routes
+        ]
+    results = []
+    for tenant in tenants:
+        if (
+            get_settings().vector_backend == "redisearch"
+            and get_settings().cache_match_mode == "semantic"
+        ):
+            results.append(await rs.occupancy(tenant))
+        else:
+            results.append(await storage.occupancy(request.app.state.redis, tenant))
+    return {
+        "scope": scope,
+        "entries": sum(item["entries"] for item in results),
+        "redis_entry_bytes": sum(item["redis_entry_bytes"] for item in results),
+        "estimated_entries": sum(item["estimated_entries"] for item in results),
+        "stale_memberships": sum(item["stale_memberships"] for item in results),
+        "earliest_expiry_seconds": min(
+            (
+                item["earliest_expiry_seconds"]
+                for item in results
+                if item["earliest_expiry_seconds"]
+            ),
+            default=0,
+        ),
+        "evictions": sum(item["evictions"] for item in results),
+    }
 
 
 @app.post("/admin/demo/restore")
 async def restore_demo_fixtures(request: Request, x_api_key: str | None = Header(default=None)):
     """Reset only the named local demo tenant, then store labelled factual fixtures."""
-    api_key = _auth(x_api_key)
+    api_key = _auth(x_api_key, request)
     if not demo_enabled(get_settings()) or not hmac.compare_digest(api_key, DEMO_API_KEY):
         raise HTTPException(status_code=404, detail="demo restoration unavailable")
     tenant = _tenant(api_key)
@@ -327,7 +474,7 @@ async def health(request: Request):
 
 @app.get("/admin/config")
 async def config_details(request: Request, x_api_key: str | None = Header(default=None)):
-    _auth(x_api_key)
+    _auth(x_api_key, request)
     return await _health_details(request)
 
 
@@ -341,6 +488,11 @@ async def _health_details(request: Request) -> dict:
             await rs.validate_index(request.app.state.embedding_dimension)
     except Exception as exc:
         raise HTTPException(status_code=503, detail="Redis unavailable") from exc
+    missing_profiles = set(request.app.state.organization_directory.profiles) - set(
+        request.app.state.profile_registries
+    )
+    if missing_profiles:
+        raise HTTPException(status_code=503, detail="provider profile unavailable")
     return {
         "status": "ok",
         "version": __version__,
@@ -349,6 +501,7 @@ async def _health_details(request: Request) -> dict:
         "vector_backend": get_settings().vector_backend,
         "cache_enabled": get_settings().cache_enabled,
         "cache_match_mode": get_settings().cache_match_mode,
+        "cache_ttl_sec": get_settings().cache_ttl_sec,
         "cache_policy_version": POLICY_VERSION,
         "answer_policy_version": (
             request.app.state.semantic_cache._answer_policy.version[:12]
@@ -357,12 +510,23 @@ async def _health_details(request: Request) -> dict:
         ),
         "answer_policy_prewarm": get_settings().answer_policy_prewarm,
         "demo_restore_available": demo_enabled(get_settings()),
+        "organization_demo_available": (
+            get_settings().environment == "development"
+            and get_settings().llm_provider == "mock"
+            and not get_settings().api_key_set
+            and Path(get_settings().organization_config_path).name == "organizations-demo.json"
+        ),
         "verifier_nli_enabled": get_settings().verifier_nli,
-        "provider_health": "configuration_only",
+        "provider_health": "configured_not_called",
         "providers": (
             list(request.app.state.provider_registry.cache_scopes())
-            if request.app.state.provider_registry.cascade
+            if request.app.state.provider_registry and request.app.state.provider_registry.cascade
             else [p.name for p in request.app.state.provider_registry.providers]
+            if request.app.state.provider_registry
+            else [
+                profile.provider
+                for profile in request.app.state.organization_directory.profiles.values()
+            ]
         ),
     }
 
@@ -387,28 +551,39 @@ def metrics():
 
 
 @app.post("/v1/chat", response_model=ChatResponse)
-async def chat(req: ChatRequest, request: Request, x_api_key: str | None = Header(default=None)):
+async def chat(  # noqa: PLR0915 - main gateway request path
+    req: ChatRequest, request: Request, x_api_key: str | None = Header(default=None)
+):
     """Non-streaming JSON endpoint — easiest to test/inspect (see X-Cache in the body)."""
-    api_key = _auth(x_api_key)
-    await _check_rate_limit(api_key, request)
-    tenant = _tenant(api_key)
+    api_key = _auth(x_api_key, request)
+    principal = _principal(request, api_key)
+    registry = _registry_for(request, principal)
+    admission_identity = _admission_identity(principal, api_key)
+    await _check_rate_limit(admission_identity, request)
+    tenant = principal.legacy_tenant or principal.organization_id
 
     prompt = req.as_prompt()
     if not prompt:
         raise HTTPException(status_code=400, detail="empty prompt")
 
     t0 = time.perf_counter()
-    cache_tenant = _cache_tenant(request, prompt, tenant)
-    intended_provider = request.app.state.provider_registry.intended_route(prompt)
+    cache_tenant, effective_scope = _cache_tenant(
+        request, prompt, principal, req.cache_scope, req.workspace, registry
+    )
+    intended_provider = registry.intended_route(prompt)
     lookup_started = time.perf_counter()
     result = await _cache_lookup(request, prompt, cache_tenant, req.cache_bypass)
     stage_ms = {"cache_lookup": round((time.perf_counter() - lookup_started) * 1000, 3)}
     _count_candidate_decision(result)
 
     if result.status == "HIT":
-        request.app.state.shadow_auditor.maybe_schedule(
-            prompt, result.answer or "", tenant, result.cached_query
-        )
+        # Revocation/permission changes during a slow verifier must not serve a hit.
+        if _principal(request, api_key) != principal:
+            raise HTTPException(status_code=401, detail="credential changed during request")
+        if principal.legacy:
+            request.app.state.shadow_auditor.maybe_schedule(
+                prompt, result.answer or "", tenant, result.cached_query
+            )
         CACHE.labels(result="hit").inc()
         REQUESTS.labels(outcome="hit").inc()
         LATENCY.labels(path="hit").observe(time.perf_counter() - t0)
@@ -427,35 +602,46 @@ async def chat(req: ChatRequest, request: Request, x_api_key: str | None = Heade
             selected_cached_query=result.cached_query
             if get_settings().llm_provider == "controlled-eval"
             else None,
-            nli_score=result.nli_score
-            if get_settings().llm_provider == "controlled-eval"
-            else None,
-            verifier_invoked=result.verifier_invoked
-            if get_settings().llm_provider == "controlled-eval"
-            else None,
-            stage_latency_ms=stage_ms if get_settings().llm_provider == "controlled-eval" else None,
+            nli_score=result.nli_score,
+            verifier_invoked=result.verifier_invoked,
+            stage_latency_ms={**result.stage_latency_ms, **stage_ms},
+            organization_id=None if principal.legacy else principal.organization_id,
+            subject_id=None if principal.legacy else principal.subject_id,
+            cache_scope=effective_scope,
+            provider_profile=None if principal.legacy else principal.provider_profile,
+            candidate_count=result.candidate_count,
+            selected_rank=result.selected_rank,
+            storage_outcome="cache_hit",
         )
 
     admission_started = time.perf_counter()
-    await _check_budget(api_key, request)  # only miss/bypass reach a provider — hits are free
+    await _check_budget(admission_identity, request)  # only miss/bypass reach provider
     stage_ms["admission"] = round((time.perf_counter() - admission_started) * 1000, 3)
     path = "bypass" if result.status == "BYPASS" else "miss"
 
+    storage_outcome = "not_attempted"
+
     async def generate_and_store() -> tuple[str, str]:
+        nonlocal storage_outcome
         provider_started = time.perf_counter()
-        provider_name, answer = await _generate_answer(prompt, request)
+        provider_name, answer = await _generate_answer(prompt, request, registry)
         stage_ms["provider"] = round((time.perf_counter() - provider_started) * 1000, 3)
-        if provider_name == intended_provider:
+        if provider_name == intended_provider and (principal.legacy or response_shareable(answer)):
             write_started = time.perf_counter()
-            await _cache_store(request, prompt, answer, cache_tenant)
+            storage_outcome = await _cache_store(request, prompt, answer, cache_tenant)
             stage_ms["cache_write"] = round((time.perf_counter() - write_started) * 1000, 3)
+        elif not principal.legacy and not response_shareable(answer):
+            storage_outcome = "response_ineligible"
+        else:
+            storage_outcome = "fallback_not_cached"
         return provider_name, answer
 
     if result.status == "BYPASS":
         provider_started = time.perf_counter()
-        provider_name, answer = await _generate_answer(prompt, request)
+        provider_name, answer = await _generate_answer(prompt, request, registry)
         stage_ms["provider"] = round((time.perf_counter() - provider_started) * 1000, 3)
         joined = False
+        storage_outcome = "bypassed"
     else:
         try:
             (provider_name, answer), joined = await request.app.state.singleflight.run(
@@ -485,11 +671,16 @@ async def chat(req: ChatRequest, request: Request, x_api_key: str | None = Heade
         selected_cached_query=result.cached_query
         if get_settings().llm_provider == "controlled-eval"
         else None,
-        nli_score=result.nli_score if get_settings().llm_provider == "controlled-eval" else None,
-        verifier_invoked=result.verifier_invoked
-        if get_settings().llm_provider == "controlled-eval"
-        else None,
-        stage_latency_ms=stage_ms if get_settings().llm_provider == "controlled-eval" else None,
+        nli_score=result.nli_score,
+        verifier_invoked=result.verifier_invoked,
+        stage_latency_ms={**result.stage_latency_ms, **stage_ms},
+        organization_id=None if principal.legacy else principal.organization_id,
+        subject_id=None if principal.legacy else principal.subject_id,
+        cache_scope=effective_scope,
+        provider_profile=None if principal.legacy else principal.provider_profile,
+        candidate_count=result.candidate_count,
+        selected_rank=result.selected_rank,
+        storage_outcome="coalesced" if joined else storage_outcome,
     )
 
 
@@ -500,25 +691,30 @@ async def chat_stream(  # noqa: PLR0915
     """Streaming endpoint (Server-Sent Events). Cache hits stream instantly."""
     started = time.perf_counter()
     deadline = asyncio.get_running_loop().time() + get_settings().provider_timeout
-    api_key = _auth(x_api_key)
-    await _check_rate_limit(api_key, request)
-    tenant = _tenant(api_key)
+    api_key = _auth(x_api_key, request)
+    principal = _principal(request, api_key)
+    registry = _registry_for(request, principal)
+    admission_identity = _admission_identity(principal, api_key)
+    await _check_rate_limit(admission_identity, request)
+    tenant = principal.legacy_tenant or principal.organization_id
     prompt = req.as_prompt()
     if not prompt:
         raise HTTPException(status_code=400, detail="empty prompt")
 
-    cache_tenant = _cache_tenant(request, prompt, tenant)
-    intended_provider = request.app.state.provider_registry.intended_route(prompt)
+    cache_tenant, effective_scope = _cache_tenant(
+        request, prompt, principal, req.cache_scope, req.workspace, registry
+    )
+    intended_provider = registry.intended_route(prompt)
     result = await _cache_lookup(request, prompt, cache_tenant, req.cache_bypass)
     _count_candidate_decision(result)
+    if result.status == "HIT" and _principal(request, api_key) != principal:
+        raise HTTPException(status_code=401, detail="credential changed during request")
     if result.status != "HIT":
-        await _check_budget(api_key, request)  # charge before streaming starts
+        await _check_budget(admission_identity, request)  # charge before streaming starts
         try:
             async with asyncio.timeout_at(deadline):
                 route_started = time.perf_counter()
-                provider_name, source = await request.app.state.provider_registry.route_stream(
-                    prompt
-                )
+                provider_name, source = await registry.route_stream(prompt)
                 STAGE_LATENCY.labels(stage="provider_first_token").observe(
                     time.perf_counter() - route_started
                 )
@@ -529,9 +725,10 @@ async def chat_stream(  # noqa: PLR0915
 
     async def event_gen():
         if result.status == "HIT":
-            request.app.state.shadow_auditor.maybe_schedule(
-                prompt, result.answer or "", tenant, result.cached_query
-            )
+            if principal.legacy:
+                request.app.state.shadow_auditor.maybe_schedule(
+                    prompt, result.answer or "", tenant, result.cached_query
+                )
             CACHE.labels(result="hit").inc()
             REQUESTS.labels(outcome="hit").inc()
             LATENCY.labels(path="hit").observe(time.perf_counter() - started)
@@ -573,7 +770,11 @@ async def chat_stream(  # noqa: PLR0915
             LATENCY.labels(path="stream_error").observe(time.perf_counter() - started)
             yield 'event: error\ndata: {"error":"empty upstream answer"}\n\n'
             return
-        if result.status != "BYPASS" and provider_name == intended_provider:
+        if (
+            result.status != "BYPASS"
+            and provider_name == intended_provider
+            and (principal.legacy or response_shareable(answer))
+        ):
             await _cache_store(request, prompt, answer, cache_tenant)
         path = "bypass" if result.status == "BYPASS" else "miss"
         CACHE.labels(result=path).inc()
@@ -587,6 +788,7 @@ async def chat_stream(  # noqa: PLR0915
         headers={
             "X-Provider": "cache" if result.status == "HIT" else provider_name,
             "X-Intended-Provider": intended_provider,
+            "X-Cache-Scope": effective_scope,
         },
     )
 

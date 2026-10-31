@@ -18,10 +18,11 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import logging
+import math
 import time
 import uuid
 from collections import OrderedDict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import numpy as np
@@ -35,7 +36,7 @@ from . import storage
 from .answer_policy import AnswerPolicy
 from .namespace import namespace
 from .policy import CachePolicy
-from .verifier import NliVerifier
+from .verifier import NliVerifier, verifier_scope
 from .volatility import is_volatile
 
 # Constants
@@ -52,6 +53,9 @@ class LookupResult:
     cached_query: str | None = None  # needed to audit answer reuse on a HIT
     nli_score: float | None = None
     verifier_invoked: bool = False
+    candidate_count: int = 0
+    selected_rank: int | None = None
+    stage_latency_ms: dict[str, float] = field(default_factory=dict)
 
 
 class SemanticCache:
@@ -202,12 +206,67 @@ class SemanticCache:
             return await self._nearest_redisearch(qvec, tenant)
         return self._nearest_inproc(qvec, tenant)
 
+    async def _ranked(
+        self, qvec: np.ndarray, tenant: str
+    ) -> tuple[list[tuple[dict, float]], float]:
+        """Retrieve a stable, scope-filtered shortlist using one request embedding."""
+        k = get_settings().semantic_retrieval_k
+        if get_settings().vector_backend == "redisearch":
+            hits = await rs.knn(qvec, tenant, k=k, include_key=True)
+            candidates = [
+                ({"query": query, "answer": answer, "key": key}, float(sim))
+                for query, answer, sim, key in hits
+            ]
+        else:
+            t = self._t(tenant)
+            if t["mat"] is None:
+                return [], 0.0
+            scores = t["mat"] @ qvec.astype(np.float32)
+            ranked = sorted(
+                range(len(scores)),
+                key=lambda index: (
+                    -float(scores[index]) if math.isfinite(float(scores[index])) else math.inf,
+                    t["queries"][index],
+                    t["ids"][index],
+                ),
+            )[:k]
+            candidates = [
+                (
+                    {
+                        "id": t["ids"][index],
+                        "query": t["queries"][index],
+                        "answer": t["answers"][index],
+                    },
+                    float(scores[index]),
+                )
+                for index in ranked
+            ]
+        candidates.sort(
+            key=lambda item: (
+                -item[1] if math.isfinite(item[1]) else math.inf,
+                item[0]["query"],
+                item[0].get("id", item[0].get("key", "")),
+            )
+        )
+        if not candidates:
+            return [], 0.0
+        best = candidates[0][1]
+        density = sum(
+            math.isfinite(sim) and best - sim <= _SIMILARITY_DENSITY_WINDOW
+            for _, sim in candidates[1:]
+        ) / len(candidates)
+        return candidates, min(1.0, density)
+
     # ------------------------------------------------------------------ #
     # Public API
     # ------------------------------------------------------------------ #
     async def lookup(self, query: str, tenant: str) -> LookupResult:
-        async with self._locks[hash(tenant) % len(self._locks)]:
-            return await self._lookup(query, tenant)
+        token = verifier_scope.set(tenant)
+        try:
+            async with self._locks[hash(tenant) % len(self._locks)]:
+                return await self._lookup(query, tenant)
+        finally:
+            verifier_scope.reset(token)
 
     async def _infer(self, function, *args):
         # Cancellation must not release capacity while the underlying thread still runs.
@@ -222,7 +281,8 @@ class SemanticCache:
         task.add_done_callback(finished)
         return await asyncio.shield(task)
 
-    async def _lookup(self, query: str, tenant: str) -> LookupResult:  # noqa: PLR0911, PLR0912
+    async def _lookup(self, query: str, tenant: str) -> LookupResult:  # noqa: PLR0911, PLR0912, PLR0915
+        stage_ms: dict[str, float] = {}
         if not get_settings().cache_enabled:
             return LookupResult(status="MISS", reason="cache_disabled")
 
@@ -233,62 +293,123 @@ class SemanticCache:
             eid = hashlib.sha256(query.encode("utf-8")).hexdigest()
             stage_started = time.perf_counter()
             row = await hash_fields(self.redis, self._entry_key(tenant, eid))
-            STAGE_LATENCY.labels(stage="exact_lookup").observe(time.perf_counter() - stage_started)
+            elapsed = time.perf_counter() - stage_started
+            STAGE_LATENCY.labels(stage="exact_lookup").observe(elapsed)
+            stage_ms["exact_lookup"] = round(elapsed * 1000, 3)
             if row and row.get("query") == query:
-                await self.redis.zadd(self._lru_key(tenant), {eid: time.time()}, xx=True)
+                await storage.touch(self.redis, tenant, eid)
                 return LookupResult(
                     status="HIT",
                     answer=row["answer"],
                     reason="exact_match",
                     cached_query=row["query"],
+                    stage_latency_ms=stage_ms,
                 )
-            return LookupResult(status="MISS", reason="exact_match_required")
+            return LookupResult(
+                status="MISS", reason="exact_match_required", stage_latency_ms=stage_ms
+            )
 
         # Ensure index is built from Redis before searching
         if get_settings().vector_backend != "redisearch":
             # Redis is authoritative, including writes/clears made by other workers.
             stage_started = time.perf_counter()
             await self._ensure(tenant)
-            STAGE_LATENCY.labels(stage="index_sync").observe(time.perf_counter() - stage_started)
+            elapsed = time.perf_counter() - stage_started
+            STAGE_LATENCY.labels(stage="index_sync").observe(elapsed)
+            stage_ms["index_sync"] = round(elapsed * 1000, 3)
 
         stage_started = time.perf_counter()
         qvec = await self._infer(self.embedder.embed, query)
-        STAGE_LATENCY.labels(stage="embedding").observe(time.perf_counter() - stage_started)
+        elapsed = time.perf_counter() - stage_started
+        STAGE_LATENCY.labels(stage="embedding").observe(elapsed)
+        stage_ms["embedding"] = round(elapsed * 1000, 3)
         stage_started = time.perf_counter()
-        best, sim, density = await self._nearest(qvec, tenant)  # tenant-scoped
-        STAGE_LATENCY.labels(stage="retrieval").observe(time.perf_counter() - stage_started)
-        if best is None:
-            return LookupResult(status="MISS", similarity=None, reason="empty_cache")
-
-        stage_started = time.perf_counter()
-        if self._answer_policy is not None:
-            decision = await self._infer(
-                self._answer_policy.decide,
-                query,
-                best["query"],
-                best["answer"],
-                sim,
-                self._policy.verifier,
-                get_settings().answer_policy_subject_guard,
+        candidates, density = await self._ranked(qvec, tenant)  # tenant-scoped
+        elapsed = time.perf_counter() - stage_started
+        STAGE_LATENCY.labels(stage="retrieval").observe(elapsed)
+        stage_ms["retrieval"] = round(elapsed * 1000, 3)
+        if not candidates:
+            return LookupResult(
+                status="MISS", similarity=None, reason="empty_cache", stage_latency_ms=stage_ms
             )
-            hit = decision.action == "ACCEPT"
-            reason = f"answer_{decision.action.lower()}:{decision.reason}"
-            threshold = self._answer_policy.min_similarity
-            nli_score = decision.score
-            verifier_invoked = decision.reason in {
-                "answer_entailment",
-                "answer_contradiction_or_irrelevance",
-                "uncertain_answer",
-                "verifier_unavailable",
-                "context_too_long",
-            }
+        count = len(candidates)
+        exact = [
+            (rank, candidate, sim)
+            for rank, (candidate, sim) in enumerate(candidates, 1)
+            if candidate["query"] == query
+        ]
+        if exact:
+            if len({candidate["answer"] for _, candidate, _ in exact}) != 1:
+                return LookupResult(
+                    status="MISS",
+                    reason="conflicting_exact_entries",
+                    candidate_count=count,
+                    stage_latency_ms=stage_ms,
+                )
+            rank, best, sim = exact[0]
+            reason, threshold, nli_score, verifier_invoked = "exact_match", None, None, False
         else:
+            best, sim = candidates[0]
+            rank = 1
+            threshold, nli_score, verifier_invoked = None, None, False
+            reason = "no_acceptable_candidate"
+        stage_started = time.perf_counter()
+        hit = bool(exact)
+        if not exact and self._answer_policy is not None:
+            threshold = self._answer_policy.min_similarity
+            accepted = []
+            deadline = time.perf_counter() + get_settings().semantic_verify_budget_ms / 1000
+            limit = min(count, get_settings().semantic_verify_limit)
+            for candidate_rank, (candidate, score) in enumerate(candidates[:limit], 1):
+                remaining = deadline - time.perf_counter()
+                if remaining <= 0:
+                    reason = "verification_budget_exhausted"
+                    break
+                try:
+                    decision = await asyncio.wait_for(
+                        self._infer(
+                            self._answer_policy.decide,
+                            query,
+                            candidate["query"],
+                            candidate["answer"],
+                            score,
+                            self._policy.verifier,
+                            get_settings().answer_policy_subject_guard,
+                            get_settings().answer_policy_technical_guard,
+                        ),
+                        timeout=remaining,
+                    )
+                except TimeoutError:
+                    reason = "verification_budget_exhausted"
+                    break
+                decision_reason = f"answer_{decision.action.lower()}:{decision.reason}"
+                if candidate_rank == 1:
+                    reason = decision_reason
+                    nli_score = decision.score
+                verifier_invoked |= decision.score is not None or decision.reason in {
+                    "verifier_unavailable",
+                    "context_too_long",
+                }
+                if decision.action == "ACCEPT":
+                    accepted.append(
+                        (candidate_rank, candidate, score, decision.score, decision_reason)
+                    )
+            else:
+                if count > limit and candidates[limit][1] >= threshold:
+                    reason = "verification_limit_exhausted"
+                elif len({item[1]["answer"].strip().casefold() for item in accepted}) > 1:
+                    reason = "conflicting_accepted_answers"
+                elif accepted:
+                    rank, best, sim, nli_score, reason = accepted[0]
+                    hit = True
+        elif not exact:
             hit, reason, threshold = await self._infer(
                 self._policy.decide, query, best["query"], sim, density
             )
-            nli_score = None
             verifier_invoked = get_settings().verifier_nli and "nli" in reason
-        STAGE_LATENCY.labels(stage="policy_decision").observe(time.perf_counter() - stage_started)
+        elapsed = time.perf_counter() - stage_started
+        STAGE_LATENCY.labels(stage="policy_decision").observe(elapsed)
+        stage_ms["policy_decision"] = round(elapsed * 1000, 3)
         if not hit:
             return LookupResult(
                 status="MISS",
@@ -298,24 +419,38 @@ class SemanticCache:
                 cached_query=best["query"],
                 nli_score=nli_score,
                 verifier_invoked=verifier_invoked,
+                candidate_count=count,
+                stage_latency_ms=stage_ms,
             )
         stage_started = time.perf_counter()
         if get_settings().vector_backend == "redisearch":
             candidate_row = await rs.read_candidate(best["key"], tenant)
         else:
             candidate_row = await hash_fields(self.redis, self._entry_key(tenant, best["id"]))
-        STAGE_LATENCY.labels(stage="candidate_identity").observe(
-            time.perf_counter() - stage_started
-        )
+        elapsed = time.perf_counter() - stage_started
+        STAGE_LATENCY.labels(stage="candidate_identity").observe(elapsed)
+        stage_ms["candidate_identity"] = round(elapsed * 1000, 3)
         if not candidate_row:
-            return LookupResult(status="MISS", reason="expired_or_evicted")
+            return LookupResult(
+                status="MISS",
+                reason="expired_or_evicted",
+                candidate_count=count,
+                stage_latency_ms=stage_ms,
+            )
         if (
             candidate_row.get("query") != best["query"]
             or candidate_row.get("answer") != best["answer"]
         ):
-            return LookupResult(status="MISS", reason="candidate_changed")
-        if get_settings().vector_backend != "redisearch":
-            await self.redis.zadd(self._lru_key(tenant), {best["id"]: time.time()}, xx=True)
+            return LookupResult(
+                status="MISS",
+                reason="candidate_changed",
+                candidate_count=count,
+                stage_latency_ms=stage_ms,
+            )
+        if get_settings().vector_backend == "redisearch":
+            await rs.touch_candidate(best["key"], tenant)
+        else:
+            await storage.touch(self.redis, tenant, best["id"])
         return LookupResult(
             status="HIT",
             answer=best["answer"],
@@ -325,37 +460,38 @@ class SemanticCache:
             cached_query=best["query"],
             nli_score=nli_score,
             verifier_invoked=verifier_invoked,
+            candidate_count=count,
+            selected_rank=rank,
+            stage_latency_ms=stage_ms,
         )
 
-    async def store(self, query: str, answer: str, tenant: str) -> None:
+    async def store(self, query: str, answer: str, tenant: str) -> bool:
         async with self._locks[hash(tenant) % len(self._locks)]:
-            await self._store(query, answer, tenant)
+            return await self._store(query, answer, tenant)
 
-    async def _store(self, query: str, answer: str, tenant: str) -> None:
+    async def _store(self, query: str, answer: str, tenant: str) -> bool:
         if not answer.strip() or not get_settings().cache_enabled or is_volatile(query):
-            return
+            return False
         if (
             len(query.encode("utf-8")) + len(answer.encode("utf-8"))
             > get_settings().max_cache_entry_bytes
         ):
-            return
+            return False
         if get_settings().cache_match_mode == "exact":
-            await storage.put(
+            return await storage.put(
                 self.redis,
                 tenant,
                 hashlib.sha256(query.encode("utf-8")).hexdigest(),
                 {"query": query, "answer": answer, "vec": ""},
             )
-            return
         vec = await self._infer(self.embedder.embed, query)
 
         if get_settings().vector_backend == "redisearch":
             await rs.ensure_index(len(vec))
-            await rs.add(query, answer, vec, tenant)
-            return
+            return bool(await rs.add(query, answer, vec, tenant))
 
         eid = uuid.uuid4().hex
-        await storage.put(
+        stored = await storage.put(
             self.redis,
             tenant,
             eid,
@@ -366,8 +502,10 @@ class SemanticCache:
                 "ts": str(time.time()),
             },
         )
-        self._index.pop(tenant, None)
-        self._versions.pop(tenant, None)
+        if stored:
+            self._index.pop(tenant, None)
+            self._versions.pop(tenant, None)
+        return stored
 
     async def clear(self, tenant: str | None = None) -> None:
         if tenant is None:

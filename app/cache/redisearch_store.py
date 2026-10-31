@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 import re
-import time
 import uuid
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
@@ -114,10 +113,10 @@ async def validate_index(dim: int) -> None:
     raise RuntimeError("RediSearch vector field missing")
 
 
-async def add(query: str, answer: str, vec: np.ndarray, tenant: str) -> str:
+async def add(query: str, answer: str, vec: np.ndarray, tenant: str) -> str | None:
     eid = uuid.uuid4().hex
     async with _client() as r:
-        await storage.put(
+        stored = await storage.put(
             r,
             tenant,
             eid,
@@ -129,7 +128,7 @@ async def add(query: str, answer: str, vec: np.ndarray, tenant: str) -> str:
             },
             namespace=_namespace(),
         )
-    return eid
+    return eid if stored else None
 
 
 async def clear(tenant: str | None = None) -> None:
@@ -192,8 +191,6 @@ async def knn(vec: np.ndarray, tenant: str, k: int = 1, *, include_key: bool = F
                 1.0 - float(values.get(b"score", b"1")),
             )
             out.append((*hit, key.decode()) if include_key else hit)
-            eid = key.decode().rsplit(":", 1)[1]
-            await r.zadd(f"{_namespace()}:lru:{tenant}", {eid: time.time()}, xx=True)
         return out
 
 
@@ -209,6 +206,18 @@ async def read_candidate(key: str, tenant: str) -> dict[str, str] | None:
         return {"query": row[b"query"].decode(), "answer": row[b"answer"].decode()}
     except KeyError:
         return None
+
+
+async def touch_candidate(key: str, tenant: str) -> None:
+    if not key.startswith(f"{_namespace()}:entry:{tenant}:"):
+        return
+    async with _client() as r:
+        await storage.touch(r, tenant, key.rsplit(":", 1)[1], namespace=_namespace())
+
+
+async def occupancy(tenant: str) -> dict[str, int]:
+    async with _client() as r:
+        return await storage.occupancy(r, tenant, namespace=_namespace())
 
 
 async def smoke_test() -> None:

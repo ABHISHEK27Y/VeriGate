@@ -4,11 +4,12 @@ from types import SimpleNamespace
 
 import numpy as np
 
-from app.cache.verifier import NliVerifier
+from app.cache.verifier import NliVerifier, verifier_scope
 
 WINDOW = 12
 OVER_WINDOW = 13
 HIGH_ENTAILMENT = 0.9
+TWO_SCOPES = 2
 
 
 class PairTokenizer:
@@ -67,3 +68,15 @@ def test_long_pair_does_not_poison_next_short_pair() -> None:
     assert verifier.entail_prob("one " * 20, "two " * 20) is None
     assert verifier.assess("one two", "three four").status == "ok"
     assert verifier.model.predict_calls == 1
+
+
+def test_nli_memoization_is_partitioned_by_authorized_cache_scope() -> None:
+    verifier = NliVerifier()
+    verifier.model = PairModel()
+    for scope in ("private-alice", "private-alice", "workspace-engineering"):
+        token = verifier_scope.set(scope)
+        try:
+            assert verifier.assess("one two", "three four").status == "ok"
+        finally:
+            verifier_scope.reset(token)
+    assert verifier.model.predict_calls == TWO_SCOPES

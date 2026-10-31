@@ -28,17 +28,28 @@ class Settings(BaseSettings):
     cache_match_mode: Literal["exact", "semantic"] = "exact"
     answer_policy_artifact: str = ""  # explicit opt-in; empty keeps historical semantic policy
     answer_policy_prewarm: bool = False  # fail startup if the enabled NLI policy cannot initialize
+    organization_config_path: str = ""  # optional hashed-key organization directory
     cache_epoch: str = "1"
     max_request_bytes: int = Field(default=65536, gt=0)
     max_concurrent_requests: int = Field(default=64, gt=0)
     request_body_timeout: float = Field(default=10, gt=0)
     max_cached_tenants: int = Field(default=16, gt=0)
     max_cache_entry_bytes: int = Field(default=65536, gt=0)
+    shared_cache_entry_limit: int = Field(default=5000, gt=0)
+    private_cache_entry_limit: int = Field(default=256, gt=0)
+    shared_cache_byte_limit: int = Field(default=64_000_000, gt=0)
+    private_cache_byte_limit: int = Field(default=8_000_000, gt=0)
+    organization_cache_entry_limit: int = Field(default=20_000, gt=0)
+    organization_cache_byte_limit: int = Field(default=256_000_000, gt=0)
+    semantic_retrieval_k: int = Field(default=5, ge=1, le=20)
+    semantic_verify_limit: int = Field(default=5, ge=1, le=20)
+    semantic_verify_budget_ms: int = Field(default=1500, gt=0, le=30000)
     # Base threshold T_base. Calibrated for the "minilm" backend (semantic scores sit
     # lower than lexical ones). The adaptive logic raises it for risky queries.
     cache_similarity_base: float = 0.72
     cache_policy_static: bool = False  # evaluation baseline; default stays adaptive
     answer_policy_subject_guard: bool = True  # opt-in policy's named-work identity check
+    answer_policy_technical_guard: bool = False  # unvalidated technical guard is opt-in
 
     # Embeddings
     #   "minilm" -> real semantic embeddings via sentence-transformers (default)
@@ -119,15 +130,17 @@ class Settings(BaseSettings):
             return
         if not self.redis_url:
             raise ValueError("Production requires shared Redis")
-        if not self.api_key_set or "demo-key-123" in self.api_key_set:
-            raise ValueError("Production requires non-demo API keys")
+        if (
+            not self.api_key_set and not self.organization_config_path
+        ) or "demo-key-123" in self.api_key_set:
+            raise ValueError("Production requires non-demo gateway credentials")
         if self.metrics_token == "internal-metrics-token" or not self.metrics_token:
             raise ValueError("Production requires a private metrics token")
         if len(self.api_key_salt) < _MIN_SALT_LENGTH:
             raise ValueError("Production requires API_KEY_SALT of at least 32 characters")
         if "*" in self.cors_origins:
             raise ValueError("Production CORS must use explicit origins")
-        if self.llm_provider in {"mock", "controlled-eval"}:
+        if self.api_key_set and self.llm_provider in {"mock", "controlled-eval"}:
             raise ValueError("Production requires a real provider")
 
     @property

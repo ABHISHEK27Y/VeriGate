@@ -324,6 +324,44 @@ test_changed_redisearch_answer_after_policy_decision_is_miss.config_overrides = 
 }
 
 
+def test_expired_redisearch_candidate_after_policy_decision_is_miss(client, monkeypatch) -> None:
+    cache = client.app.state.semantic_cache
+    cache._policy.verifier = ControlledVerifier()
+    tenant = tenant_id("demo-key-123")
+    stored = "What is the capital of France?"
+    incoming = "Name France's capital city."
+    key = f"test:rs:entry:{tenant}:expiring"
+
+    async def fake_knn(_vec, _tenant, k=5, *, include_key=False):
+        assert include_key and k == REDISEARCH_NEIGHBORS
+        return [(stored, "Paris", 0.8, key)]
+
+    async def expired_candidate(_key, _tenant):
+        assert _key == key and _tenant == tenant
+
+    monkeypatch.setattr(rs, "knn", fake_knn)
+    monkeypatch.setattr(rs, "read_candidate", expired_candidate)
+
+    async def lookup():
+        token = _runtime.set(
+            client.app.state.config.model_copy(update={"vector_backend": "redisearch"})
+        )
+        try:
+            return await cache.lookup(incoming, tenant)
+        finally:
+            _runtime.reset(token)
+
+    result = client.portal.call(lookup)
+    assert result.status == "MISS"
+    assert result.reason == "expired_or_evicted"
+
+
+test_expired_redisearch_candidate_after_policy_decision_is_miss.config_overrides = {
+    "cache_match_mode": "semantic",
+    "answer_policy_artifact": str(ARTIFACT),
+}
+
+
 @pytest.mark.asyncio
 async def test_redisearch_discards_hash_changed_after_search(monkeypatch) -> None:
     tenant = "t_test"

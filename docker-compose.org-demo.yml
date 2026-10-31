@@ -1,0 +1,17 @@
+# Run with: powershell -File scripts/start_org_demo.ps1
+services:
+  gateway:
+    environment:
+      ENVIRONMENT: development
+      API_KEYS: ""
+      API_KEY_SALT: ${API_KEY_SALT:-verigate-development-only}
+      ORGANIZATION_CONFIG_PATH: /app/config/organizations-demo.json
+      LLM_PROVIDER: mock
+      CACHE_MATCH_MODE: semantic
+      ANSWER_POLICY_ARTIFACT: app/cache/artifacts/answer_policy_v1.json
+      ANSWER_POLICY_PREWARM: "true"
+    volumes:
+      - ./config:/app/config:ro
+      - model-cache:/home/appuser/.cache/huggingface
+volumes:
+  model-cache:

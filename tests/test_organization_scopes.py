@@ -1,0 +1,277 @@
+"""Organization identities and authorized cache scopes through the HTTP gateway."""
+
+from __future__ import annotations
+
+import hashlib
+import hmac
+import json
+from concurrent.futures import ThreadPoolExecutor
+from http import HTTPStatus
+from pathlib import Path
+
+from fastapi.testclient import TestClient
+
+from app.config import Settings
+from app.main import create_app
+from app.organization import OrganizationDirectory
+
+ARTIFACT = Path(__file__).resolve().parents[1] / "app/cache/artifacts/answer_policy_v1.json"
+
+ALICE = "example-alice-key-12345"
+CAROL = "example-carol-key-12345"
+DAVE = "other-dave-key-123456"
+ROTATED = "example-alice-new-key-12345"
+
+
+def digest(key: str, salt: str) -> str:
+    return hmac.new(salt.encode(), key.encode(), hashlib.sha256).hexdigest()
+
+
+def directory_file(path: Path, salt: str) -> None:
+    raw = {
+        "schema_version": 1,
+        "organizations": {
+            "example": {
+                "default_profile": "example-mock",
+                "workspaces": {
+                    "engineering": {
+                        "members": ["alice", "carol"],
+                        "trusted_applications": ["developer-tool"],
+                    }
+                },
+            },
+            "other": {"default_profile": "other-mock", "workspaces": {}},
+        },
+        "provider_profiles": {
+            "example-mock": {"provider": "mock"},
+            "other-mock": {"provider": "mock"},
+        },
+        "credentials": [
+            {
+                "key_digest": digest(key, salt),
+                "organization_id": org,
+                "subject_id": subject,
+                "application_id": "developer-tool",
+                "permissions": ["cache:shared"] if org == "example" else [],
+                "status": "active",
+            }
+            for key, org, subject in (
+                (ALICE, "example", "alice"),
+                (CAROL, "example", "carol"),
+                (DAVE, "other", "dave"),
+            )
+        ],
+    }
+    path.write_text(json.dumps(raw), encoding="utf-8")
+
+
+def settings_for(path: Path, salt: str) -> Settings:
+    return Settings(
+        _env_file=None,
+        api_keys="",
+        api_key_salt=salt,
+        organization_config_path=str(path),
+        llm_provider="mock",
+        cache_match_mode="exact",
+        embedding_backend="hash",
+        vector_backend="inproc",
+    )
+
+
+def ask(client: TestClient, key: str, prompt: str, **extra):
+    return client.post("/v1/chat", json={"prompt": prompt, **extra}, headers={"x-api-key": key})
+
+
+def test_shared_private_cross_org_and_forged_scope(tmp_path: Path) -> None:
+    path = tmp_path / "organizations.json"
+    config = settings_for(path, "scope-test-salt")
+    directory_file(path, config.api_key_salt)
+    with TestClient(create_app(config)) as client:
+        shared = {"cache_scope": "workspace", "workspace": "engineering"}
+        prompt = "Explain Redis cache eviction."
+        first = ask(client, ALICE, prompt, **shared)
+        assert first.status_code == HTTPStatus.OK
+        assert first.json()["cache"] == "MISS"
+        assert first.json()["cache_scope"] == "workspace"
+        assert first.json()["provider_profile"] == "example-mock"
+        reused = ask(client, CAROL, prompt, **shared)
+        assert reused.json()["cache"] == "HIT"
+        assert reused.json()["answer"] == first.json()["answer"]
+        assert reused.json()["subject_id"] == "carol"
+        assert "exact_lookup" in reused.json()["stage_latency_ms"]
+        assert reused.json()["storage_outcome"] == "cache_hit"
+        occupancy = client.get(
+            "/admin/cache/occupancy?scope=workspace&workspace=engineering",
+            headers={"x-api-key": CAROL},
+        )
+        assert occupancy.status_code == HTTPStatus.OK
+        assert occupancy.json()["entries"] == 1
+        assert (
+            client.get(
+                "/admin/cache/occupancy?scope=workspace&workspace=engineering",
+                headers={"x-api-key": DAVE},
+            ).status_code
+            == HTTPStatus.FORBIDDEN
+        )
+        private = ask(client, ALICE, prompt)
+        assert private.json()["cache"] == "MISS"
+        assert ask(client, CAROL, prompt).json()["cache"] == "MISS"
+        assert ask(client, DAVE, prompt).json()["cache"] == "MISS"
+        assert ask(client, DAVE, prompt, **shared).status_code == HTTPStatus.FORBIDDEN
+        cleared = client.post("/admin/cache/clear", headers={"x-api-key": ALICE})
+        assert cleared.status_code == HTTPStatus.OK
+        assert ask(client, CAROL, prompt, **shared).json()["cache"] == "HIT"
+        assert ask(client, ALICE, prompt).json()["cache"] == "MISS"
+        assert (
+            ask(client, CAROL, prompt, organization_id="other", **shared).status_code
+            == HTTPStatus.UNPROCESSABLE_ENTITY
+        )
+        assert (
+            ask(client, CAROL, prompt, cache_scope="workspace", workspace="forged").status_code
+            == HTTPStatus.FORBIDDEN
+        )
+        # Sensitive or unknown content is private even for a member requesting a workspace.
+        sensitive = ask(client, ALICE, "Explain my Redis password", **shared).json()
+        assert sensitive["cache_scope"] == "private"
+        assert sensitive["storage_outcome"] == "response_ineligible"
+        assert ask(client, ALICE, "Explain my Redis password", **shared).json()["cache"] == "MISS"
+        assert ask(client, CAROL, "Explain my Redis password", **shared).json()["cache"] == "MISS"
+
+
+def test_rotation_and_revocation_preserve_subject_scope(tmp_path: Path) -> None:
+    path = tmp_path / "organizations.json"
+    config = settings_for(path, "rotation-test-salt")
+    directory_file(path, config.api_key_salt)
+    before = OrganizationDirectory(config)
+    alice = before.resolve(ALICE)
+    assert alice is not None
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    rotated = {**raw["credentials"][0], "key_digest": digest(ROTATED, config.api_key_salt)}
+    raw["credentials"][0]["status"] = "revoked"
+    raw["credentials"].append(rotated)
+    path.write_text(json.dumps(raw), encoding="utf-8")
+    after = OrganizationDirectory(config)
+    new_alice = after.resolve(ROTATED)
+    assert new_alice is not None
+    assert after.resolve(ALICE) is None
+    assert before.scoped_tenant(alice, "private", "", "mock-example-mock") == after.scoped_tenant(
+        new_alice, "private", "", "mock-example-mock"
+    )
+    with TestClient(create_app(config)) as client:
+        assert (
+            ask(client, ALICE, "Explain Python decorators").status_code == HTTPStatus.UNAUTHORIZED
+        )
+        assert ask(client, ROTATED, "Explain Python decorators").status_code == HTTPStatus.OK
+
+
+def test_live_revocation_and_rotation_without_cache_orphan(tmp_path: Path) -> None:
+    path = tmp_path / "organizations.json"
+    config = settings_for(path, "live-rotation-test-salt")
+    config.daily_request_budget = 1
+    directory_file(path, config.api_key_salt)
+    with TestClient(create_app(config)) as client:
+        first = ask(client, ALICE, "Explain Python decorators").json()
+        assert first["cache"] == "MISS"
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        replacement = {
+            **raw["credentials"][0],
+            "key_digest": digest(ROTATED, config.api_key_salt),
+        }
+        raw["credentials"][0]["status"] = "revoked"
+        raw["credentials"].append(replacement)
+        updated = tmp_path / "updated.json"
+        updated.write_text(json.dumps(raw), encoding="utf-8")
+        updated.replace(path)
+        assert (
+            ask(client, ALICE, "Explain Python decorators").status_code == HTTPStatus.UNAUTHORIZED
+        )
+        rotated = ask(client, ROTATED, "Explain Python decorators").json()
+        assert rotated["cache"] == "HIT"
+        assert rotated["subject_id"] == "alice"
+        assert ask(client, ROTATED, "Explain SQL joins").status_code == HTTPStatus.TOO_MANY_REQUESTS
+
+
+def test_revocation_during_hit_lookup_prevents_serve(tmp_path: Path) -> None:
+    path = tmp_path / "organizations.json"
+    config = settings_for(path, "serve-boundary-test-salt")
+    directory_file(path, config.api_key_salt)
+    with TestClient(create_app(config)) as client:
+        assert ask(client, ALICE, "Explain Python decorators").json()["cache"] == "MISS"
+        original = client.app.state.semantic_cache.lookup
+
+        async def revoke_after_lookup(query: str, tenant: str):
+            result = await original(query, tenant)
+            raw = json.loads(path.read_text(encoding="utf-8"))
+            raw["credentials"][0]["status"] = "revoked"
+            replacement = tmp_path / "revoked.json"
+            replacement.write_text(json.dumps(raw), encoding="utf-8")
+            replacement.replace(path)
+            return result
+
+        client.app.state.semantic_cache.lookup = revoke_after_lookup
+        response = ask(client, ALICE, "Explain Python decorators")
+        assert response.status_code == HTTPStatus.UNAUTHORIZED
+
+
+def test_concurrent_profiles_are_isolated(tmp_path: Path) -> None:
+    path = tmp_path / "organizations.json"
+    config = settings_for(path, "concurrent-test-salt")
+    directory_file(path, config.api_key_salt)
+    with TestClient(create_app(config)) as client, ThreadPoolExecutor(max_workers=2) as pool:
+        futures = [pool.submit(ask, client, key, "Explain SQL joins") for key in (ALICE, DAVE)]
+        responses = [future.result() for future in futures]
+        assert all(response.status_code == HTTPStatus.OK for response in responses)
+        assert responses[0].json()["provider"] == "mock-example-mock"
+        assert responses[1].json()["provider"] == "mock-other-mock"
+        assert responses[0].json()["organization_id"] == "example"
+        assert responses[1].json()["organization_id"] == "other"
+        assert responses[0].json()["cache"] == responses[1].json()["cache"] == "MISS"
+
+
+def test_semantic_retrieval_excludes_unauthorized_private_candidate(tmp_path: Path) -> None:
+    path = tmp_path / "organizations.json"
+    config = settings_for(path, "semantic-scope-test-salt")
+    config.cache_match_mode = "semantic"
+    config.answer_policy_artifact = str(ARTIFACT)
+    directory_file(path, config.api_key_salt)
+    with TestClient(create_app(config)) as client:
+        first = ask(client, ALICE, "Explain Python decorators").json()
+        assert first["cache"] == "MISS"
+        other = ask(client, CAROL, "Explain Python decorators").json()
+        assert other["cache"] == "MISS"
+        assert other["candidate_count"] == 0
+        assert other["note"] == "empty_cache"
+
+
+def test_full_private_cache_keeps_provider_answer(tmp_path: Path) -> None:
+    path = tmp_path / "organizations.json"
+    config = settings_for(path, "capacity-http-test-salt")
+    config.private_cache_byte_limit = 10
+    directory_file(path, config.api_key_salt)
+    with TestClient(create_app(config)) as client:
+        result = ask(client, ALICE, "Explain Python decorators")
+        assert result.status_code == HTTPStatus.OK
+        assert result.json()["provider"] == "mock-example-mock"
+        assert result.json()["storage_outcome"] == "ineligible_or_full"
+        assert ask(client, ALICE, "Explain Python decorators").json()["cache"] == "MISS"
+
+
+def test_missing_profile_secret_is_explicit_and_readiness_fails(
+    tmp_path: Path, monkeypatch
+) -> None:
+    path = tmp_path / "organizations.json"
+    config = settings_for(path, "missing-secret-test-salt")
+    directory_file(path, config.api_key_salt)
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    raw["provider_profiles"]["example-mock"] = {
+        "provider": "openai",
+        "secret_env": "VERIGATE_TEST_MISSING_PROVIDER_SECRET",
+    }
+    path.write_text(json.dumps(raw), encoding="utf-8")
+    monkeypatch.delenv("VERIGATE_TEST_MISSING_PROVIDER_SECRET", raising=False)
+    with TestClient(create_app(config)) as client:
+        assert client.get("/ready").status_code == HTTPStatus.SERVICE_UNAVAILABLE
+        assert (
+            ask(client, ALICE, "Explain Python decorators").status_code
+            == HTTPStatus.SERVICE_UNAVAILABLE
+        )

@@ -26,6 +26,7 @@ import re
 import threading
 import time
 from collections import OrderedDict
+from contextvars import ContextVar
 from dataclasses import dataclass
 from difflib import SequenceMatcher
 from typing import Literal
@@ -38,6 +39,7 @@ from ..metrics import STAGE_LATENCY
 
 _MAX_NLI_PAIRS = 8192
 _MAX_PLAUSIBLE_MODEL_WINDOW = 100_000
+verifier_scope: ContextVar[str] = ContextVar("verifier_scope", default="standalone")
 
 log = logging.getLogger("verigate.verifier")
 
@@ -289,7 +291,7 @@ class NliVerifier:
         self.model = None
         self.unavailable = False
         self.lock = threading.Lock()
-        self.cache: OrderedDict[tuple[str, str], NliAssessment] = OrderedDict()
+        self.cache: OrderedDict[tuple[str, str, str], NliAssessment] = OrderedDict()
 
     def prewarm(self) -> None:
         """Load and run the pinned model before readiness when configured."""
@@ -299,7 +301,7 @@ class NliVerifier:
 
     def assess(self, premise: str, hypothesis: str) -> NliAssessment:
         """Score only when the complete paired input fits the model window."""
-        key = (premise, hypothesis)
+        key = (verifier_scope.get(), premise, hypothesis)
         with self.lock:
             if key in self.cache:
                 self.cache.move_to_end(key)

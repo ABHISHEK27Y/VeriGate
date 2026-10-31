@@ -27,6 +27,9 @@ VERIFY and REJECT both call the upstream provider. The [controlled comparison](d
 reports what that policy did on authored factoid cases, including its latency and limits.
 For a free, seeded factual demonstration with real MiniLM/NLI, follow the
 [local semantic demo](docs/SEMANTIC_DEMO.md).
+The optional [organization workspace demo](docs/ORG_WORKSPACE.md) shows two
+authorized users sharing a technical cache while private entries stay isolated.
+It uses server-owned hashed gateway credentials and mock provider profiles.
 
 The [1,000-question controlled-answer HTTP stress evaluation](docs/STRESS_EVALUATION.md)
 tests 200 NQ-derived song-writer families with real Redis Stack, MiniLM, and

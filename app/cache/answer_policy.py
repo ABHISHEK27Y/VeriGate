@@ -15,6 +15,8 @@ from typing import Literal
 
 from ..embeddings import tokenize
 from .subject_identity import conflicting_named_work
+from .technical_identity import compare as compare_technical_identity
+from .technical_identity import normalized_for_numbers
 from .verifier import NliVerifier, _negation_flag, _numbers
 
 Action = Literal["ACCEPT", "VERIFY", "REJECT"]
@@ -86,6 +88,7 @@ class AnswerPolicy:
         similarity: float,
         verifier: NliVerifier,
         subject_guard: bool = True,
+        technical_guard: bool = False,
     ) -> AnswerDecision:
         if (
             not answer.strip()
@@ -97,12 +100,16 @@ class AnswerPolicy:
         similarity = max(-1.0, min(1.0, similarity))
         if similarity < self.min_similarity:
             return AnswerDecision("REJECT", "below_retrieval_threshold", None)
-        if _numbers(incoming) != _numbers(stored):
+        if _numbers(normalized_for_numbers(incoming)) != _numbers(normalized_for_numbers(stored)):
             return AnswerDecision("REJECT", "number_mismatch", None)
         if _negation_flag(incoming) != _negation_flag(stored):
             return AnswerDecision("REJECT", "negation_mismatch", None)
         if subject_guard and conflicting_named_work(incoming, stored):
             return AnswerDecision("REJECT", "subject_identity_conflict", None)
+        if technical_guard and (technical_reason := compare_technical_identity(incoming, stored)):
+            if technical_reason.endswith("uncertain"):
+                return AnswerDecision("VERIFY", technical_reason, None)
+            return AnswerDecision("REJECT", technical_reason, None)
         incoming_tokens, stored_tokens = tokenize(incoming), tokenize(stored)
         answer_tokens = tokenize(answer)
         # A proposed answer repeated in the new question may play a different

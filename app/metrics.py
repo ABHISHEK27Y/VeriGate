@@ -9,6 +9,9 @@ from prometheus_client import CollectorRegistry, Counter, Histogram, generate_la
 REQUESTS = Counter("verigate_requests_total", "Total chat requests", ["outcome"])
 CACHE = Counter("verigate_cache_total", "Cache outcomes", ["result"])  # hit/miss/bypass
 CACHE_FAILURES = Counter("verigate_cache_failures_total", "Cache operation failures", ["stage"])
+CACHE_WRITES = Counter(
+    "verigate_cache_writes_total", "Cache write outcomes; no answer quality label", ["result"]
+)
 CANDIDATE_VERIFIER_REJECTED = Counter(
     "verigate_candidate_verifier_rejected_total",
     "Candidate cache matches rejected by the verifier; correctness is unlabelled",

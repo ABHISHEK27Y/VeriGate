@@ -122,9 +122,9 @@ section{padding:74px 0}
 @media(max-width:820px){.play{grid-template-columns:1fr}}
 .panel{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:22px}
 label{display:block;font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px}
-input,textarea{width:100%;background:var(--bg);color:var(--text);border:1px solid var(--line2);
+input,textarea,select{width:100%;background:var(--bg);color:var(--text);border:1px solid var(--line2);
   border-radius:8px;padding:11px 12px;font-size:14.5px;font-family:inherit;transition:border-color .15s}
-input:focus,textarea:focus{outline:none;border-color:var(--accent)}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent)}
 textarea{resize:vertical;min-height:56px;line-height:1.5}
 .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 .chip{cursor:pointer;font-size:12.5px;color:var(--muted);background:var(--bg);
@@ -256,6 +256,11 @@ footer{border-top:1px solid var(--line);padding:34px 0 60px;color:var(--faint);f
       </div>
       <label>Query</label>
       <textarea id="query" placeholder="how do I reset my password"></textarea>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px">
+        <div><label for="scope">Requested scope</label><select id="scope"><option value="private">Private</option><option value="workspace">Authorized workspace</option></select></div>
+        <div><label for="workspace">Workspace</label><input id="workspace" placeholder="engineering" autocomplete="off"></div>
+      </div>
+      <div class="hint">The gateway derives organization, user, and workspace access from the key. Requesting a workspace does not grant access.</div>
       <div class="actions" style="margin-top:12px">
         <button class="btn pri sm" id="ask">Ask</button>
         <button class="btn sec sm" id="clear">Clear cache</button>
@@ -268,6 +273,9 @@ footer{border-top:1px solid var(--line);padding:34px 0 60px;color:var(--faint);f
         A MISS response from the mock provider is normally cached, so repeating that question
         may HIT its mock placeholder. Restore fixtures to reset this demo tenant; Clear cache
         removes all fixtures without restoring them.</div>
+      <div class="hint" id="org-demo-note" hidden>Organization mock demo: the Python decorator answer is a labelled factual fixture,
+        not mock generation. Select the engineering workspace for shared queries. Mock MISS responses are placeholders and may be cached;
+        repeating a MISS can therefore HIT that placeholder. The legacy Restore fixtures button does not reset this workspace.</div>
       <div class="err" id="err"></div>
       <div class="result" id="result">
         <span class="rbadge" id="rbadge">—</span>
@@ -282,6 +290,15 @@ footer{border-top:1px solid var(--line);padding:34px 0 60px;color:var(--faint);f
           <div><span>browser HTTP time</span><b id="rhttp">—</b></div>
           <div><span>similarity</span><b id="rsim">—</b></div>
           <div><span>threshold</span><b id="rthr">—</b></div>
+          <div><span>authenticated identity</span><b id="ridentity">—</b></div>
+          <div><span>effective scope</span><b id="rscope">—</b></div>
+          <div><span>provider profile</span><b id="rprofile">—</b></div>
+          <div><span>candidates / selected rank</span><b id="rcandidates">—</b></div>
+          <div><span>policy detail</span><b id="rstructure">—</b></div>
+          <div><span>NLI model evidence</span><b id="rnli">—</b></div>
+          <div><span>storage outcome</span><b id="rstorage">—</b></div>
+          <div><span>configured TTL</span><b id="rttl">—</b></div>
+          <div style="grid-column:1/-1"><span>measured stages</span><b id="rstages">—</b></div>
           <div style="grid-column:1/-1"><span>reason</span><b id="rreason">—</b></div>
         </div>
       </div>
@@ -332,7 +349,8 @@ footer{border-top:1px solid var(--line);padding:34px 0 60px;color:var(--faint);f
 <script>
 const $=id=>document.getElementById(id);
 let s={total:0,hits:0,miss:0,bypass:0,declined:0,errors:0};
-const DEMO_ANSWERS=new Set(["Jane Austen","1969","Mars"]);
+let configuredTtl=null;
+const DEMO_ANSWERS=new Set(["Jane Austen","1969","Mars","A Python decorator wraps a function to add behavior without changing its source."]);
 const EX=[
   {t:"how do I reset my password",d:"MISS"},
   {t:"what is the process to recover my account password",d:"paraphrase test"},
@@ -348,8 +366,13 @@ const SEMANTIC_EX=[
   {t:"Which planet is nicknamed the Red Planet?",d:"valid paraphrase"},
   {t:"Which planet is known as the Blue Planet?",d:"different planet"},
 ];
+const ORG_EX=[
+  {t:"Explain how Python decorators work.",d:"shared factual fixture",scope:"workspace",workspace:"engineering"},
+  {t:"How do Python generators work?",d:"misleading near-match",scope:"workspace",workspace:"engineering"},
+  {t:"Explain Python functions.",d:"private isolation",scope:"private"},
+];
 function showChips(examples){$("chips").innerHTML="";examples.forEach(e=>{const c=document.createElement("div");c.className="chip";
-  c.innerHTML=`${e.t}<small>${e.d}</small>`;c.onclick=()=>{$("query").value=e.t;ask();};$("chips").appendChild(c);});
+  c.innerHTML=`${e.t}<small>${e.d}</small>`;c.onclick=()=>{$("query").value=e.t;if(e.scope){$("scope").value=e.scope;$("workspace").value=e.workspace||"";}ask();};$("chips").appendChild(c);});
 }
 showChips(EX);
 
@@ -357,12 +380,14 @@ async function health(){try{const r=await fetch("/health");if(!r.ok)throw new Er
   if(!h.cache_match_mode&&$("apikey").value){const detail=await fetch("/admin/config",{headers:{"x-api-key":$("apikey").value}});if(detail.ok)h=await detail.json();}
   if(!h.cache_match_mode){$("cfg").textContent="Enter an API key to view configuration.";$("stat").textContent="ready · configuration private";$("mode-label").textContent="Configuration private";return;}
   const answerAware=h.cache_match_mode==="semantic"&&Boolean(h.answer_policy_version);
+  configuredTtl=h.cache_ttl_sec??null;
   $("restore").hidden=!h.demo_restore_available;
-  showChips(h.demo_restore_available?SEMANTIC_EX:EX);
+  showChips(h.organization_demo_available?ORG_EX:h.demo_restore_available?SEMANTIC_EX:EX);
   $("demo-note").hidden=!h.demo_restore_available;
+  $("org-demo-note").hidden=!h.organization_demo_available;
   $("mode-banner").classList.toggle("semantic",answerAware);
   $("mode-label").textContent=answerAware?"Answer-aware semantic cache":h.cache_match_mode==="semantic"?"Semantic cache":"Exact cache";
-  $("mode-detail").textContent=answerAware?h.embedding_backend+" embeddings + NLI · "+(h.answer_policy_prewarm?"prewarmed":"lazy NLI")+" · provider: "+(h.providers||[]).join(", "):"Provider: "+(h.providers||[]).join(", ");
+  $("mode-detail").textContent=answerAware?h.embedding_backend+" embeddings + NLI · "+(h.answer_policy_prewarm?"prewarmed":"lazy NLI")+" · "+(h.organization_demo_available?"mock organization profiles":"provider: "+(h.providers||[]).join(", ")):"Provider: "+(h.providers||[]).join(", ");
   $("cfg").innerHTML=[["matching",h.cache_match_mode],["policy",h.answer_policy_version||h.cache_policy_version],
     ["answer-aware NLI",answerAware?"enabled":"off"],["NLI prewarm",h.answer_policy_prewarm?"ready":"off"],["redis",h.redis],["vector index",h.vector_backend],["embeddings",h.embedding_backend],
     ["provider",(h.providers||[]).join(", ")]].map(([k,v])=>`<div class="c"><div class="k">${k}</div><div class="v">${v}</div></div>`).join("");
@@ -374,7 +399,7 @@ function setS(){$("s-total").textContent=s.total;const d=s.hits+s.miss;
   $("s-hits").textContent=s.hits;$("s-miss").textContent=s.miss;$("s-bypass").textContent=s.bypass;$("s-declined").textContent=s.declined;$("s-errors").textContent=s.errors;}
 
 async function ask(){const q=$("query").value.trim();if(!q)return;$("ask").disabled=true;$("err").textContent="";s.total++;const started=performance.now();
-  try{const r=await fetch("/v1/chat",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":$("apikey").value},body:JSON.stringify({prompt:q})});
+  try{const r=await fetch("/v1/chat",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":$("apikey").value},body:JSON.stringify({prompt:q,cache_scope:$("scope").value,workspace:$("scope").value==="workspace"?$("workspace").value.trim():null})});
     if(r.status===429){s.errors++;$("err").textContent="Rate limited (429).";return;}
     if(r.status===401){s.errors++;$("err").textContent="Invalid API key (401).";return;}
     if(!r.ok)throw new Error("Gateway returned HTTP "+r.status);
@@ -382,16 +407,23 @@ async function ask(){const q=$("query").value.trim();if(!q)return;$("ask").disab
     const declined=decision==="VERIFY"||decision==="REJECT"||(d.note||"").startsWith("verify_rejected");
     const b=$("rbadge");b.textContent=(decision?decision+" · ":declined?"DECLINED · ":"")+d.cache;b.className="rbadge b-"+(declined?"REJECT":d.cache);
     $("ranswer").textContent=d.answer;$("rprov").textContent=d.provider;
-    $("rsource").textContent=d.provider==="cache"?(DEMO_ANSWERS.has(d.answer)?"matches seeded fixture":"cached answer"):(d.provider==="mock"?"mock placeholder":"generated answer");
+    $("rsource").textContent=d.provider==="cache"?(DEMO_ANSWERS.has(d.answer)?"matches seeded fixture":"cached answer"):(d.provider.startsWith("mock")?"mock placeholder":"generated answer");
     $("rupstream").textContent=d.provider==="cache"?"no":(d.note||"").startsWith("coalesced:")?"shared call":"yes";
     $("rintended").textContent=d.intended_provider||"—";$("rfallback").textContent=d.fallback_used?"yes":"no";$("rlat").textContent=(d.latency_ms??0)+" ms";$("rhttp").textContent=browserMs+" ms";
     $("rsim").textContent=d.similarity!=null?d.similarity.toFixed(3):"—";$("rthr").textContent=d.threshold!=null?d.threshold.toFixed(3):"—";
+    $("ridentity").textContent=d.organization_id&&d.subject_id?d.organization_id+" / "+d.subject_id:"legacy private key";
+    $("rscope").textContent=d.cache_scope||"—";$("rprofile").textContent=d.provider_profile||d.intended_provider||"—";
+    $("rcandidates").textContent=(d.candidate_count??"—")+" / "+(d.selected_rank??"—");
+    $("rstructure").textContent=(d.note||"—").split(":").slice(1).join(":")||d.note||"—";
+    $("rnli").textContent=d.nli_score!=null?d.nli_score.toFixed(3)+" (model evidence)":d.verifier_invoked?"invoked; score unavailable":"not invoked";
+    $("rstorage").textContent=d.storage_outcome||"—";$("rttl").textContent=configuredTtl!=null?configuredTtl+" s configured (not remaining TTL)":"—";
+    $("rstages").textContent=Object.entries(d.stage_latency_ms||{}).map(([name,ms])=>name+" "+ms+" ms").join(" · ")||"—";
     $("rreason").textContent=d.note||"—";$("result").style.display="block";
     if(d.cache==="HIT")s.hits++;else if(d.cache==="BYPASS")s.bypass++;else s.miss++;if(declined)s.declined++;setS();
     const col=declined?"var(--block)":d.cache==="HIT"?"var(--hit)":d.cache==="BYPASS"?"var(--bypass)":"var(--miss)";
     const tr=document.createElement("tr");
-    tr.innerHTML=`<td><span class="dot" style="background:${col}"></span>${declined?"DECLINED":d.cache}</td>
-      <td>${q.replace(/</g,"&lt;")}</td><td class="c">${d.similarity!=null?d.similarity.toFixed(2):"—"}</td><td class="c">${d.latency_ms??"—"}</td>`;
+    tr.innerHTML=`<td><span class="dot" style="background:${col}"></span>${declined?"DECLINED":d.cache}</td><td></td><td class="c">${d.similarity!=null?d.similarity.toFixed(2):"—"}</td><td class="c">${d.latency_ms??"—"}</td>`;
+    tr.children[1].textContent=q;
     $("log").prepend(tr);while($("log").children.length>100)$("log").lastElementChild.remove();
   }catch(e){s.errors++;$("err").textContent="Request failed: "+e.message;}finally{$("ask").disabled=false;setS();}}
 

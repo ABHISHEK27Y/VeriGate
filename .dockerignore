@@ -17,6 +17,7 @@ docs/
 .gitignore
 
 audit/
+config/
 .coverage
 .mypy_cache/
 .ruff_cache/

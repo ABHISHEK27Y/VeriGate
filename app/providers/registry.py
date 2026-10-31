@@ -16,6 +16,7 @@ from typing import Any
 
 from ..complexity import is_hard
 from ..config import get_settings
+from ..organization import OrganizationDirectory, ProviderProfile
 from ..redis_client import create_redis
 from . import breaker
 from .base import Provider
@@ -100,6 +101,26 @@ class ProviderRegistry:
             cascade=cascade,
             redis=redis_client if redis_client is not None else create_redis(),
         )
+
+    @classmethod
+    def from_profile(
+        cls, profile: ProviderProfile, directory: OrganizationDirectory, redis_client
+    ) -> ProviderRegistry:
+        """Build an immutable, profile-owned client without changing global settings."""
+        label = f"{profile.provider}-{profile.profile_id}"
+        provider: Provider
+        if profile.provider == "mock":
+            provider = MockProvider(name_override=label)
+        else:
+            config = get_settings()
+            base = profile.base_url or (
+                config.openai_base_url if profile.provider == "openai" else config.gemini_base_url
+            )
+            model = profile.model or (
+                config.openai_model if profile.provider == "openai" else config.gemini_model
+            )
+            provider = _real(label, directory.profile_secret(profile.profile_id), base, model)
+        return cls(providers=(provider,), redis=redis_client)
 
     async def aclose(self) -> None:
         providers = [*self.providers, *(self.cascade.values() if self.cascade else [])]
