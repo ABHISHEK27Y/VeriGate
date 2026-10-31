@@ -173,6 +173,21 @@ async def run(output: Path) -> Path:  # noqa: PLR0912, PLR0915 - one frozen benc
                 rows.append(first)
                 await cache.clear(tenant)
 
+                # The cold request may exhaust the verifier budget while its model
+                # keeps loading in a protected worker. Establish warm state through
+                # observed HTTP decisions, and retain every warmup abstention.
+                warmup_succeeded = False
+                for attempt in range(8):
+                    await cache.clear(tenant)
+                    await cache.store(valid["cached_query"], valid["cached_answer"], tenant)
+                    warmup = await _request(
+                        client, attempt, "warmup_valid_semantic", valid["incoming_query"]
+                    )
+                    rows.append(warmup)
+                    if warmup["cache"] == "HIT":
+                        warmup_succeeded = True
+                        break
+
                 for trial in range(TRIALS):
                     for scenario, case, prompt in (
                         ("exact_hit", valid, valid["cached_query"]),
@@ -246,6 +261,8 @@ async def run(output: Path) -> Path:  # noqa: PLR0912, PLR0915 - one frozen benc
         "nli_model": "cross-encoder/nli-deberta-v3-xsmall",
         "nli_revision": "a150876415327c80daeff35ca6f68f5ed8cf5c24",
         "trials": TRIALS,
+        "warmup_attempts": sum(row["scenario"] == "warmup_valid_semantic" for row in rows),
+        "warmup_succeeded": warmup_succeeded,
         "cold_startup_ms": round(cold_startup_ms, 3),
         "python": platform.python_version(),
         "platform": platform.platform(),
@@ -265,7 +282,7 @@ async def run(output: Path) -> Path:  # noqa: PLR0912, PLR0915 - one frozen benc
         "rejected_candidate": "MISS",
         "cold_miss": "MISS",
     }
-    if any(
+    if not warmup_succeeded or any(
         row["http_status"] != HTTP_OK
         or (row["scenario"] in expected and row["cache"] != expected[row["scenario"]])
         for row in rows

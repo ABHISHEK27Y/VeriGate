@@ -252,6 +252,19 @@ workspace-edit regression. Per-scope verifier memoization can be purged on
 cache clear in the current worker. Cross-worker purge and in-flight write
 fencing are not implemented; the clear contract is limited accordingly.
 
+CI follow-up: `d76c9db` failed its generated test-count check after the suite
+grew. `e1fd935` refreshed those files from a full test run. Its tests,
+lint/typecheck, Docker build, and security audit passed, but its real-model
+benchmark failed: one of three valid semantic trials returned a safe
+`verification_budget_exhausted` MISS while the cold NLI worker was still
+initializing. Saved CI rows show 2/3 valid semantic HITs, 3/3 exact HITs,
+3/3 rejected-candidate MISSes, and no HTTP errors. The benchmark harness now
+records warmup HTTP attempts and begins warm trials only after observing valid
+reuse. Historical source verification uses the original committed script bytes.
+The revised harness passed locally with pinned MiniLM/NLI and isolated Redis;
+no runtime threshold or verification budget changed. Exact-commit CI for this
+follow-up remains to be checked.
+
 | Phase | Implemented change and regression | Measured result or limitation | Next executable task |
 |---|---|---|---|
 | 1. Establish state | Verified PR #3 branch from `bd1e02b`; left pre-existing untracked `audit/` untouched. | Previous five CI jobs passed on that commit. | Review final PR diff and CI again. |
