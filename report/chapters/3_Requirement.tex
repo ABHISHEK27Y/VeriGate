@@ -1,5 +1,5 @@
 \section{Introduction}
-Requirement engineering translates the goals of Chapter~1 into precise, verifiable specifications. For VeriGate the requirements divide into those governing the caching intelligence (the adaptive threshold, verifier, and volatility logic), those governing the gateway's role as a reliable proxy in front of paid LLM providers, and those governing production safety (isolation, budgeting, observability). Functional requirements state \emph{what} the system must do; non-functional requirements state \emph{how well} it must do it.
+Requirement engineering translates the project goals into specifications for the implemented gateway. VeriGate combines a safe exact-prompt cache default with an opt-in semantic-cache research path, provider routing and streaming, and operational controls. This chapter distinguishes implemented behaviour from optional modes and from deployment requirements; functional requirements state what the system does, while non-functional requirements describe the quality and limits that must be evaluated.
 
 \section{System Analysis}
 \subsection{Limitations of the Existing System}
@@ -10,14 +10,14 @@ Before designing VeriGate, existing semantic-caching and gateway solutions were 
     \item \textbf{No notion of staleness.} Time-sensitive queries are cached and served like any other, returning stale answers for volatile information.
     \item \textbf{Cross-tenant leakage.} A global semantic cache lets one client's question match and receive another client's answer --- a confidentiality breach unique to \emph{semantic} (as opposed to exact) caching, and the single most serious risk for a shared gateway.
     \item \textbf{Cost-blind routing.} Every cache-missed query is sent to one model, overpaying on queries a cheaper model would answer correctly.
-    \item \textbf{Operational fragility.} A dead or slow provider is retried on every request, and there is no spend cap, so a burst of unique queries can exhaust both latency budgets and money.
+    \item \textbf{Operational fragility.} Provider failures need bounded retry/failover behaviour, and request admission limits must not be confused with token- or money-based spending controls.
 \end{enumerate}
 
 \subsection{Feasibility Study}
 \begin{itemize}
     \item \textbf{Technical Feasibility:} The system is built entirely on mature open-source components --- FastAPI \cite{fastapi}, the sentence-transformers encoder \cite{sentencetransformers}, Redis, and standard scientific-Python libraries --- and requires no GPU for inference. The default in-process vector index runs in a single Python process, and the RediSearch backend uses a standard Redis Stack container. The project is therefore technically highly feasible.
     \item \textbf{Operational Feasibility:} The gateway is a drop-in HTTP proxy: an existing application changes only the base URL of its LLM client. An operator dashboard makes the cache's behaviour observable and testable without writing code, easing adoption.
-    \item \textbf{Economic Feasibility:} All dependencies are free and open-source, and the container runs on a single small instance. The system's \emph{purpose} is to save money --- each cache hit and each cheap-model route is avoided or reduced LLM spend --- so it is economically self-justifying. Estimated hosting cost on a free-tier or small cloud instance is approximately USD~0--7 per month.
+    \item \textbf{Economic Feasibility:} The gateway may reduce repeated provider calls when cache hits occur and may route selected requests to a cheaper model when the optional cascade is enabled. Actual savings depend on workload, provider pricing, cache precision, and routing quality; this project does not claim a fixed hosting cost or guaranteed monetary saving.
 \end{itemize}
 
 \section{System Requirements}
@@ -55,26 +55,26 @@ The stack is uniformly Python-based to keep the caching layer and the web server
 \begin{enumerate}
     \item \textbf{Authenticated chat endpoint.} The gateway must accept a chat request bearing a valid API key and return a completion; requests without a valid key must be rejected with HTTP~401.
     \item \textbf{Streaming.} The gateway must support token streaming (SSE) as well as a non-streaming JSON response.
-    \item \textbf{Semantic cache lookup.} For each query the system must embed the query, find its nearest cached neighbour within the caller's tenant, and, subject to the policy below, serve the stored answer as a HIT rather than calling the provider.
+    \item \textbf{Cache lookup modes.} The default exact mode reuses only an identical UTF-8 prompt within the caller's tenant and cache namespace. When semantic mode is explicitly enabled, the system embeds the query, retrieves a tenant-scoped nearest neighbour, and applies the configured cache policy before reusing an answer.
     \item \textbf{Adaptive threshold.} The effective similarity threshold must be adjusted per query as a function of neighbourhood density, rather than being a single global constant.
     \item \textbf{Self-verification.} Before serving a candidate hit, the system must run a Tier-1 structural verifier (numbers, negation, named entities) and, when enabled, a Tier-2 NLI verifier; a candidate that fails verification must be rejected as a false hit and treated as a MISS.
     \item \textbf{Volatility bypass.} Queries classified as time-sensitive must bypass the cache (never served from and never written to it).
     \item \textbf{Fast lookup.} The cache-hit path must use a vectorised index (in-process or RediSearch) so that lookup remains far faster than a provider call as the cache grows.
     \item \textbf{Cost-aware cascade.} When enabled, the gateway must score query complexity and route easy queries to a cheap model, escalating hard queries to a strong model, keeping the unused tier as failover.
-    \item \textbf{Provider abstraction and failover.} The gateway must front OpenAI-compatible providers (OpenAI, Gemini) selected by configuration, and must fail over to a mock provider so a provider outage never hard-fails a request.
+    \item \textbf{Provider abstraction and failover.} The gateway supports configured OpenAI-compatible providers, including OpenAI and Gemini. Failover is attempted only across explicitly configured candidates; a mock provider is used only when explicitly selected. If all configured providers fail, the request returns an upstream error rather than a fabricated completion.
     \item \textbf{Per-tenant isolation.} Each API key must map to a tenant whose cache is isolated; one tenant must never receive another tenant's cached answer.
-    \item \textbf{Per-key spend budget.} The system must cap provider calls per key per day; over-budget requests receive HTTP~429, and cache hits must not count against the budget.
+    \item \textbf{Per-key daily admission budget.} The optional daily counter limits admitted cache misses and bypasses per API key and UTC day; over-limit requests receive HTTP~429, while cache hits do not consume the counter. It is not a token, provider-attempt, or monetary spend cap.
     \item \textbf{Rate limiting.} The system must throttle bursts per API key via a token bucket, returning HTTP~429 when the bucket is empty.
-    \item \textbf{Observability endpoints.} The system must expose \texttt{/health} (live configuration) and \texttt{/metrics} (Prometheus), and an operator dashboard at \texttt{/ui} for interactive testing and a cache-clear admin action.
+    \item \textbf{Observability endpoints.} The system exposes \texttt{/live} and \texttt{/ready} health routes, a token-protected Prometheus \texttt{/metrics} endpoint, and a same-origin operator dashboard at \texttt{/ui} with tenant-scoped cache management.
 \end{enumerate}
 
 \section{Non-Functional Requirements}
 \begin{enumerate}
-    \item \textbf{Correctness (primary).} On the evaluation benchmark, the full system must achieve a false-hit rate substantially below the fixed-threshold baseline; the target is zero false hits (100\% precision) on the curated hard negatives.
-    \item \textbf{Cache-hit latency.} A cache hit must complete at least an order of magnitude faster than a hosted-LLM call; the target hit path is $\sim$10~ms against an $\sim$800~ms reference call.
+    \item \textbf{Correctness (primary).} Semantic reuse must be conservative and evaluated on labelled positive and negative pairs. The checked-in curated benchmark currently records zero accepted negative pairs out of 15 for adaptive plus Tier-1 verification; this is an observed result on a small dataset, not a correctness guarantee for unseen queries.
+    \item \textbf{Cache-hit latency.} Cache-hit latency must be measured separately by mode, embedding backend, vector backend, and cache size. The local semantic-mode measurement is reported in Chapter~6; the 800~ms hosted-model comparison is an illustrative reference, not a measured provider baseline.
     \item \textbf{Verification overhead.} Tier-1 verification must impose negligible overhead ($<$1~ms) on the hit path so that safety is effectively free; the cost of Tier-2 must be quantified and its use made optional.
     \item \textbf{Scalability.} Lookup latency must remain sub-linear in cache size (near-flat and sub-millisecond to at least several thousand entries for the in-process index).
-    \item \textbf{Security.} API-key authentication on every request; secrets held only in environment/secret stores and never logged; per-tenant isolation verified by test; per-key spend caps to bound economic exposure.
+    \item \textbf{Security.} API-key authentication, opaque tenant identifiers, tenant-scoped cache access, bounded request/cache resources, protected metrics, and secret configuration are required. The daily admission counter does not replace provider-side financial controls.
     \item \textbf{Reliability.} A failing provider must be skipped quickly by a circuit breaker rather than retried on every request; the cache must fail open (a cache error degrades to a provider call rather than an error).
     \item \textbf{Reproducibility.} The evaluation harness must share the exact \texttt{CachePolicy} used by the live gateway, so that measured results equal shipped behaviour; all figures and tables must be regenerable from the repository.
 \end{enumerate}
