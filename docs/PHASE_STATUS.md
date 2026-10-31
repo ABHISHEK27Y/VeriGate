@@ -89,3 +89,26 @@ the same CI runner with 30 observations per warm scenario and mode. It records
 stage timings and actual NLI inference counts. Required prewarm moved the first
 NLI load to startup; it did not materially change warm hit latency. This remains
 a selected-reference, delayed-mock-provider benchmark.
+
+## 31 October subject-identity checkpoint
+
+The [frozen 41-request challenge](../evaluation/runs/subject_guard_challenge_20261030_v1/REPORT.md)
+compared the unchanged and guarded policies through local HTTP, Redis Stack,
+MiniLM, and NLI with stipulated fictional answers. Among 11 different-identity
+near matches, suspected incorrect accepts were 7 without the guard and 0 with it.
+Valid reuse was 19/19 without the guard and 18/19 with it; provider calls rose
+from 15 to 23. These authored controls test decision consistency, not factual
+answer accuracy or a production error rate. The policy and thresholds were not
+changed after this challenge.
+
+The guard has three explicit limits. **Aliases:** it normalizes case,
+punctuation, book/novel, film/movie, and leading `the`, but has no general title
+alias source. It rejected one declared valid alias, “A Lantern in Winter” versus
+“Lantern in Winter.” **Title extraction:** it parses a narrow explicit typed-work
+phrase; an attribution or trailing clause can be swallowed as part of a title
+and cause unnecessary rejection. **Unsupported entities:** people, places,
+dates, and works named without a typed phrase do not receive this identity check;
+they continue through existing retrieval and NLI and may still be accepted
+incorrectly. The preserved row-level failures define future work, not an
+invitation to loosen matching based on this challenge set. Keep semantic mode
+experimental and `CACHE_MATCH_MODE=exact` as the deployment default.
