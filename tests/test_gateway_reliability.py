@@ -18,6 +18,7 @@ HEADERS = {"x-api-key": "demo-key-123"}
 
 class EmptyProvider(Provider):
     name = "empty-test"
+    implicit_completion_is_safe = True
 
     async def stream(self, prompt: str) -> AsyncIterator[str]:
         yield "   "
@@ -25,6 +26,7 @@ class EmptyProvider(Provider):
 
 class PartialProvider(Provider):
     name = "partial-test"
+    implicit_completion_is_safe = True
 
     async def stream(self, prompt: str) -> AsyncIterator[str]:
         yield "partial"
@@ -33,6 +35,7 @@ class PartialProvider(Provider):
 
 class LargeProvider(Provider):
     name = "large-test"
+    implicit_completion_is_safe = True
 
     async def stream(self, prompt: str) -> AsyncIterator[str]:
         yield "too long"
@@ -40,6 +43,7 @@ class LargeProvider(Provider):
 
 class SlowFirstProvider(Provider):
     name = "slow-first-test"
+    implicit_completion_is_safe = True
 
     async def stream(self, prompt: str) -> AsyncIterator[str]:
         await asyncio.sleep(0.2)

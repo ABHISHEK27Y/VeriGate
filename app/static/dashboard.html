@@ -352,6 +352,7 @@ footer{border-top:1px solid var(--line);padding:34px 0 60px;color:var(--faint);f
 const $=id=>document.getElementById(id);
 let s={total:0,hits:0,miss:0,bypass:0,declined:0,errors:0};
 let configuredTtl=null;
+let developmentDemoAvailable=false;
 const DEMO_ANSWERS=new Set(["Jane Austen","1969","Mars","A Python decorator wraps a function to add behavior without changing its source."]);
 const EX=[
   {t:"how do I reset my password",d:"MISS"},
@@ -371,10 +372,10 @@ const SEMANTIC_EX=[
 const ORG_EX=[
   {t:"Explain how Python decorators work.",d:"shared factual fixture"},
   {t:"How do Python generators work?",d:"misleading near-match"},
-  {t:"Explain Python functions.",d:"private isolation",scope:"private"},
+  {t:"Explain Python functions.",d:"private isolation",options:{cache_scope:"private"}},
 ];
 function showChips(examples){$("chips").innerHTML="";examples.forEach(e=>{const c=document.createElement("div");c.className="chip";
-  c.innerHTML=`${e.t}<small>${e.d}</small>`;c.onclick=()=>{$("query").value=e.t;$("scope").value=e.scope||"auto";$("workspace").value=e.workspace||"";ask();};$("chips").appendChild(c);});
+  c.innerHTML=`${e.t}<small>${e.d}</small>`;c.onclick=()=>{$("query").value=e.t;ask(developmentDemoAvailable?e.options||{}:{});};$("chips").appendChild(c);});
 }
 showChips(EX);
 
@@ -383,6 +384,7 @@ async function health(){try{const r=await fetch("/health");if(!r.ok)throw new Er
   if(!h.cache_match_mode){$("cfg").textContent="Enter an API key to view configuration.";$("stat").textContent="ready · configuration private";$("mode-label").textContent="Configuration private";return;}
   const answerAware=h.cache_match_mode==="semantic"&&Boolean(h.answer_policy_version);
   configuredTtl=h.cache_ttl_sec??null;
+  developmentDemoAvailable=Boolean(h.organization_demo_available||h.demo_restore_available);
   $("restore").hidden=!h.demo_restore_available;
   $("dev-overrides").hidden=!(h.organization_demo_available||h.demo_restore_available);
   showChips(h.organization_demo_available?ORG_EX:h.demo_restore_available?SEMANTIC_EX:EX);
@@ -401,8 +403,8 @@ function setS(){$("s-total").textContent=s.total;const d=s.hits+s.miss;
   $("s-rate").textContent=d?Math.round(100*s.hits/d)+"%":"0%";
   $("s-hits").textContent=s.hits;$("s-miss").textContent=s.miss;$("s-bypass").textContent=s.bypass;$("s-declined").textContent=s.declined;$("s-errors").textContent=s.errors;}
 
-async function ask(){const q=$("query").value.trim();if(!q)return;$("ask").disabled=true;$("err").textContent="";s.total++;const started=performance.now();
-  try{const payload={prompt:q};if($("dev-overrides").open&&$("scope").value!=="auto"){payload.cache_scope=$("scope").value;if(payload.cache_scope==="workspace")payload.workspace=$("workspace").value.trim();}const r=await fetch("/v1/chat",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":$("apikey").value},body:JSON.stringify(payload)});
+async function ask(exampleOptions={}){const q=$("query").value.trim();if(!q)return;$("ask").disabled=true;$("err").textContent="";s.total++;const started=performance.now();
+  try{const payload={prompt:q};if(developmentDemoAvailable&&$("dev-overrides").open&&$("scope").value!=="auto"){payload.cache_scope=$("scope").value;if(payload.cache_scope==="workspace")payload.workspace=$("workspace").value.trim();}if(developmentDemoAvailable)Object.assign(payload,exampleOptions);const r=await fetch("/v1/chat",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":$("apikey").value},body:JSON.stringify(payload)});
     if(r.status===429){s.errors++;$("err").textContent="Rate limited (429).";return;}
     if(r.status===401){s.errors++;$("err").textContent="Invalid API key (401).";return;}
     if(!r.ok)throw new Error("Gateway returned HTTP "+r.status);
@@ -430,7 +432,7 @@ async function ask(){const q=$("query").value.trim();if(!q)return;$("ask").disab
     $("log").prepend(tr);while($("log").children.length>100)$("log").lastElementChild.remove();
   }catch(e){s.errors++;$("err").textContent="Request failed: "+e.message;}finally{$("ask").disabled=false;setS();}}
 
-$("ask").onclick=ask;
+$("ask").onclick=()=>ask();
 $("apikey").addEventListener("change",health);
 $("clear").onclick=async()=>{try{const r=await fetch("/admin/cache/clear",{method:"POST",headers:{"x-api-key":$("apikey").value}});if(!r.ok)throw new Error("HTTP "+r.status);$("err").textContent="Cache cleared.";}catch(e){$("err").textContent="Clear failed.";}};
 $("restore").onclick=async()=>{try{const r=await fetch("/admin/demo/restore",{method:"POST",headers:{"x-api-key":$("apikey").value}});if(!r.ok)throw new Error("HTTP "+r.status);const d=await r.json();$("reset").click();$("result").style.display="none";$("err").textContent=d.fixtures+" labelled factual fixtures restored for the demo tenant. Earlier MISS responses were removed.";}catch(e){$("err").textContent="Restore failed: "+e.message;}};

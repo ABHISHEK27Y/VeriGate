@@ -1,7 +1,7 @@
 {
-  "tests": 248,
+  "tests": 256,
   "failures": 0,
   "errors": 0,
-  "skipped": 5,
-  "passed": 243
+  "skipped": 7,
+  "passed": 249
 }

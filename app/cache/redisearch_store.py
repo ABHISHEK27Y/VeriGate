@@ -113,7 +113,9 @@ async def validate_index(dim: int) -> None:
     raise RuntimeError("RediSearch vector field missing")
 
 
-async def add(query: str, answer: str, vec: np.ndarray, tenant: str) -> str | None:
+async def add(
+    query: str, answer: str, vec: np.ndarray, tenant: str, *, metadata: dict[str, str] | None = None
+) -> str | None:
     eid = hashlib.sha256(query.encode("utf-8")).hexdigest()
     async with _client() as r:
         stored = await storage.put(
@@ -125,6 +127,7 @@ async def add(query: str, answer: str, vec: np.ndarray, tenant: str) -> str | No
                 "query": query,
                 "answer": answer,
                 "vec": np.asarray(vec, dtype=np.float32).tobytes(),
+                **(metadata or {}),
             },
             namespace=_namespace(),
         )
@@ -211,6 +214,27 @@ async def read_candidate(key: str, tenant: str) -> dict[str, str] | None:
         return {"query": row[b"query"].decode(), "answer": row[b"answer"].decode()}
     except KeyError:
         return None
+
+
+async def read_overlay_candidate(key: str, tenant: str) -> dict[str, str] | None:
+    """Read only text fields; the vector hash field is binary, not UTF-8."""
+    if not key.startswith(f"{_namespace()}:entry:{tenant}:"):
+        return None
+    fields = (
+        "tenant",
+        "query",
+        "answer",
+        "origin_scope",
+        "origin_workspace",
+        "origin_application",
+        "origin_policy_version",
+        "response_eligibility",
+    )
+    async with _client() as r:
+        values = await r.hmget(key, *fields)
+    if any(value is None for value in values) or values[0] != tenant.encode():
+        return None
+    return {field: value.decode() for field, value in zip(fields, values, strict=True)}
 
 
 async def touch_candidate(key: str, tenant: str) -> None:

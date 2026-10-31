@@ -286,10 +286,19 @@ async def _cache_lookup(request: Request, prompt: str, tenant: str, bypass: bool
         return result
 
 
-async def _cache_store(request: Request, prompt: str, answer: str, tenant: str) -> str:
+async def _cache_store(
+    request: Request,
+    prompt: str,
+    answer: str,
+    tenant: str,
+    *,
+    metadata: dict[str, str] | None = None,
+) -> str:
     started = time.perf_counter()
     try:
-        stored = await request.app.state.semantic_cache.store(prompt, answer, tenant)
+        stored = await request.app.state.semantic_cache.store(
+            prompt, answer, tenant, metadata=metadata
+        )
     except Exception:
         CACHE_FAILURES.labels(stage="write").inc()
         CACHE_WRITES.labels(result="failed").inc()
@@ -301,6 +310,49 @@ async def _cache_store(request: Request, prompt: str, answer: str, tenant: str) 
         return outcome
     finally:
         STAGE_LATENCY.labels(stage="cache_write").observe(time.perf_counter() - started)
+
+
+async def _lookup_with_overlay(  # noqa: PLR0913, PLR0917 - explicit scope context
+    request: Request,
+    prompt: str,
+    principal: Principal,
+    registry: ProviderRegistry,
+    tenant: str,
+    decision: ScopeDecision,
+    bypass: bool,
+) -> tuple[LookupResult, str]:
+    if decision.eligibility == "no_store":
+        return LookupResult(status="BYPASS", reason="no_store_request"), decision.scope
+    if not bypass and not principal.legacy and decision.scope == "workspace":
+        directory = request.app.state.organization_directory
+        private_tenant = directory.scoped_tenant(
+            principal, "private", "", registry.intended_route(prompt)
+        )
+        try:
+            overlay = await request.app.state.semantic_cache.lookup_private_overlay(
+                prompt,
+                private_tenant,
+                workspace=decision.workspace,
+                application=principal.application_id,
+                policy_version=decision.policy_version,
+            )
+        except Exception:
+            CACHE_FAILURES.labels(stage="lookup").inc()
+            log.warning("private_overlay_lookup_failed")
+        else:
+            if overlay is not None:
+                return overlay, "private"
+    return await _cache_lookup(request, prompt, tenant, bypass), decision.scope
+
+
+def _downgrade_metadata(principal: Principal, decision: ScopeDecision) -> dict[str, str]:
+    return {
+        "origin_scope": "workspace",
+        "origin_workspace": decision.workspace,
+        "origin_application": principal.application_id,
+        "origin_policy_version": decision.policy_version,
+        "response_eligibility": "private_only",
+    }
 
 
 def _count_candidate_decision(result: LookupResult) -> None:
@@ -604,10 +656,14 @@ async def chat(  # noqa: PLR0915 - main gateway request path
     effective_scope = scope_decision.scope
     intended_provider = registry.intended_route(prompt)
     lookup_started = time.perf_counter()
-    result = (
-        LookupResult(status="BYPASS", reason="no_store_request")
-        if scope_decision.eligibility == "no_store"
-        else await _cache_lookup(request, prompt, cache_tenant, req.cache_bypass)
+    result, lookup_scope = await _lookup_with_overlay(
+        request,
+        prompt,
+        principal,
+        registry,
+        cache_tenant,
+        scope_decision,
+        req.cache_bypass,
     )
     stage_ms = {"cache_lookup": round((time.perf_counter() - lookup_started) * 1000, 3)}
     _count_candidate_decision(result)
@@ -643,10 +699,15 @@ async def chat(  # noqa: PLR0915 - main gateway request path
             stage_latency_ms={**result.stage_latency_ms, **stage_ms},
             organization_id=None if principal.legacy else principal.organization_id,
             subject_id=None if principal.legacy else principal.subject_id,
-            cache_scope=effective_scope,
+            cache_scope=lookup_scope,
+            lookup_scope=lookup_scope,
             scope_reason=scope_decision.reason,
             scope_policy_version=scope_decision.policy_version,
             storage_eligibility=scope_decision.eligibility,
+            request_eligibility=scope_decision.eligibility,
+            response_eligibility=content_eligibility(result.answer or ""),
+            storage_reason="cache_hit",
+            provider_invoked=False,
             provider_profile=None if principal.legacy else principal.provider_profile,
             candidate_count=result.candidate_count,
             selected_rank=result.selected_rank,
@@ -661,29 +722,45 @@ async def chat(  # noqa: PLR0915 - main gateway request path
     path = "bypass" if result.status == "BYPASS" else "miss"
 
     storage_outcome = "not_attempted"
+    storage_scope: str | None = None
+    storage_reason = "not_attempted"
 
     async def generate_and_store() -> tuple[str, str, ProviderEvent]:
-        nonlocal storage_outcome
+        nonlocal storage_outcome, storage_scope, storage_reason
         provider_started = time.perf_counter()
         provider_name, answer, completion = await _generate_answer(prompt, request, registry)
         stage_ms["provider"] = round((time.perf_counter() - provider_started) * 1000, 3)
         response_eligibility = content_eligibility(answer)
         if not _still_authorized(request, api_key, principal):
             storage_outcome = "credential_changed_no_store"
+            storage_reason = "credential_changed"
         elif provider_name == intended_provider and response_eligibility != "no_store":
             write_tenant = cache_tenant
+            storage_scope = effective_scope
+            storage_reason = "response_eligible"
+            metadata = None
             if not principal.legacy and response_eligibility == "private_only":
                 route = registry.intended_route(prompt)
                 write_tenant = request.app.state.organization_directory.scoped_tenant(
                     principal, "private", "", route
                 )
+                storage_scope = "private"
+                storage_reason = "response_private_only"
+                if effective_scope == "workspace":
+                    metadata = _downgrade_metadata(principal, scope_decision)
             write_started = time.perf_counter()
-            storage_outcome = await _cache_store(request, prompt, answer, write_tenant)
+            storage_outcome = await _cache_store(
+                request, prompt, answer, write_tenant, metadata=metadata
+            )
+            if storage_outcome != "stored":
+                storage_scope = None
             stage_ms["cache_write"] = round((time.perf_counter() - write_started) * 1000, 3)
         elif response_eligibility == "no_store":
             storage_outcome = "response_ineligible"
+            storage_reason = "response_no_store"
         else:
             storage_outcome = "fallback_not_cached"
+            storage_reason = "provider_fallback"
         return provider_name, answer, completion
 
     if result.status == "BYPASS":
@@ -692,6 +769,7 @@ async def chat(  # noqa: PLR0915 - main gateway request path
         stage_ms["provider"] = round((time.perf_counter() - provider_started) * 1000, 3)
         joined = False
         storage_outcome = "bypassed"
+        storage_reason = "request_bypass"
     else:
         try:
             flight_key = f"{cache_tenant}\x00{principal.subject_id}\x00{prompt}"
@@ -715,7 +793,7 @@ async def chat(  # noqa: PLR0915 - main gateway request path
         provider=provider_name,
         provider_model=completion.model,
         finish_reason=completion.finish_reason,
-        provider_usage=completion.usage,
+        provider_usage=None if joined else completion.usage,
         intended_provider=intended_provider,
         fallback_used=provider_name != intended_provider,
         latency_ms=round((time.perf_counter() - t0) * 1000, 2),
@@ -730,10 +808,16 @@ async def chat(  # noqa: PLR0915 - main gateway request path
         stage_latency_ms={**result.stage_latency_ms, **stage_ms},
         organization_id=None if principal.legacy else principal.organization_id,
         subject_id=None if principal.legacy else principal.subject_id,
-        cache_scope=effective_scope,
+        cache_scope=lookup_scope,
+        lookup_scope=lookup_scope,
         scope_reason=scope_decision.reason,
         scope_policy_version=scope_decision.policy_version,
         storage_eligibility=scope_decision.eligibility,
+        request_eligibility=scope_decision.eligibility,
+        response_eligibility=content_eligibility(answer),
+        storage_scope=None if joined else storage_scope,
+        storage_reason="coalesced_follower" if joined else storage_reason,
+        provider_invoked=not joined,
         provider_profile=None if principal.legacy else principal.provider_profile,
         candidate_count=result.candidate_count,
         selected_rank=result.selected_rank,
@@ -763,10 +847,14 @@ async def chat_stream(  # noqa: PLR0915, PLR0912 - streaming state machine
     )
     effective_scope = scope_decision.scope
     intended_provider = registry.intended_route(prompt)
-    result = (
-        LookupResult(status="BYPASS", reason="no_store_request")
-        if scope_decision.eligibility == "no_store"
-        else await _cache_lookup(request, prompt, cache_tenant, req.cache_bypass)
+    result, lookup_scope = await _lookup_with_overlay(
+        request,
+        prompt,
+        principal,
+        registry,
+        cache_tenant,
+        scope_decision,
+        req.cache_bypass,
     )
     _count_candidate_decision(result)
     if result.status == "HIT" and _principal(request, api_key) != principal:
@@ -797,6 +885,22 @@ async def chat_stream(  # noqa: PLR0915, PLR0912 - streaming state machine
             REQUESTS.labels(outcome="hit").inc()
             LATENCY.labels(path="hit").observe(time.perf_counter() - started)
             yield f"data: {json.dumps(result.answer)}\n\n"
+            yield (
+                "event: meta\ndata: "
+                + json.dumps(
+                    {
+                        "lookup_scope": lookup_scope,
+                        "request_eligibility": scope_decision.eligibility,
+                        "response_eligibility": content_eligibility(result.answer or ""),
+                        "storage_scope": None,
+                        "storage_reason": "cache_hit",
+                        "storage_outcome": "cache_hit",
+                        "provider_invoked": False,
+                        "provider_usage": None,
+                    }
+                )
+                + "\n\n"
+            )
             yield "data: [DONE]\n\n"
             return
         buf = []
@@ -844,23 +948,64 @@ async def chat_stream(  # noqa: PLR0915, PLR0912 - streaming state machine
             LATENCY.labels(path="stream_error").observe(time.perf_counter() - started)
             yield 'event: error\ndata: {"error":"empty upstream answer"}\n\n'
             return
+        response_eligibility = content_eligibility(answer)
+        storage_scope = None
+        storage_reason = "request_bypass" if result.status == "BYPASS" else "not_attempted"
+        storage_outcome = "bypassed" if result.status == "BYPASS" else "not_attempted"
         if result.status != "BYPASS" and provider_name == intended_provider:
-            response_eligibility = content_eligibility(answer)
             if (
                 _still_authorized(request, api_key, principal)
                 and response_eligibility != "no_store"
             ):
                 write_tenant = cache_tenant
+                intended_storage_scope = effective_scope
+                storage_reason = "response_eligible"
+                metadata = None
                 if not principal.legacy and response_eligibility == "private_only":
                     route = registry.intended_route(prompt)
                     write_tenant = request.app.state.organization_directory.scoped_tenant(
                         principal, "private", "", route
                     )
-                await _cache_store(request, prompt, answer, write_tenant)
+                    intended_storage_scope = "private"
+                    storage_reason = "response_private_only"
+                    if effective_scope == "workspace":
+                        metadata = _downgrade_metadata(principal, scope_decision)
+                storage_outcome = await _cache_store(
+                    request, prompt, answer, write_tenant, metadata=metadata
+                )
+                if storage_outcome == "stored":
+                    storage_scope = intended_storage_scope
+            elif response_eligibility == "no_store":
+                storage_reason = "response_no_store"
+                storage_outcome = "response_ineligible"
+            else:
+                storage_reason = "credential_changed"
+                storage_outcome = "credential_changed_no_store"
+        elif result.status != "BYPASS":
+            storage_reason = "provider_fallback"
+            storage_outcome = "fallback_not_cached"
         path = "bypass" if result.status == "BYPASS" else "miss"
         CACHE.labels(result=path).inc()
         REQUESTS.labels(outcome=path).inc()
         LATENCY.labels(path=path).observe(time.perf_counter() - started)
+        yield (
+            "event: meta\ndata: "
+            + json.dumps(
+                {
+                    "lookup_scope": lookup_scope,
+                    "request_eligibility": scope_decision.eligibility,
+                    "response_eligibility": response_eligibility,
+                    "storage_scope": storage_scope,
+                    "storage_reason": storage_reason,
+                    "storage_outcome": storage_outcome,
+                    "provider_invoked": True,
+                    "provider_model": completion.model,
+                    "finish_reason": completion.finish_reason,
+                    "provider_usage": completion.usage,
+                }
+            )
+            + "\n\n"
+        )
         yield "data: [DONE]\n\n"
 
     return StreamingResponse(
@@ -869,7 +1014,7 @@ async def chat_stream(  # noqa: PLR0915, PLR0912 - streaming state machine
         headers={
             "X-Provider": "cache" if result.status == "HIT" else provider_name,
             "X-Intended-Provider": intended_provider,
-            "X-Cache-Scope": effective_scope,
+            "X-Cache-Scope": lookup_scope,
             "X-Scope-Reason": scope_decision.reason,
             "X-Scope-Policy-Version": scope_decision.policy_version,
         },

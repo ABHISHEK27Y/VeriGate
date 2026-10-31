@@ -12,7 +12,7 @@ import asyncio
 from collections.abc import AsyncIterator, Mapping
 from dataclasses import dataclass, field
 from types import MappingProxyType
-from typing import Any, cast
+from typing import Any, Literal, cast
 
 from ..complexity import is_hard
 from ..config import get_settings
@@ -25,8 +25,10 @@ from .mock import MockProvider
 from .openai_compat import OpenAICompatibleProvider
 
 
-def _real(name: str, key: str, base: str, model: str) -> Provider:
-    return OpenAICompatibleProvider(name, key, base, model)
+def _real(
+    name: str, key: str, base: str, model: str, *, family: Literal["openai", "gemini"]
+) -> Provider:
+    return OpenAICompatibleProvider(name, key, base, model, family=family)
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,6 +56,7 @@ class ProviderRegistry:
                     get_settings().openai_api_key,
                     get_settings().openai_base_url,
                     get_settings().openai_model,
+                    family="openai",
                 )
             )
         elif get_settings().llm_provider == "gemini" and get_settings().gemini_api_key:
@@ -63,6 +66,7 @@ class ProviderRegistry:
                     get_settings().gemini_api_key,
                     get_settings().gemini_base_url,
                     get_settings().gemini_model,
+                    family="gemini",
                 )
             )
         if get_settings().llm_provider == "mock":
@@ -80,14 +84,22 @@ class ProviderRegistry:
             if get_settings().llm_provider == "gemini" and get_settings().gemini_api_key:
                 k, b = get_settings().gemini_api_key, get_settings().gemini_base_url
                 cascade = {
-                    "cheap": _real("gemini-cheap", k, b, get_settings().gemini_model),
-                    "strong": _real("gemini-strong", k, b, get_settings().gemini_strong_model),
+                    "cheap": _real(
+                        "gemini-cheap", k, b, get_settings().gemini_model, family="gemini"
+                    ),
+                    "strong": _real(
+                        "gemini-strong", k, b, get_settings().gemini_strong_model, family="gemini"
+                    ),
                 }
             elif get_settings().llm_provider == "openai" and get_settings().openai_api_key:
                 k, b = get_settings().openai_api_key, get_settings().openai_base_url
                 cascade = {
-                    "cheap": _real("openai-cheap", k, b, get_settings().openai_model),
-                    "strong": _real("openai-strong", k, b, get_settings().openai_strong_model),
+                    "cheap": _real(
+                        "openai-cheap", k, b, get_settings().openai_model, family="openai"
+                    ),
+                    "strong": _real(
+                        "openai-strong", k, b, get_settings().openai_strong_model, family="openai"
+                    ),
                 }
             else:
                 # no real key -> demonstrate with two mock tiers
@@ -119,7 +131,13 @@ class ProviderRegistry:
             model = profile.model or (
                 config.openai_model if profile.provider == "openai" else config.gemini_model
             )
-            provider = _real(label, directory.profile_secret(profile.profile_id), base, model)
+            provider = _real(
+                label,
+                directory.profile_secret(profile.profile_id),
+                base,
+                model,
+                family=cast(Literal["openai", "gemini"], profile.provider),
+            )
         return cls(providers=(provider,), redis=redis_client)
 
     async def aclose(self) -> None:

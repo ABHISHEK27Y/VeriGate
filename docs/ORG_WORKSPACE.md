@@ -41,9 +41,10 @@ The development fixture keys are `example-alice-key-12345`,
 credentials, never live secrets. Enter one in the dashboard. For a shared
 technical request, ask `Explain how Python decorators work.` as Carol after the explicit fixture
 seed. The saved HTTP run returned a HIT with the labelled Python answer. For a
-private request, open the development scope override, select **Private**, and ask
-the same question with Alice, then Carol: Carol cannot see Alice's private
-entry. Dave belongs to a different organization and cannot request
+private request, click the **private isolation** example with Alice, then
+Carol. The example sends an explicit private override even when the development
+panel is collapsed; ordinary question entry remains automatic. Carol cannot
+see Alice's private entry. Dave belongs to a different organization and cannot request
 `engineering`. The mock provider's text is a placeholder, not a factual answer.
 
 For exact HTTP requests:
@@ -57,7 +58,8 @@ Invoke-RestMethod http://127.0.0.1:8000/v1/chat -Method Post -Headers $c -Conten
 ```
 
 The result reports the authenticated organization/subject, effective scope,
-scope-policy version/reason, storage eligibility,
+scope-policy version/reason, request and response eligibility, lookup and
+actual storage scope,
 route profile, candidate count, selected rank, model evidence (if invoked),
 cache-write outcome, and measured gateway stages. `/admin/cache/occupancy`
 accepts `scope=private` or an authorized `scope=workspace&workspace=engineering`
@@ -74,6 +76,17 @@ outside the normal dashboard question flow. An actual credential in a request
 causes no-store. Personal context may be private-only. A private-only response
 is written only to the employee's private namespace. These are conservative
 heuristics, not comprehensive data-loss prevention.
+
+When an otherwise shared request generates a private-only answer, the JSON
+response reports `lookup_scope=workspace`, `response_eligibility=private_only`,
+and `storage_scope=private`. A repeat of that exact question can reuse the
+private entry only for the same employee, application, workspace, route, and
+policy version. Another employee cannot read it. Streaming responses send
+the same final storage decision in an `event: meta` SSE frame before `[DONE]`;
+content frames retain their existing format. Coalesced followers report no
+individual provider invocation or provider usage. The browser regression is
+opt-in: set `VERIGATE_BROWSER_TEST=1` and run
+`python -m pytest tests/test_dashboard_private_chip.py -q` with local Chromium.
 
 ## Provisioning and rotation
 

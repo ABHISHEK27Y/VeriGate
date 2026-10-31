@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import AsyncIterator
+from typing import Literal
 
 import httpx
 
@@ -22,13 +23,21 @@ from .base import Provider, ProviderEvent
 
 
 class OpenAICompatibleProvider(Provider):
-    def __init__(
-        self, name: str, api_key: str, base_url: str, model: str, timeout: float | None = None
+    def __init__(  # noqa: PLR0913 - provider identity and capabilities are explicit
+        self,
+        name: str,
+        api_key: str,
+        base_url: str,
+        model: str,
+        *,
+        family: Literal["openai", "gemini"],
+        timeout: float | None = None,
     ) -> None:
         self.name = name
         self._key = api_key
         self._base = base_url.rstrip("/")
         self._model = model
+        self._family = family
         # Use settings timeout if not explicitly provided
         self._timeout = timeout if timeout is not None else get_settings().provider_timeout
         self._client = httpx.AsyncClient(
@@ -52,7 +61,7 @@ class OpenAICompatibleProvider(Provider):
             "messages": [{"role": "user", "content": prompt}],
             "stream": True,
         }
-        if self.name.startswith("openai"):
+        if self._family == "openai":
             payload["stream_options"] = {"include_usage": True}
             payload["max_completion_tokens"] = get_settings().provider_max_completion_tokens
         else:
@@ -76,6 +85,8 @@ class OpenAICompatibleProvider(Provider):
                     raise RuntimeError("Malformed upstream stream event") from exc
                 if not isinstance(obj, dict):
                     raise TypeError("Malformed upstream stream event")
+                if "error" in obj:
+                    raise RuntimeError("Upstream reported an error event")
                 if isinstance(obj.get("model"), str):
                     response_model = obj["model"]
                 if isinstance(obj.get("usage"), dict):
@@ -101,11 +112,15 @@ class OpenAICompatibleProvider(Provider):
                 if content is not None and not isinstance(content, str):
                     raise RuntimeError("Malformed upstream answer content")
                 if content:
+                    if finish_reason is not None:
+                        raise RuntimeError("Content after upstream termination")
                     yield ProviderEvent("content", content=content, model=obj.get("model"))
                 reason = choice.get("finish_reason")
                 if reason is not None:
                     if not isinstance(reason, str):
                         raise RuntimeError("Malformed upstream finish reason")
+                    if finish_reason is not None:
+                        raise RuntimeError("Duplicate upstream finish reason")
                     finish_reason = reason
             if not finished:
                 raise RuntimeError("Upstream stream ended without completion marker")

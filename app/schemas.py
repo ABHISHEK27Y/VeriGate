@@ -61,9 +61,15 @@ class ChatResponse(BaseModel):
     organization_id: str | None = None
     subject_id: str | None = None
     cache_scope: str | None = None
+    lookup_scope: str | None = None
     scope_reason: str | None = None
     scope_policy_version: str | None = None
     storage_eligibility: str | None = None
+    request_eligibility: str | None = None
+    response_eligibility: str | None = None
+    storage_scope: str | None = None
+    storage_reason: str | None = None
+    provider_invoked: bool = False
     provider_profile: str | None = None
     candidate_count: int | None = None
     selected_rank: int | None = None

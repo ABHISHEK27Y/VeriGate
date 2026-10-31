@@ -29,7 +29,7 @@ import numpy as np
 from ..config import RuntimeSettings, get_settings
 from ..embeddings import Embedder
 from ..metrics import STAGE_LATENCY
-from ..redis_client import create_redis, hash_fields, remove_member, set_members
+from ..redis_client import create_redis, hash_fields, set_members
 from . import redisearch_store as rs
 from . import storage
 from .answer_policy import AnswerPolicy
@@ -129,8 +129,8 @@ class SemanticCache:
                 records = await pipe.execute()
             for eid, record in zip(batch, records, strict=True):
                 if not record:
-                    await remove_member(r, self._ids_key(tenant), eid)
-                    await r.zrem(self._lru_key(tenant), eid)
+                    # Quota metadata is reconciled atomically by storage.put.
+                    # A read-side rebuild must not remove only scope membership.
                     continue
                 t["ids"].append(eid)
                 t["queries"].append(record["query"])
@@ -280,6 +280,63 @@ class SemanticCache:
                 return await self._lookup(query, tenant)
         finally:
             verifier_scope.reset(token)
+
+    async def lookup_private_overlay(
+        self,
+        query: str,
+        tenant: str,
+        *,
+        workspace: str,
+        application: str,
+        policy_version: str,
+    ) -> LookupResult | None:
+        """Read only an exact private response downgraded from this workspace."""
+        if is_volatile(query) or not get_settings().cache_enabled:
+            return None
+        eid = hashlib.sha256(query.encode("utf-8")).hexdigest()
+        key_namespace = (
+            rs._namespace()
+            if get_settings().cache_match_mode == "semantic"
+            and get_settings().vector_backend == "redisearch"
+            else namespace()
+        )
+        key = f"{key_namespace}:entry:{tenant}:{eid}"
+        expected = {
+            "origin_scope": "workspace",
+            "origin_workspace": workspace,
+            "origin_application": application,
+            "origin_policy_version": policy_version,
+            "response_eligibility": "private_only",
+        }
+        redisearch = key_namespace == rs._namespace()
+        row = (
+            await rs.read_overlay_candidate(key, tenant)
+            if redisearch
+            else await hash_fields(self.redis, key)
+        )
+        if (
+            not row
+            or row.get("query") != query
+            or any(row.get(k) != v for k, v in expected.items())
+        ):
+            return None
+        await storage.touch(self.redis, tenant, eid, namespace=key_namespace)
+        current = (
+            await rs.read_overlay_candidate(key, tenant)
+            if redisearch
+            else await hash_fields(self.redis, key)
+        )
+        if current != row:
+            return None
+        return LookupResult(
+            status="HIT",
+            answer=row["answer"],
+            similarity=1.0,
+            reason="private_response_overlay",
+            cached_query=query,
+            candidate_count=1,
+            selected_rank=1,
+        )
 
     async def _infer(self, function, *args):
         # Cancellation must not release capacity while the underlying thread still runs.
@@ -519,11 +576,15 @@ class SemanticCache:
             stage_latency_ms=stage_ms,
         )
 
-    async def store(self, query: str, answer: str, tenant: str) -> bool:
+    async def store(
+        self, query: str, answer: str, tenant: str, *, metadata: dict[str, str] | None = None
+    ) -> bool:
         async with self._locks[hash(tenant) % len(self._locks)]:
-            return await self._store(query, answer, tenant)
+            return await self._store(query, answer, tenant, metadata=metadata)
 
-    async def _store(self, query: str, answer: str, tenant: str) -> bool:
+    async def _store(
+        self, query: str, answer: str, tenant: str, *, metadata: dict[str, str] | None = None
+    ) -> bool:
         if not answer.strip() or not get_settings().cache_enabled or is_volatile(query):
             return False
         if (
@@ -536,13 +597,13 @@ class SemanticCache:
                 self.redis,
                 tenant,
                 hashlib.sha256(query.encode("utf-8")).hexdigest(),
-                {"query": query, "answer": answer, "vec": ""},
+                {"query": query, "answer": answer, "vec": "", **(metadata or {})},
             )
         vec = await self._infer(self.embedder.embed, query)
 
         if get_settings().vector_backend == "redisearch":
             await rs.ensure_index(len(vec))
-            return bool(await rs.add(query, answer, vec, tenant))
+            return bool(await rs.add(query, answer, vec, tenant, metadata=metadata))
 
         eid = hashlib.sha256(query.encode("utf-8")).hexdigest()
         stored = await storage.put(
@@ -554,6 +615,7 @@ class SemanticCache:
                 "answer": answer,
                 "vec": self._vec_to_str(vec),
                 "ts": str(time.time()),
+                **(metadata or {}),
             },
         )
         if stored:

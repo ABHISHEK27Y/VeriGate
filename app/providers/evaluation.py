@@ -14,6 +14,7 @@ from .base import Provider
 
 class ControlledEvaluationProvider(Provider):
     name = "controlled-eval"
+    implicit_completion_is_safe = True
 
     def __init__(self, path: str) -> None:
         payload = json.loads(Path(path).read_text(encoding="utf-8"))

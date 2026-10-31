@@ -1,5 +1,27 @@
 # VeriGate software progress — 31 October 2026
 
+## Follow-up correctness checkpoint — 1 November 2026
+
+The static follow-up was checked against `7aed35b61cecb3fb656a10966e62093cdaead117`.
+Focused regressions reproduced partial index cleanup, deletion of a live hash
+from an old expiry score, response-only private storage with misleading scope
+metadata and no automatic reuse, the collapsed private demo chip, and
+overwritten or followed upstream terminal reasons. The fixes under test make
+index rebuilding read-only for quota metadata, use Redis time and positive TTL
+checks before expiry cleanup, provide an exact employee-private overlay for
+response-downgraded shared requests, report lookup/request/response/storage
+scopes separately, and validate terminal events inside the adapter. A browser
+regression verifies the private chip with its override panel closed. This is
+engineering correctness work; no verifier threshold or policy artifact changed.
+
+Verification: 249 local tests passed with seven expected skips; the isolated
+Redis Stack run passed 255 tests with the opt-in browser test skipped. The
+headless-browser regression passed separately with `VERIGATE_BROWSER_TEST=1`.
+Ruff, MyPy, the offline evaluator, and saved-evidence validators passed.
+
+Deadline, lock-contention, candidate-trace, configuration-lifecycle, and
+HTTP/replay parity work remain open until separately implemented and verified.
+
 ## Source-review implementation checkpoint (local verification)
 
 Rechecked the 31 October source review on branch `codex/evaluation-integrity`

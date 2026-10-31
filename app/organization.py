@@ -256,7 +256,10 @@ class OrganizationDirectory:
             identity = f"{principal.organization_id}:workspace:{workspace}"
             prefix = "s"
         else:
-            identity = f"{principal.organization_id}:private:{principal.subject_id}"
+            identity = (
+                f"{principal.organization_id}:private:"
+                f"{principal.subject_id}:{principal.application_id}"
+            )
             prefix = "p"
         # The provider profile and actual route are part of answer compatibility.
         identity += (

@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 
 import fakeredis.aioredis
+import numpy as np
 import pytest
 
 from app.cache import storage
+from app.cache.semantic_cache import SemanticCache
 from app.config import Settings, _runtime
 
 SCOPE_LIMIT = 2
@@ -125,6 +128,61 @@ async def test_expired_recently_touched_entry_does_not_evict_live_entry() -> Non
             for row in ({"query": "live", "answer": "live"}, {"query": "new", "answer": "new"})
         )
         assert int(await r.get(f"{namespace}:bytes:{tenant}")) == expected
+    finally:
+        _runtime.reset(token)
+        await r.aclose()
+
+
+@pytest.mark.asyncio
+async def test_index_rebuild_leaves_expired_quota_metadata_for_atomic_cleanup() -> None:
+    class FixedEmbedder:
+        def embed(self, _query):
+            return np.array([1.0, 0.0], dtype=np.float32)
+
+    config = Settings(
+        _env_file=None,
+        cache_match_mode="semantic",
+        vector_backend="inproc",
+        shared_cache_entry_limit=2,
+        organization_cache_entry_limit=4,
+    )
+    token = _runtime.set(config)
+    r = fakeredis.aioredis.FakeRedis(decode_responses=True)
+    tenant = "s_eeeeeeeeeeeeeeee_engineering"
+    try:
+        cache = SemanticCache(r, FixedEmbedder())
+        assert await cache.store("old question", "old answer", tenant)
+        assert await cache.store("second question", "second answer", tenant)
+        ids, lru, prefix = storage.keys(tenant)
+        old = hashlib.sha256(b"old question").hexdigest()
+        await r.delete(prefix + old)
+        await cache._build_index(tenant)
+        # Index rebuilding must not partially mutate quota metadata.
+        assert old in await r.smembers(ids)
+        assert await r.zscore(lru, old) is not None
+        assert await cache.store("third question", "third answer", tenant)
+        assert old not in await r.smembers(ids)
+        assert await r.zscore(lru, old) is None
+        assert (await storage.occupancy(r, tenant))["entries"] == SCOPE_LIMIT
+    finally:
+        _runtime.reset(token)
+        await r.aclose()
+
+
+@pytest.mark.asyncio
+async def test_old_expiry_score_never_deletes_live_hash() -> None:
+    config = Settings(_env_file=None, shared_cache_entry_limit=2, organization_cache_entry_limit=3)
+    token = _runtime.set(config)
+    r = fakeredis.aioredis.FakeRedis(decode_responses=True)
+    tenant = "s_ffffffffffffffff_engineering"
+    try:
+        assert await storage.put(r, tenant, "old", {"query": "old", "answer": "old"})
+        namespace = storage.current_namespace()
+        await r.zadd(storage._org_expiry(tenant, namespace), {f"{tenant}|old": 1})
+        assert await r.ttl(storage.keys(tenant)[2] + "old") > 0
+        assert await storage.put(r, tenant, "new", {"query": "new", "answer": "new"})
+        assert await r.exists(storage.keys(tenant)[2] + "old") == 1
+        assert (await storage.occupancy(r, tenant))["entries"] == SCOPE_LIMIT
     finally:
         _runtime.reset(token)
         await r.aclose()

@@ -5,16 +5,19 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import os
 from concurrent.futures import ThreadPoolExecutor
 from http import HTTPStatus
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 import app.main as gateway_main
 from app.config import Settings
 from app.main import create_app
 from app.organization import OrganizationDirectory
+from app.providers.mock import MockProvider
 
 ARTIFACT = Path(__file__).resolve().parents[1] / "app/cache/artifacts/answer_policy_v1.json"
 
@@ -204,6 +207,102 @@ def test_private_only_response_stores_only_in_employee_scope(tmp_path: Path) -> 
         assert first["cache_scope"] == "private"
         assert first["storage_outcome"] == "stored"
         assert ask(client, ALICE, prompt).json()["cache"] == "HIT"
+        assert ask(client, CAROL, prompt).json()["cache"] == "MISS"
+
+
+def test_shared_request_with_private_response_reuses_only_for_originator(
+    tmp_path: Path, monkeypatch
+) -> None:
+    path = tmp_path / "organizations.json"
+    config = settings_for(path, "response-downgrade-test-salt")
+    directory_file(path, config.api_key_salt)
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    raw["organizations"]["example"]["application_defaults"] = {"developer-tool": "engineering"}
+    path.write_text(json.dumps(raw), encoding="utf-8")
+
+    async def private_answer(self, _prompt):
+        yield "Our account uses a private internal setting."
+
+    monkeypatch.setattr(MockProvider, "stream", private_answer)
+    with TestClient(create_app(config)) as client:
+        prompt = "Explain the service configuration."
+        first = ask(client, ALICE, prompt).json()
+        assert first["cache"] == "MISS"
+        assert first["cache_scope"] == "workspace"
+        assert first["request_eligibility"] == "shared_eligible"
+        assert first["response_eligibility"] == "private_only"
+        assert first["storage_scope"] == "private"
+        assert first["storage_outcome"] == "stored"
+        again = ask(client, ALICE, prompt).json()
+        assert again["cache"] == "HIT"
+        assert again["lookup_scope"] == "private"
+        assert again["provider"] == "cache"
+        other = ask(client, CAROL, prompt).json()
+        assert other["cache"] == "MISS"
+        assert other["provider"] == "mock-example-mock"
+
+
+def test_stream_reports_response_downgrade_and_private_overlay(tmp_path: Path, monkeypatch) -> None:
+    path = tmp_path / "organizations.json"
+    config = settings_for(path, "stream-downgrade-test-salt")
+    directory_file(path, config.api_key_salt)
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    raw["organizations"]["example"]["application_defaults"] = {"developer-tool": "engineering"}
+    path.write_text(json.dumps(raw), encoding="utf-8")
+
+    async def private_answer(self, _prompt):
+        yield "Our account uses a private internal setting."
+
+    monkeypatch.setattr(MockProvider, "stream", private_answer)
+    prompt = "Explain the service configuration."
+    with TestClient(create_app(config)) as client:
+        first = client.post(
+            "/v1/chat/stream", json={"prompt": prompt}, headers={"x-api-key": ALICE}
+        )
+        assert first.headers["x-cache-scope"] == "workspace"
+        assert '"storage_scope": "private"' in first.text
+        assert '"response_eligibility": "private_only"' in first.text
+        again = client.post(
+            "/v1/chat/stream", json={"prompt": prompt}, headers={"x-api-key": ALICE}
+        )
+        assert again.headers["x-provider"] == "cache"
+        assert again.headers["x-cache-scope"] == "private"
+        assert '"provider_invoked": false' in again.text
+        other = client.post(
+            "/v1/chat/stream", json={"prompt": prompt}, headers={"x-api-key": CAROL}
+        )
+        assert other.headers["x-provider"] == "mock-example-mock"
+
+
+def test_redisearch_private_overlay_reads_binary_vector_safely(tmp_path: Path, monkeypatch) -> None:
+    if not os.environ.get("REDIS_URL") or os.environ.get("VECTOR_BACKEND") != "redisearch":
+        pytest.skip("Requires isolated Redis Stack test configuration")
+    path = tmp_path / "organizations.json"
+    base = settings_for(path, "redisearch-overlay-test-salt")
+    config = base.model_copy(
+        update={
+            "redis_url": os.environ["REDIS_URL"],
+            "vector_backend": "redisearch",
+            "cache_match_mode": "semantic",
+        }
+    )
+    directory_file(path, config.api_key_salt)
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    raw["organizations"]["example"]["application_defaults"] = {"developer-tool": "engineering"}
+    path.write_text(json.dumps(raw), encoding="utf-8")
+
+    async def private_answer(self, _prompt):
+        yield "Our account uses a private internal setting."
+
+    monkeypatch.setattr(MockProvider, "stream", private_answer)
+    with TestClient(create_app(config)) as client:
+        prompt = "Explain the service configuration."
+        first = ask(client, ALICE, prompt).json()
+        assert first["cache"] == "MISS"
+        assert first["storage_scope"] == "private"
+        again = ask(client, ALICE, prompt).json()
+        assert again["cache"] == "HIT"
+        assert again["lookup_scope"] == "private"
         assert ask(client, CAROL, prompt).json()["cache"] == "MISS"
 
 

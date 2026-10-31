@@ -19,6 +19,7 @@ class ProviderEvent:
 
 class Provider(ABC):
     name: str = "base"
+    implicit_completion_is_safe: bool = False
     price_per_1k_input: float = 0.0
     price_per_1k_output: float = 0.0
 
@@ -30,6 +31,8 @@ class Provider(ABC):
 
     async def stream_events(self, prompt: str) -> AsyncIterator[ProviderEvent]:
         """Adapt controlled/mock providers; real adapters override with upstream metadata."""
+        if not self.implicit_completion_is_safe:
+            raise RuntimeError("Provider must report explicit completion metadata")
         async for content in self.stream(prompt):
             yield ProviderEvent("content", content=content)
         yield ProviderEvent("complete", finish_reason="stop")
