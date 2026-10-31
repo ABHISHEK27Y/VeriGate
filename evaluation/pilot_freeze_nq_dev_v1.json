@@ -1,0 +1,39 @@
+{
+  "schema_version": "realistic-query-pilot-freeze-v1",
+  "run_id": "nq_dev_minilm_pilot_v1",
+  "frozen_from_commit": "e9c2c3deb2c94167c41cbacd15c23356f1fbb10a",
+  "source": "NQ-Open original dev split",
+  "source_url": "https://raw.githubusercontent.com/google-research-datasets/natural-questions/master/nq_open/NQ-open.dev.jsonl",
+  "source_license": "CC BY-SA 3.0",
+  "source_sha256": "f15567f38099f3615f5b8a685c0aef449c11ad90d3da3735e8d1b98115b40616",
+  "selection": {
+    "order": "SHA-256 of pilot-v1: plus normalized question; ascending",
+    "stored_count": 60,
+    "distinct_incoming_count": 50,
+    "exact_repeat_count": 10,
+    "candidate": "top cosine nearest among the 60 stored questions using pinned MiniLM",
+    "exclusions": "duplicate normalized questions; all text in controlled_answer_cases.json, answer_aware_holdout.json, and mined NQ-train gold_answer_pairs.tsv"
+  },
+  "embedding": {
+    "backend": "minilm",
+    "model": "all-MiniLM-L6-v2",
+    "revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+    "normalize_embeddings": true
+  },
+  "policy": {
+    "artifact": "app/cache/artifacts/answer_policy_v1.json",
+    "artifact_sha256": "f9d2365021192fe7a78c54a0d250e1c384f416ad3c1818b084c5b89cd276b6a2",
+    "accept_at": 0.9,
+    "reject_below": 0.2,
+    "min_similarity": 0.35,
+    "nli_model": "cross-encoder/nli-deberta-v3-xsmall",
+    "nli_revision": "a150876415327c80daeff35ca6f68f5ed8cf5c24"
+  },
+  "comparators": {
+    "exact": "byte-identical query",
+    "static_0.72": "CachePolicy(use_adaptive=False, use_verifier=False, static_threshold=0.72)",
+    "adaptive_tier1": "CachePolicy() with token_diff verifier and no NLI",
+    "answer_aware_v1": "frozen answer-policy artifact"
+  },
+  "labels": "none; NQ reference answers are candidate cached answers, not a human review of reuse"
+}

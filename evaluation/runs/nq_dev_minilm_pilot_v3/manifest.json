@@ -1,0 +1,41 @@
+{
+  "schema_version": "realistic-query-pilot-v1",
+  "run_id": "nq_dev_minilm_pilot_v3",
+  "freeze_sha256": "129e9aa82f99cd44eb1ad68f34924e7550aa4d590aa950da7126cb019f5594b2",
+  "source_sha256": "f15567f38099f3615f5b8a685c0aef449c11ad90d3da3735e8d1b98115b40616",
+  "development_sha256": "d03c1fa7b92638a278f363c4a16457d4dcafa58f4335848c172c69297d79b48d",
+  "heldout_sha256": "b2353fe45c093ddb5d5fafce1dd4c51e93110d2c3ad826472b3d00de6523f44f",
+  "mined_train_pairs_sha256": "52aef4caca650b814523cc9b4f9951a8cce59d5f6613597d982e7fa199cdda67",
+  "eligible_source_rows": 3610,
+  "stored_rows": 60,
+  "incoming_rows": 60,
+  "selected_questions_sha256": "a1990103b94a8e6cb249e91592e9e6b12c0f481b48a713ced0a9a185ff1b77df",
+  "artifact_sha256": "f9d2365021192fe7a78c54a0d250e1c384f416ad3c1818b084c5b89cd276b6a2",
+  "artifact_version": "4e3733ec95ca4948fd845174c70f477383d27690618bde5df0c41c0ce27bbe3f",
+  "source_code_sha256": {
+    "app/cache/answer_policy.py": "911df51df7e0543782be9d8414b2188f3c0c24282d41fbc48ff5070814b5f248",
+    "app/cache/policy.py": "0d58d431bdf0cc21883d84b8c606ddc60b17634a37798ffe1c0f51c38a887d6e",
+    "app/cache/verifier.py": "381f41d31327cfc431bd918fef015f572c81f9c84a16792ae6a7bcab34e7b415",
+    "app/embeddings.py": "8235c13f0fb91f2dd05ada9ded39adb7baebbe102161e5d69879bede0ca18a53",
+    "scripts/run_realistic_query_pilot.py": "e0ca812cb8ecc7668a176f2f531cc183c80e2a35bac67e99dba0f8519d6f0cd3"
+  },
+  "embedding_model": {
+    "backend": "minilm",
+    "model": "all-MiniLM-L6-v2",
+    "revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+    "normalize_embeddings": true
+  },
+  "nli_model": "cross-encoder/nli-deberta-v3-xsmall",
+  "nli_revision": "a150876415327c80daeff35ca6f68f5ed8cf5c24",
+  "python": "3.13.2",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "machine": "AMD64",
+  "sentence_transformers": "6.1.0",
+  "git_commit_at_run": "bd1e02bb6955debe8f4746d8706ab5336acdaf58",
+  "latency_scope": "warm local query embedding, nearest-neighbor retrieval and policy decision; excludes Redis, HTTP and provider",
+  "label_type": "unlabelled_nq_reference",
+  "outputs": {
+    "decisions.csv": "c8bac6027044448402067edbdf8a89f47fe82b94239e0bd26c8fbb23a4c9e5d5",
+    "metrics.csv": "1cbebf9fabb9870d1c78c3458c0287c2faeae77216eb3d63f934ec5a70c0aedf"
+  }
+}

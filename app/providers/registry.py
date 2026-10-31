@@ -8,22 +8,27 @@ evaluation/cascade.py). The unused tier stays as failover.
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator, Mapping
 from dataclasses import dataclass, field
 from types import MappingProxyType
-from typing import Any
+from typing import Any, Literal, cast
 
 from ..complexity import is_hard
 from ..config import get_settings
+from ..organization import OrganizationDirectory, ProviderProfile
 from ..redis_client import create_redis
 from . import breaker
-from .base import Provider
+from .base import Provider, ProviderEvent
+from .evaluation import ControlledEvaluationProvider
 from .mock import MockProvider
 from .openai_compat import OpenAICompatibleProvider
 
 
-def _real(name: str, key: str, base: str, model: str) -> Provider:
-    return OpenAICompatibleProvider(name, key, base, model)
+def _real(
+    name: str, key: str, base: str, model: str, *, family: Literal["openai", "gemini"]
+) -> Provider:
+    return OpenAICompatibleProvider(name, key, base, model, family=family)
 
 
 @dataclass(frozen=True, slots=True)
@@ -51,6 +56,7 @@ class ProviderRegistry:
                     get_settings().openai_api_key,
                     get_settings().openai_base_url,
                     get_settings().openai_model,
+                    family="openai",
                 )
             )
         elif get_settings().llm_provider == "gemini" and get_settings().gemini_api_key:
@@ -60,10 +66,16 @@ class ProviderRegistry:
                     get_settings().gemini_api_key,
                     get_settings().gemini_base_url,
                     get_settings().gemini_model,
+                    family="gemini",
                 )
             )
         if get_settings().llm_provider == "mock":
             provs.append(MockProvider())
+        elif get_settings().llm_provider == "controlled-eval":
+            config = get_settings()
+            if config.environment != "development" or not config.evaluation_answers_path:
+                raise ValueError("Controlled evaluation requires development and an answer file")
+            provs.append(ControlledEvaluationProvider(config.evaluation_answers_path))
         elif not provs:
             raise ValueError("Configured provider is unsupported or missing its API key")
 
@@ -72,14 +84,22 @@ class ProviderRegistry:
             if get_settings().llm_provider == "gemini" and get_settings().gemini_api_key:
                 k, b = get_settings().gemini_api_key, get_settings().gemini_base_url
                 cascade = {
-                    "cheap": _real("gemini-cheap", k, b, get_settings().gemini_model),
-                    "strong": _real("gemini-strong", k, b, get_settings().gemini_strong_model),
+                    "cheap": _real(
+                        "gemini-cheap", k, b, get_settings().gemini_model, family="gemini"
+                    ),
+                    "strong": _real(
+                        "gemini-strong", k, b, get_settings().gemini_strong_model, family="gemini"
+                    ),
                 }
             elif get_settings().llm_provider == "openai" and get_settings().openai_api_key:
                 k, b = get_settings().openai_api_key, get_settings().openai_base_url
                 cascade = {
-                    "cheap": _real("openai-cheap", k, b, get_settings().openai_model),
-                    "strong": _real("openai-strong", k, b, get_settings().openai_strong_model),
+                    "cheap": _real(
+                        "openai-cheap", k, b, get_settings().openai_model, family="openai"
+                    ),
+                    "strong": _real(
+                        "openai-strong", k, b, get_settings().openai_strong_model, family="openai"
+                    ),
                 }
             else:
                 # no real key -> demonstrate with two mock tiers
@@ -93,6 +113,32 @@ class ProviderRegistry:
             cascade=cascade,
             redis=redis_client if redis_client is not None else create_redis(),
         )
+
+    @classmethod
+    def from_profile(
+        cls, profile: ProviderProfile, directory: OrganizationDirectory, redis_client
+    ) -> ProviderRegistry:
+        """Build an immutable, profile-owned client without changing global settings."""
+        label = f"{profile.provider}-{profile.profile_id}"
+        provider: Provider
+        if profile.provider == "mock":
+            provider = MockProvider(name_override=label)
+        else:
+            config = get_settings()
+            base = profile.base_url or (
+                config.openai_base_url if profile.provider == "openai" else config.gemini_base_url
+            )
+            model = profile.model or (
+                config.openai_model if profile.provider == "openai" else config.gemini_model
+            )
+            provider = _real(
+                label,
+                directory.profile_secret(profile.profile_id),
+                base,
+                model,
+                family=cast(Literal["openai", "gemini"], profile.provider),
+            )
+        return cls(providers=(provider,), redis=redis_client)
 
     async def aclose(self) -> None:
         providers = [*self.providers, *(self.cascade.values() if self.cascade else [])]
@@ -115,23 +161,54 @@ class ProviderRegistry:
             ]  # cheap first; strong as failover
         return list(self.providers)
 
+    def intended_route(self, prompt: str) -> str:
+        """The configured first choice, independent of breaker/fallback state."""
+        return self._order_for(prompt)[0].name
+
+    def cache_scopes(self) -> tuple[str, ...]:
+        """Cache partitions created by this registry for one API-key tenant."""
+        if self.cascade:
+            return tuple(provider.name for provider in self.cascade.values())
+        return ()
+
     async def route_stream(self, prompt: str) -> tuple[str, AsyncIterator[str]]:
+        name, stream = await self._route(prompt, events=False)
+        return name, cast(AsyncIterator[str], stream)
+
+    async def route_events(self, prompt: str) -> tuple[str, AsyncIterator[ProviderEvent]]:
+        name, stream = await self._route(prompt, events=True)
+        return name, cast(AsyncIterator[ProviderEvent], stream)
+
+    async def _route(self, prompt: str, *, events: bool) -> tuple[str, AsyncIterator]:  # noqa: PLR0915
         """Pick a provider (cascade + circuit-breaker + failover) -> (name, token_stream)."""
         last_err: Exception | None = None
         order = self._order_for(prompt)
         # Acquire ownership before attempting upstream work.
+        first_timeout = min(
+            get_settings().provider_first_token_timeout,
+            get_settings().provider_timeout / max(len(order), 1),
+        )
         for p in order:
             ticket = await breaker.acquire(p.name, self.redis)
             if ticket is None:
                 continue
+            agen = None
             try:
-                agen = p.stream(prompt)
-                first = await agen.__anext__()
+                agen = p.stream_events(prompt) if events else p.stream(prompt)
+                async with asyncio.timeout(first_timeout):
+                    first = await agen.__anext__()
 
                 async def _wrapped(first_chunk=first, gen=agen, provider_name=p.name, lease=ticket):
                     try:
                         yield first_chunk
-                        async for chunk in gen:
+                        while True:
+                            try:
+                                async with asyncio.timeout(
+                                    get_settings().provider_stream_idle_timeout
+                                ):
+                                    chunk = await gen.__anext__()
+                            except StopAsyncIteration:
+                                break
                             yield chunk
                     except Exception as error:
                         if breaker.transient(error):
@@ -143,17 +220,25 @@ class ProviderRegistry:
                         await gen.aclose()
 
                 return p.name, _wrapped()
+            except asyncio.CancelledError:
+                if agen is not None and hasattr(agen, "aclose"):
+                    await agen.aclose()
+                raise
             except StopAsyncIteration:
-                await breaker.record_success(p.name, self.redis, ticket)
-                return p.name, _empty()
+                if agen is not None and hasattr(agen, "aclose"):
+                    await agen.aclose()
+                await breaker.record_failure(p.name, self.redis, ticket)
+                last_err = RuntimeError("provider returned no first token")
+                continue
             except Exception as e:  # noqa: BLE001
+                if agen is not None and hasattr(agen, "aclose"):
+                    await agen.aclose()
                 if breaker.transient(e):
                     await breaker.record_failure(p.name, self.redis, ticket)
+                else:
+                    raise RuntimeError("provider rejected request") from e
                 last_err = e
                 continue
+        if isinstance(last_err, TimeoutError):
+            raise TimeoutError("all providers timed out") from last_err
         raise RuntimeError("all providers unavailable") from last_err
-
-
-async def _empty() -> AsyncIterator[str]:
-    if False:
-        yield ""  # pragma: no cover

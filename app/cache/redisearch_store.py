@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import re
-import time
-import uuid
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
 
@@ -114,10 +113,12 @@ async def validate_index(dim: int) -> None:
     raise RuntimeError("RediSearch vector field missing")
 
 
-async def add(query: str, answer: str, vec: np.ndarray, tenant: str) -> str:
-    eid = uuid.uuid4().hex
+async def add(
+    query: str, answer: str, vec: np.ndarray, tenant: str, *, metadata: dict[str, str] | None = None
+) -> str | None:
+    eid = hashlib.sha256(query.encode("utf-8")).hexdigest()
     async with _client() as r:
-        await storage.put(
+        stored = await storage.put(
             r,
             tenant,
             eid,
@@ -126,10 +127,11 @@ async def add(query: str, answer: str, vec: np.ndarray, tenant: str) -> str:
                 "query": query,
                 "answer": answer,
                 "vec": np.asarray(vec, dtype=np.float32).tobytes(),
+                **(metadata or {}),
             },
             namespace=_namespace(),
         )
-    return eid
+    return eid if stored else None
 
 
 async def clear(tenant: str | None = None) -> None:
@@ -143,10 +145,13 @@ async def clear(tenant: str | None = None) -> None:
                 )
 
 
-async def knn(vec: np.ndarray, tenant: str, k: int = 1):
+async def knn(vec: np.ndarray, tenant: str, k: int = 1, *, include_key: bool = False):
     # Escape TAG syntax even for callers outside the authenticated gateway.
     escaped = re.sub(r"([^a-zA-Z0-9_])", lambda m: "\\" + m[0], tenant)
-    q = f"(@tenant:{{{escaped}}})=>[KNN {k} @vec $BLOB AS score]"
+    # A hash can expire between FT.SEARCH and validation; bounded overfetch
+    # lets a live later result fill that shortlist slot.
+    search_k = min(max(k, 1) * 4, 64)
+    q = f"(@tenant:{{{escaped}}})=>[KNN {search_k} @vec $BLOB AS score]"
     async with _client() as r:
         res = await r.execute_command(
             "FT.SEARCH",
@@ -165,7 +170,7 @@ async def knn(vec: np.ndarray, tenant: str, k: int = 1):
             "score",
             "LIMIT",
             0,
-            k,
+            search_k,
             "DIALECT",
             2,
         )
@@ -178,16 +183,70 @@ async def knn(vec: np.ndarray, tenant: str, k: int = 1):
                 continue
             fields = res[i + 1]
             values = dict(zip(fields[::2], fields[1::2], strict=True))
-            out.append(
-                (
-                    row[b"query"].decode(),
-                    row[b"answer"].decode(),
-                    1.0 - float(values.get(b"score", b"1")),
-                )
+            # A hash can change after FT.SEARCH computed its score. Do not pair
+            # that score with a different question or answer from the hash.
+            if (
+                row.get(b"tenant") != tenant.encode()
+                or row.get(b"query") != values.get(b"query")
+                or row.get(b"answer") != values.get(b"answer")
+            ):
+                continue
+            hit = (
+                row[b"query"].decode(),
+                row[b"answer"].decode(),
+                1.0 - float(values.get(b"score", b"1")),
             )
-            eid = key.decode().rsplit(":", 1)[1]
-            await r.zadd(f"{_namespace()}:lru:{tenant}", {eid: time.time()}, xx=True)
+            out.append((*hit, key.decode()) if include_key else hit)
+            if len(out) >= k:
+                break
         return out
+
+
+async def read_candidate(key: str, tenant: str) -> dict[str, str] | None:
+    """Recheck the selected hash immediately before serving a RediSearch hit."""
+    if not key.startswith(f"{_namespace()}:entry:{tenant}:"):
+        return None
+    async with _client() as r:
+        row = await r.hgetall(key)
+    if not row or row.get(b"tenant") != tenant.encode():
+        return None
+    try:
+        return {"query": row[b"query"].decode(), "answer": row[b"answer"].decode()}
+    except KeyError:
+        return None
+
+
+async def read_overlay_candidate(key: str, tenant: str) -> dict[str, str] | None:
+    """Read only text fields; the vector hash field is binary, not UTF-8."""
+    if not key.startswith(f"{_namespace()}:entry:{tenant}:"):
+        return None
+    fields = (
+        "tenant",
+        "query",
+        "answer",
+        "origin_scope",
+        "origin_workspace",
+        "origin_application",
+        "origin_policy_version",
+        "response_eligibility",
+    )
+    async with _client() as r:
+        values = await r.hmget(key, *fields)
+    if any(value is None for value in values) or values[0] != tenant.encode():
+        return None
+    return {field: value.decode() for field, value in zip(fields, values, strict=True)}
+
+
+async def touch_candidate(key: str, tenant: str) -> None:
+    if not key.startswith(f"{_namespace()}:entry:{tenant}:"):
+        return
+    async with _client() as r:
+        await storage.touch(r, tenant, key.rsplit(":", 1)[1], namespace=_namespace())
+
+
+async def occupancy(tenant: str) -> dict[str, int]:
+    async with _client() as r:
+        return await storage.occupancy(r, tenant, namespace=_namespace())
 
 
 async def smoke_test() -> None:

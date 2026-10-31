@@ -39,7 +39,7 @@ The design realises these goals through a small set of well-established software
 The gateway is organised into four cooperating layers. Requests descend through them; the cache policy short-circuits the descent whenever a verified hit is available.
 
 \begin{itemize}
-    \item \textbf{Layer 1 --- Edge / API (FastAPI).} Terminates HTTP, authenticates the API key, derives the tenant, applies rate limiting and the daily spend budget, and exposes the chat, health, metrics, admin, and dashboard routes. Streaming responses are served as Server-Sent Events.
+    \item \textbf{Layer 1 --- Edge / API (FastAPI).} Terminates HTTP, authenticates the API key, derives the tenant, applies rate limiting and the daily request admission budget, and exposes the chat, health, metrics, admin, and dashboard routes. Streaming responses are served as Server-Sent Events.
     \item \textbf{Layer 2 --- Cache Intelligence.} The heart of the system: it embeds the query, retrieves the nearest neighbour within the tenant, and applies the \texttt{CachePolicy} (adaptive threshold $\rightarrow$ verifier $\rightarrow$ decision). It also classifies volatile queries for bypass. On a verified hit it returns the stored answer; otherwise it forwards to Layer~3.
     \item \textbf{Layer 3 --- Provider Routing.} Selects the upstream model. With the cascade enabled it scores complexity and chooses the cheap or strong tier; a circuit breaker skips unhealthy providers, and a mock provider is always retained as a terminal failover.
     \item \textbf{Layer 4 --- State \& Storage.} Redis (or in-process \texttt{fakeredis}) holds cache entries, rate-limit buckets, budget counters, and breaker state, all namespaced per tenant. The vector index (in-process NumPy matrix or RediSearch/HNSW) provides the nearest-neighbour lookup.
@@ -51,7 +51,7 @@ The gateway is organised into four cooperating layers. Requests descend through 
     \begin{tikzpicture}[node distance=0.5cm]
     \node[vgnode, text width=0.82\textwidth] (edge)
         {\textbf{Layer 1 \textbullet\ Edge / API} (FastAPI + uvicorn)\\[1pt]
-         Auth $\rightarrow$ tenant derivation $\rightarrow$ rate limit $\rightarrow$ spend budget \quad\textbar\quad Routes: \texttt{/v1/chat}, \texttt{/v1/chat/stream}, \texttt{/health}, \texttt{/metrics}, \texttt{/ui}};
+         Auth $\rightarrow$ tenant derivation $\rightarrow$ rate limit $\rightarrow$ request admission budget \quad\textbar\quad Routes: \texttt{/v1/chat}, \texttt{/v1/chat/stream}, \texttt{/health}, \texttt{/metrics}, \texttt{/ui}};
     \node[vgacc, text width=0.82\textwidth, below=of edge] (cache)
         {\textbf{Layer 2 \textbullet\ Cache Intelligence} \; \textit{(the contribution)}\\[1pt]
          embed $\rightarrow$ nearest neighbour (per tenant) $\rightarrow$ \texttt{CachePolicy}: adaptive threshold $\rightarrow$ Tier-1/Tier-2 verifier $\rightarrow$ HIT / MISS \quad\textbar\quad volatility $\rightarrow$ BYPASS};
@@ -148,7 +148,7 @@ A Data-Flow Diagram (DFD) models how information moves through the system indepe
 \subsection{Level-1 DFD (Process Decomposition)}
 The gateway decomposes into five processes (P1--P5) reading and writing five data stores (D1--D5).
 \begin{itemize}
-    \item \textbf{P1 Guard:} authenticate key, derive tenant, apply rate limit and spend budget (reads/writes D3).
+    \item \textbf{P1 Guard:} authenticate key, derive tenant, apply rate limit and request admission budget (reads/writes D3).
     \item \textbf{P2 Embed \& Lookup:} embed the query and find the nearest neighbour in the tenant's partition (reads D2, the vector index).
     \item \textbf{P3 Verify \& Decide:} read the candidate entry (D1), apply the adaptive threshold and the verifier, classify volatility, and emit HIT/MISS/BYPASS.
     \item \textbf{P4 Route \& Call:} on a miss, run the cascade, skip open breakers (reads/writes D4), call the provider, and store the answer (writes D1, D2).
@@ -293,7 +293,7 @@ The defining logic of VeriGate is the decision, taken for every query, among fou
 \end{figure}
 
 \section{Cache Intelligence Design}
-The cache intelligence is composed of three sub-designs that together constitute the novel contribution.
+The cache intelligence is composed of three sub-designs that together constitute the experimental cache policy.
 
 \subsection{Adaptive Similarity Threshold}
 \label{sec:adaptive}
@@ -348,7 +348,7 @@ For queries that miss the cache, a complexity score $\kappa(q) \in [0,1]$ (based
 \end{figure}
 
 \section{Component and Module Design}
-The static structure follows the layers of Figure~\ref{fig:sys_arch}. Table~\ref{tab:modules} maps each source module to its responsibility and its principal collaborators, showing that the novel logic is concentrated in \texttt{app/cache/} behind a single policy object.
+The static structure follows the layers of Figure~\ref{fig:sys_arch}. Table~\ref{tab:modules} maps each source module to its responsibility and its principal collaborators, showing that the cache decision logic is concentrated in \texttt{app/cache/} behind a single policy object.
 
 \begin{table}[H]
     \centering
@@ -368,7 +368,7 @@ The static structure follows the layers of Figure~\ref{fig:sys_arch}. Table~\ref
     \texttt{app/providers/registry.py} & Build providers / cascade; \texttt{route\_stream} & 3 \\ \hline
     \texttt{app/providers/openai\_compat.py} & OpenAI/Gemini streaming client & 3 \\ \hline
     \texttt{app/providers/breaker.py} & Per-provider circuit breaker (Redis state) & 3, 4 \\ \hline
-    \texttt{app/budget.py} & Per-key daily spend budget & 1, 4 \\ \hline
+    \texttt{app/budget.py} & Per-key daily request admission budget & 1, 4 \\ \hline
     \texttt{app/metrics.py} & Prometheus counters and histograms & cross-cutting \\ \hline
     \texttt{app/static/dashboard.html} & Operator dashboard served at \texttt{/ui} & 1 \\ \hline
     \end{tabular}

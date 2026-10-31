@@ -5,7 +5,7 @@ from __future__ import annotations
 from contextvars import ContextVar
 from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, PrivateAttr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _MIN_SALT_LENGTH = 32
@@ -26,15 +26,32 @@ class Settings(BaseSettings):
     # Semantic cache
     cache_enabled: bool = True
     cache_match_mode: Literal["exact", "semantic"] = "exact"
+    answer_policy_artifact: str = ""  # explicit opt-in; empty keeps historical semantic policy
+    answer_policy_prewarm: bool = False  # fail startup if the enabled NLI policy cannot initialize
+    organization_config_path: str = ""  # optional hashed-key organization directory
     cache_epoch: str = "1"
     max_request_bytes: int = Field(default=65536, gt=0)
     max_concurrent_requests: int = Field(default=64, gt=0)
     request_body_timeout: float = Field(default=10, gt=0)
     max_cached_tenants: int = Field(default=16, gt=0)
     max_cache_entry_bytes: int = Field(default=65536, gt=0)
+    shared_cache_entry_limit: int = Field(default=5000, gt=0)
+    private_cache_entry_limit: int = Field(default=256, gt=0)
+    shared_cache_byte_limit: int = Field(default=64_000_000, gt=0)
+    private_cache_byte_limit: int = Field(default=8_000_000, gt=0)
+    organization_cache_entry_limit: int = Field(default=20_000, gt=0)
+    organization_cache_byte_limit: int = Field(default=256_000_000, gt=0)
+    semantic_retrieval_k: int = Field(default=5, ge=1, le=20)
+    semantic_verify_limit: int = Field(default=5, ge=1, le=20)
+    semantic_verify_budget_ms: int = Field(default=1500, gt=0, le=30000)
+    cache_lookup_timeout_sec: float = Field(default=5.0, gt=0, le=60)
+    request_deadline_sec: float = Field(default=45.0, gt=0, le=300)
     # Base threshold T_base. Calibrated for the "minilm" backend (semantic scores sit
     # lower than lexical ones). The adaptive logic raises it for risky queries.
     cache_similarity_base: float = 0.72
+    cache_policy_static: bool = False  # evaluation baseline; default stays adaptive
+    answer_policy_subject_guard: bool = True  # opt-in policy's named-work identity check
+    answer_policy_technical_guard: bool = False  # unvalidated technical guard is opt-in
 
     # Embeddings
     #   "minilm" -> real semantic embeddings via sentence-transformers (default)
@@ -82,13 +99,25 @@ class Settings(BaseSettings):
     # Provider call timeout (seconds)
     max_response_chars: int = Field(default=1_000_000, gt=0)
     provider_timeout: float = Field(default=30.0, gt=0)
+    provider_first_token_timeout: float = Field(default=8.0, gt=0)
+    provider_stream_idle_timeout: float = Field(default=8.0, gt=0)
+
+    # Optional shadow samples: a cache HIT still returns immediately. A sampled
+    # fresh answer is retained for human review, never treated as a truth label.
+    shadow_enabled: bool = False
+    shadow_sample_rate: float = Field(default=0.0, ge=0.0, le=1.0)
+    shadow_max_pending: int = Field(default=4, gt=0, le=64)
+    shadow_daily_limit_per_tenant: int = Field(default=20, ge=0)
+    shadow_review_limit: int = Field(default=100, gt=0, le=10000)
 
     # Upstream LLM provider: "mock" (free, default), "openai", or "gemini".
     # Mock is used only when explicitly selected; keys come from the environment.
     llm_provider: str = "mock"
+    evaluation_answers_path: str = ""  # development-only controlled HTTP evaluation
     openai_api_key: str = ""
     openai_base_url: str = "https://api.openai.com/v1"
     openai_model: str = "gpt-4o-mini"
+    provider_max_completion_tokens: int = Field(default=2048, ge=1, le=32768)
     gemini_api_key: str = ""
     gemini_base_url: str = "https://generativelanguage.googleapis.com/v1beta/openai"
     gemini_model: str = "gemini-flash-lite-latest"
@@ -104,15 +133,17 @@ class Settings(BaseSettings):
             return
         if not self.redis_url:
             raise ValueError("Production requires shared Redis")
-        if not self.api_key_set or "demo-key-123" in self.api_key_set:
-            raise ValueError("Production requires non-demo API keys")
+        if (
+            not self.api_key_set and not self.organization_config_path
+        ) or "demo-key-123" in self.api_key_set:
+            raise ValueError("Production requires non-demo gateway credentials")
         if self.metrics_token == "internal-metrics-token" or not self.metrics_token:
             raise ValueError("Production requires a private metrics token")
         if len(self.api_key_salt) < _MIN_SALT_LENGTH:
             raise ValueError("Production requires API_KEY_SALT of at least 32 characters")
         if "*" in self.cors_origins:
             raise ValueError("Production CORS must use explicit origins")
-        if self.llm_provider == "mock":
+        if self.api_key_set and self.llm_provider in {"mock", "controlled-eval"}:
             raise ValueError("Production requires a real provider")
 
     @property
@@ -122,6 +153,8 @@ class Settings(BaseSettings):
 
 class RuntimeSettings(Settings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore", frozen=True)
+    _answer_policy_sha256: str | None = PrivateAttr(default=None)
+    _namespace_snapshot: str | None = PrivateAttr(default=None)
 
 
 settings = Settings()

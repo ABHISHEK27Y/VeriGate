@@ -1,0 +1,21 @@
+{
+  "workload_sha256": "0168d74c0e9a4602234008d2509e9c486814cd13e89629cfbb4084efcbc07a25",
+  "policy_sha256": "f9d2365021192fe7a78c54a0d250e1c384f416ad3c1818b084c5b89cd276b6a2",
+  "requests_sha256": "76b0ffb2ee26d90a73d8cc4f173af3b7de07b5809ba3571d1c91c8182b5205bc",
+  "environment": {
+    "python": "3.13.2 (tags/v3.13.2:4f8bb39, Feb  4 2025, 15:23:48) [MSC v.1942 64 bit (AMD64)]",
+    "platform": "Windows-11-10.0.26300-SP0"
+  },
+  "config": {
+    "CACHE_MATCH_MODE": "semantic",
+    "CACHE_POLICY_STATIC": "false",
+    "ANSWER_POLICY_ARTIFACT": "D:\\miniProject\\verigate\\app\\cache\\artifacts\\answer_policy_v1.json",
+    "CACHE_TTL_SEC": "86400",
+    "MAX_CACHE_ENTRIES_PER_TENANT": "256",
+    "CACHE_EPOCH": "stress-technical_identity_holdout_20261031_v1-answer_aware-unchanged",
+    "EMBEDDING_BACKEND": "minilm",
+    "VECTOR_BACKEND": "redisearch",
+    "ANSWER_POLICY_TECHNICAL_GUARD": "false"
+  },
+  "runner_sha256": "58f79759fe63772b07db0719b4af55c12c42d684366bdb3c502b760478901971"
+}

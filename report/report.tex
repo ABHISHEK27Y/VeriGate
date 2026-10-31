@@ -2,7 +2,7 @@
 \usepackage[left=1in, right=1in, top=1in, bottom=1in]{geometry}
 \newcommand{\plogo}{\fbox{$\mathcal{PL}$}}
 \usepackage{graphicx}
-\graphicspath{{figures/}}
+\graphicspath{{../evaluation/results/}{figures/}}
 \usepackage{graphics}
 \usepackage{float}
 \usepackage[table,xcdraw]{xcolor}
@@ -159,7 +159,14 @@ In this submission, I have expressed my idea in my own words, and I have adequat
 \end{center}
 \vspace{1.5cm}
 {\large
-Large Language Models (LLMs) are increasingly deployed in production, but every API call incurs monetary cost and high latency. A \textit{semantic cache} mitigates this by returning a stored answer when a new query is semantically ``close enough'' to a past one. However, existing semantic caches (e.g. GPTCache) rely on a \textbf{single fixed similarity threshold}, which produces \textbf{false cache hits} --- serving the wrong stored answer to a look-alike query (for example, returning the answer for \textit{``capital of Austria''} to \textit{``capital of Australia''}). This report presents \textbf{VeriGate}, a production-grade LLM Gateway whose core novel contribution is an \textbf{adaptive, self-verifying semantic cache}: it (i) adapts the similarity threshold per query using neighbourhood density, (ii) \textit{verifies} a candidate hit with a two-tier verifier (a near-free structural check on numbers, negation and named entities, and an optional NLI cross-encoder), and (iii) detects volatile queries to skip caching time-sensitive answers. A second contribution, a \textbf{cost-aware model cascade}, routes easy queries to a cheap model and escalates only hard ones. On a controlled benchmark, VeriGate reduces the false-hit rate from the fixed-threshold baseline's \textbf{46.7\%} to \textbf{0.0\%} (100\% precision), with structural verification costing only \textbf{$\sim$0.03~ms}; a vectorised index brings the cache-hit path to \textbf{$\sim$10~ms} ($\sim$78$\times$ faster than an 800~ms LLM call), and the cascade cuts LLM cost by \textbf{$\sim$47\%} with no quality loss on hard queries. The system is engineered for production with per-tenant cache isolation, per-key spend budgets, a provider circuit breaker, Prometheus/Grafana observability, and Docker packaging.
+VeriGate is an LLM gateway with an experimental semantic answer cache. Its conservative
+default reuses only exact prompts; approximate reuse is opt-in. The gateway also provides
+tenant separation, rate limiting, provider routing, streaming, and observability. This
+report documents the implementation and a small candidate-pair smoke experiment. That
+experiment does not measure whether a specific cached answer remains correct on a new
+request, and its results do not establish a production error rate or a novel algorithmic
+contribution. The research direction is to evaluate answer-aware, cost-aware selective
+verification against fairly tuned baselines on independently reviewed, held-out data.
 }
 
 \newpage

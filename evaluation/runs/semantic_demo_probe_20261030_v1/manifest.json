@@ -1,0 +1,18 @@
+{
+  "schema_version": "semantic-demo-probe-v1",
+  "label_type": "authored_exploratory",
+  "input_sha256": "ca3b6d923158e1d52c55d46198c6335f69e121cd5b370c4d3cfd1975a385fefd",
+  "source_sha256": "223c6a2eb3eef9ca0b416c2bcf0a38d23765778378c64fb4f7a1feb050e3a6dd",
+  "policy_version": "4e3733ec95ca",
+  "embedding_backend": "minilm",
+  "provider": "mock",
+  "python": "3.13.2",
+  "rows_sha256": "2743aca40a15f6b057dd71e53d7917ceb9faebc6f29d203a5c39c69d64d9161d",
+  "counts": {
+    "valid_reuse": 6,
+    "lost_valid_reuse": 0,
+    "suspected_incorrect_accept": 0,
+    "unsafe_declined": 6
+  },
+  "fixtures_restored_after_run": true
+}

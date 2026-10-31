@@ -1,0 +1,23 @@
+{
+  "How do I backup Nginx configuration?": "Back up the Nginx configuration.",
+  "How can I make a backup of Nginx config?": "Back up the Nginx configuration.",
+  "How do I restore Nginx configuration?": "Restore the Nginx configuration.",
+  "How do I create a MySQL index?": "Create the index.",
+  "How can I add a MySQL index?": "Create the index.",
+  "How do I delete a MySQL index?": "Delete the index.",
+  "How do I read `MODEL_OUT` in FastAPI?": "Read the output model.",
+  "How can I get `MODEL_OUT` in FastAPI?": "Read the output model.",
+  "How do I read `MODEL_IN` in FastAPI?": "Read the input model.",
+  "How do I restore S3 in production?": "Restore production S3.",
+  "How can I recover S3 in prod?": "Restore production S3.",
+  "How do I restore S3 in staging?": "Restore staging S3.",
+  "How do I revert a Git commit?": "Revert the commit.",
+  "How can I rollback a Git commit?": "Revert the commit.",
+  "How do I delete a Git commit?": "Delete the commit.",
+  "How do I install a Linux package?": "Install the package.",
+  "How can I setup a Linux package?": "Install the package.",
+  "How do I remove a Linux package?": "Remove the package.",
+  "How do I restart Node.js 18?": "Restart Node.js 18.",
+  "How can I reboot Node.js 18?": "Restart Node.js 18.",
+  "How do I restart Node.js 20?": "Restart Node.js 20."
+}

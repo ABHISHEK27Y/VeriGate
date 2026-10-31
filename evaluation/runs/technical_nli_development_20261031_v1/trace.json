@@ -1,0 +1,108 @@
+{
+  "model": "cross-encoder/nli-deberta-v3-xsmall",
+  "revision": "a150876415327c80daeff35ca6f68f5ed8cf5c24",
+  "prewarm_ms": 88440.296,
+  "rss_before_bytes": 52895744,
+  "rss_after_bytes": 734121984,
+  "rows": [
+    {
+      "id": "fastapi-2:paraphrase",
+      "similarity": "0.9473284482956",
+      "historical_reason": "answer_verify:uncertain_answer",
+      "accept_at": 0.9,
+      "reject_below": 0.2,
+      "variants": {
+        "current": {
+          "premise": "The answer to How do I read `MODEL_OUT` in FastAPI? is Read the output model..",
+          "hypothesis": "The answer to How can I get `MODEL_OUT` in FastAPI? is Read the output model..",
+          "score": 0.7487446069717407,
+          "status": "ok",
+          "tokens": 49,
+          "warm_ms": 76.117
+        },
+        "compact": {
+          "premise": "Question: How do I read `MODEL_OUT` in FastAPI?\nAnswer: Read the output model.",
+          "hypothesis": "Question: How can I get `MODEL_OUT` in FastAPI?\nAnswer: Read the output model.",
+          "score": 0.7869997024536133,
+          "status": "ok",
+          "tokens": 47,
+          "warm_ms": 67.758
+        },
+        "question_only": {
+          "premise": "How do I read `MODEL_OUT` in FastAPI?",
+          "hypothesis": "How can I get `MODEL_OUT` in FastAPI?",
+          "score": 0.6853607296943665,
+          "status": "ok",
+          "tokens": 29,
+          "warm_ms": 94.79
+        }
+      }
+    },
+    {
+      "id": "s3-3:paraphrase",
+      "similarity": "0.751784920692",
+      "historical_reason": "answer_verify:uncertain_answer",
+      "accept_at": 0.9,
+      "reject_below": 0.2,
+      "variants": {
+        "current": {
+          "premise": "The answer to How do I restore S3 in production? is Restore production S3..",
+          "hypothesis": "The answer to How can I recover S3 in prod? is Restore production S3..",
+          "score": 0.5653244256973267,
+          "status": "ok",
+          "tokens": 41,
+          "warm_ms": 75.502
+        },
+        "compact": {
+          "premise": "Question: How do I restore S3 in production?\nAnswer: Restore production S3.",
+          "hypothesis": "Question: How can I recover S3 in prod?\nAnswer: Restore production S3.",
+          "score": 0.5524649024009705,
+          "status": "ok",
+          "tokens": 39,
+          "warm_ms": 67.304
+        },
+        "question_only": {
+          "premise": "How do I restore S3 in production?",
+          "hypothesis": "How can I recover S3 in prod?",
+          "score": 0.9637828469276428,
+          "status": "ok",
+          "tokens": 21,
+          "warm_ms": 64.009
+        }
+      }
+    },
+    {
+      "id": "linux-5:paraphrase",
+      "similarity": "0.887952625751",
+      "historical_reason": "answer_verify:uncertain_answer",
+      "accept_at": 0.9,
+      "reject_below": 0.2,
+      "variants": {
+        "current": {
+          "premise": "The answer to How do I install a Linux package? is Install the package..",
+          "hypothesis": "The answer to How can I setup a Linux package? is Install the package..",
+          "score": 0.879062831401825,
+          "status": "ok",
+          "tokens": 37,
+          "warm_ms": 63.035
+        },
+        "compact": {
+          "premise": "Question: How do I install a Linux package?\nAnswer: Install the package.",
+          "hypothesis": "Question: How can I setup a Linux package?\nAnswer: Install the package.",
+          "score": 0.7554713487625122,
+          "status": "ok",
+          "tokens": 35,
+          "warm_ms": 58.678
+        },
+        "question_only": {
+          "premise": "How do I install a Linux package?",
+          "hypothesis": "How can I setup a Linux package?",
+          "score": 0.9412742853164673,
+          "status": "ok",
+          "tokens": 19,
+          "warm_ms": 59.159
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "schema_version": "freshness-development-v1",
+  "run_id": "freshness_dev_20261030_v3",
+  "label_type": "authored_development",
+  "input_sha256": "bfb98d6588d45645e74225cb6546e9b027bbdc2305ba9d60b1e77c5888abd74f",
+  "policy_source_sha256": "f4e06c943022bbc71c7506e728d62d4c677aa1ef098d96500da511239caece93",
+  "outputs": {
+    "decisions.csv": "6a4a4cda9bebfe81d938135c6b382232ed8af5913e8a290ab1dfbf6784da6674",
+    "summary.json": "034090651a30689a2110d07a130f382352d28cfdc0d0ede80e6210fe4e9d8062"
+  }
+}

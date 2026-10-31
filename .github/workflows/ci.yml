@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, 'codex/**']
   pull_request:
     branches: [main, master]
 
@@ -30,17 +30,19 @@ jobs:
 
       - name: Run Ruff (format check)
         run: |
-          ruff format --check app/ tests/ evaluation/
+          ruff format --check app/ tests/ evaluation/ scripts/
 
       - name: Run MyPy (type check)
         run: |
-          mypy app/
+          mypy app/ evaluation/ scripts/
 
   test:
     name: Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # historical answer-policy study source is verified at its commit
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -55,11 +57,22 @@ jobs:
 
       - name: Run tests
         run: |
-          python -m pytest tests/ -v --tb=short
+          python -m pytest tests/ -v --tb=short --junitxml=evaluation/results/tests.xml
+          python scripts/record_test_summary.py
 
       - name: Run evaluation (accuracy)
         run: |
           python -m evaluation.run
+
+      - name: Verify generated report tables
+        run: |
+          python scripts/export_report_tables.py
+          python -m scripts.verify_evidence_bundle evidence-20261029-hash-v3
+          python -m scripts.export_directional_report evidence-20261029-hash-v3
+          python -m scripts.export_answer_policy_report answer_aware_20261029_v6
+          python -m scripts.verify_current_pilots
+          python -m scripts.verify_live_runs
+          git diff --exit-code -- evaluation/results/checks.json report/generated/ docs/RESULTS_DIRECTIONAL.md docs/RESULTS_ANSWER_AWARE.md
 
       - name: Upload evaluation results
         uses: actions/upload-artifact@v4
@@ -108,6 +121,50 @@ jobs:
           TEST_ALLOW_REDIS_FLUSHDB: "1"
         run: |
           python -m pytest tests/ -v --tb=short
+
+      - name: Live HTTP benchmark with Redis Stack and delayed mock provider
+        env:
+          REDIS_URL: redis://localhost:6379/0
+        run: |
+          python -m scripts.benchmark_live_gateway evaluation/results/live_http_redis_ci
+
+      - name: Two-worker shared Redis checks
+        env:
+          REDIS_URL: redis://localhost:6379/0
+        run: |
+          python -m scripts.test_multiworker_redis evaluation/results/multiworker_redis_ci
+
+      - name: Real MiniLM and NLI live HTTP benchmark
+        timeout-minutes: 25
+        env:
+          REDIS_URL: redis://localhost:6379/0
+        run: |
+          python -m scripts.benchmark_real_semantic evaluation/results/real_semantic_ci
+
+      - name: Compare lazy and required NLI prewarm on one runner
+        timeout-minutes: 25
+        env:
+          REDIS_URL: redis://localhost:6379/0
+        run: |
+          python -m scripts.benchmark_prewarm_semantic evaluation/results/prewarm_semantic_ci
+
+      - name: Upload live benchmark artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-http-redis-benchmark
+          path: evaluation/results/live_http_redis_ci/
+          retention-days: 7
+
+      - name: Upload real semantic and multi-worker artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: real-semantic-and-multiworker
+          path: |
+            evaluation/results/real_semantic_ci/
+            evaluation/results/multiworker_redis_ci/
+            evaluation/results/prewarm_semantic_ci/
+          retention-days: 7
 
   security-audit:
     name: Security Audit

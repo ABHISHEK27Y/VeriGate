@@ -1,5 +1,9 @@
 # Evaluation Plan
 
+> Historical plan. Its pair-label assumptions and metric names have been superseded by
+> [the current evaluation README](../evaluation/README.md) and
+> [research baseline](RESEARCH_BASELINE.md). Retained for provenance, not evidence.
+
 How VeriGate proves its novel contribution with numbers. This maps directly to the
 "Results & Evaluation" chapter of the report — the section examiners weigh most heavily.
 

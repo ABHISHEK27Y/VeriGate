@@ -1,0 +1,18 @@
+{
+  "workload_sha256": "2ab1c4b696e7acd184278816b2fe194cd8aa3987a7c6f6e22ea9dd55d5e0158f",
+  "policy_sha256": "f9d2365021192fe7a78c54a0d250e1c384f416ad3c1818b084c5b89cd276b6a2",
+  "requests_sha256": "f597f64de2ff989eedfe44ddba6ecb21fd3a3c0a5c439a25b26c13b025ac4ca7",
+  "environment": {
+    "python": "3.13.2 (tags/v3.13.2:4f8bb39, Feb  4 2025, 15:23:48) [MSC v.1942 64 bit (AMD64)]",
+    "platform": "Windows-11-10.0.26300-SP0"
+  },
+  "config": {
+    "CACHE_MATCH_MODE": "exact",
+    "ANSWER_POLICY_ARTIFACT": "",
+    "CACHE_TTL_SEC": "86400",
+    "MAX_CACHE_ENTRIES_PER_TENANT": "1200",
+    "CACHE_EPOCH": "stress-nq_song_stress_20261030_v1-exact-sufficient",
+    "EMBEDDING_BACKEND": "minilm",
+    "VECTOR_BACKEND": "redisearch"
+  }
+}

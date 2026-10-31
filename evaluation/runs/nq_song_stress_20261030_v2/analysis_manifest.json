@@ -1,0 +1,13 @@
+{
+  "input_request_hashes": {
+    "exact_sufficient": "128eb0ac373f262e64256eedf6515b7521a5dd841c8492cd38a39023da9de67c",
+    "static_sufficient": "0a8476cd3ba924ccd8e60a1f7da90e8ce3de513cf3423e445ad1a0f30d842311",
+    "answer_aware_sufficient": "95f96b7e772330b45c31eb48237ee640c265e11b5b8b08deb968a384498bca94",
+    "exact_deployment": "51c4f3e3e0ed1e1969e91684e81f1ffadeefa5d4f8359b2518ae5ca93fb25c3e",
+    "static_deployment": "4b8138fceeb832af051b66b3b6c04a03da1ed3f3d45be33cfab397af408d3e89",
+    "answer_aware_deployment": "19a2bb29272ba38218af740495926fd57d37d06b7bba0f3f60594a2976c9438f"
+  },
+  "aggregate_sha256": "979a883ead9005de400726c4a052dc67be703333c37b562b4310c340ca5846ae",
+  "report_sha256": "8057ab5a362e12f1ad0ab90c462790ad401101dae41a9815274082d6a8ca2ff3",
+  "analysis_seed": 90210
+}

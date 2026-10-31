@@ -1,0 +1,3 @@
+mode,requests,completed,reference_matching_hits,suspected_wrong_hits,verifier_false_rejections,live_opportunities,common_potential,provider_calls,uncertain_reference_rows
+unchanged,120,120,83,0,1,84,90,37,120
+guarded,120,120,42,0,42,84,90,78,120

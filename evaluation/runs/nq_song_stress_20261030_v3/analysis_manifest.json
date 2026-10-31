@@ -1,0 +1,21 @@
+{
+  "input_request_hashes": {
+    "exact_sufficient": "1c67f831e2ebc2a9d1c6d07689575157c6bf0f8dd538703d9770fc9c3639397d",
+    "static_sufficient": "1fa9395e27bdba9b6f3647ca9500c232cf2f5c5dce1fd9b63888f88bf3b020ef",
+    "answer_aware_sufficient": "447e436b469dfeb3d2c834ecfaf98df1ac5ead385a1eb090683208e2544b3182",
+    "exact_deployment": "8e41dac409401f1977a19fbb8ba13c0a5c6d446f8f221ca1eb13f5d7b3bb0e54",
+    "static_deployment": "b32f95f4fa86a37d7c130a3f7da836384ead8b9a23b15576edf59b637b2538cf",
+    "answer_aware_deployment": "7bffd910f2bf811747860749df104497ef2979bfd24aec8c59c38b777f28f7b9"
+  },
+  "aggregate_sha256": "415cc50140ed9bec9626493ba867aaeebca0620fec73e150846ce49d333a0d19",
+  "report_sha256": "6655a41d71461f7fa414866ba82ceebd9319b4cbc7141d06f3ce4af702d1c69b",
+  "analysis_seed": 90210,
+  "code_sha256": {
+    "app/main.py": "4dcbda3be68c6a78f0c0dc83b692a5d2e50eb1e7d8e9d9ff35e855f2f955356f",
+    "app/cache/semantic_cache.py": "52b93920348ae492348739b5657021296361acc33443fd2efbce349fcd834746",
+    "app/cache/answer_policy.py": "24271ef169c99e9a0d377fdbfba50b1c1380851a6900de960e919d39cd6e6c0a",
+    "app/providers/evaluation.py": "39521dca16adaa6e574d601e9faa582091cfe2312cc84481a5c5cffba5c3d41b",
+    "scripts/stress_semantic_http.py": "1c54350c3fcbec67c96bc99bbed708684ebf2916559f7256efb03ed1dc5e8877",
+    "scripts/analyze_stress_semantic_http.py": "60dea560bb0a240ae97b03b8c28305008a14639255313b42924860594c4f017a"
+  }
+}

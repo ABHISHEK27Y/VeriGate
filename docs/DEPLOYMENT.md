@@ -57,8 +57,10 @@ production. It is *infrastructure plumbing*, not part of the gateway's logic.
 docker compose up --build
 
 # or with a real model (key from your shell/.env, never baked into the image)
-LLM_PROVIDER=gemini GEMINI_API_KEY=your-key docker compose up --build
+VERIGATE_COMPOSE_PROVIDER=gemini GEMINI_API_KEY=your-key docker compose up --build
 ```
+Compose defaults to `mock` even if a local `.env` contains `LLM_PROVIDER=gemini`.
+Only `VERIGATE_COMPOSE_PROVIDER` selects a real provider for this Compose stack.
 - Gateway: http://localhost:8000  (`/health`, `/docs`, `/metrics`)
 - Redis Stack: `localhost:6379`; RedisInsight UI: http://localhost:8001
 

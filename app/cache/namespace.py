@@ -2,12 +2,19 @@
 
 import hashlib
 import json
+from pathlib import Path
 
-from ..config import get_settings
+from ..config import RuntimeSettings, get_settings
+
+POLICY_VERSION = "token-diff-v2"
+ANSWER_POLICY_RUNTIME_VERSION = "8"
 
 
 def namespace() -> str:
-    config = get_settings().model_dump()
+    runtime = get_settings()
+    if isinstance(runtime, RuntimeSettings) and runtime._namespace_snapshot is not None:
+        return runtime._namespace_snapshot
+    config = runtime.model_dump()
     fields = (
         "embedding_backend",
         "embedding_model",
@@ -25,6 +32,7 @@ def namespace() -> str:
         "cascade_enabled",
         "cascade_threshold",
         "cache_match_mode",
+        "answer_policy_artifact",
         "cache_similarity_base",
         "verifier_nli",
         "nli_model",
@@ -32,6 +40,26 @@ def namespace() -> str:
         "nli_threshold",
         "cache_epoch",
     )
-    payload = json.dumps({key: config[key] for key in fields}, sort_keys=True)
-    digest = hashlib.sha256(("schema-v3:" + payload).encode()).hexdigest()[:24]
-    return f"cache:v3:{digest}"
+    selected = {key: config[key] for key in fields}
+    selected["scoped_storage_schema"] = 2
+    if config["cache_policy_static"]:
+        selected["cache_policy_static"] = True
+    if artifact := config["answer_policy_artifact"]:
+        selected["answer_policy_sha256"] = (
+            runtime._answer_policy_sha256
+            if isinstance(runtime, RuntimeSettings) and runtime._answer_policy_sha256
+            else hashlib.sha256(Path(artifact).read_bytes()).hexdigest()
+        )
+        selected["answer_policy_runtime_version"] = ANSWER_POLICY_RUNTIME_VERSION
+        selected["answer_policy_subject_guard"] = config["answer_policy_subject_guard"]
+        selected["answer_policy_technical_guard"] = config["answer_policy_technical_guard"]
+    payload = json.dumps(selected, sort_keys=True)
+    digest = hashlib.sha256(("schema-v3:" + POLICY_VERSION + ":" + payload).encode()).hexdigest()[
+        :24
+    ]
+    result = f"cache:v3:{digest}"
+    if isinstance(runtime, RuntimeSettings) and (
+        not artifact or runtime._answer_policy_sha256 is not None
+    ):
+        runtime._namespace_snapshot = result
+    return result

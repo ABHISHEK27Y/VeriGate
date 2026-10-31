@@ -1,0 +1,16 @@
+{
+  "policy": "exact",
+  "capacity": "sufficient",
+  "requests": 1000,
+  "completed": 1000,
+  "failed": 0,
+  "outcomes": {
+    "cold_miss": 197,
+    "retrieval_miss": 788,
+    "bypass": 15
+  },
+  "reuse_opportunities": 788,
+  "successful_reuse_per_opportunity": 0.0,
+  "provider_calls": 1000,
+  "startup_ms": 5080.56
+}

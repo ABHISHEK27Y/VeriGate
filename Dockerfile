@@ -22,7 +22,9 @@ RUN pip install --require-hashes --extra-index-url https://download.pytorch.org/
 COPY app ./app
 
 # Run as a non-root user (security hardening)
-RUN useradd -m appuser && chown -R appuser /app
+RUN useradd -m appuser \
+ && mkdir -p /home/appuser/.cache/huggingface \
+ && chown -R appuser /app /home/appuser/.cache
 USER appuser
 
 EXPOSE 8000

@@ -152,25 +152,26 @@ and serves the dashboard at `/` and `/ui`.
 
 ### `static/dashboard.html`
 A dependency-free single-page UI served **same-origin** by the gateway (no CORS). Talks to
-`/v1/chat`, `/health`, `/admin/cache/clear`. Explains the contribution, shows animated results,
+`/v1/chat`, `/health`, `/admin/cache/clear`. Shows the configured mode, scoped evidence,
 and provides the interactive playground.
 
 ### `evaluation/` and `tests/`
 `evaluation/*` produce the figures: `run.py` (accuracy/ablation + the trade-off graph),
 `cascade.py` (cost-vs-quality), `latency.py` + `backend_compare.py` (latency/scaling).
-`tests/*` (15) cover health, auth, cache hit/miss, verifier, volatility, rate-limit, metrics,
+`tests/*` cover health, auth, cache hit/miss, verifier, volatility, rate-limit, metrics,
 **tenant isolation**, and **cascade routing**.
 
 ---
 
 ## 4. Key design decisions (be ready to defend these)
 
-1. **One shared `CachePolicy`** for gateway + evaluation → results equal shipped behaviour; the
-   ablation is just flag toggles.
-2. **Verifier over a looser threshold** → you get high recall *and* correctness; the threshold
-   alone forces a bad trade-off.
-3. **Tier-2 NLI is opt-in** → data showed it maximizes correctness but costs recall/latency and
-   is redundant once the adaptive threshold is on. Defaults reflect the evidence, not hype.
+1. **One shared `CachePolicy` decision function** is used by the gateway and several
+   evaluations. Input retrieval, configuration and labels must also match before an
+   offline result describes live behaviour.
+2. **Verifier after a threshold** filters some structural mismatches but rejects many
+   valid paraphrases. Neither step proves the specific cached answer is usable.
+3. **Tier-2 NLI is opt-in** and runs after structural checks for every surviving
+   candidate when enabled. It compares questions only; it is not selective routing.
 4. **Per-tenant partitioning** → identified cross-tenant leakage as the defining risk of a
    *semantic* cache in the threat model, then eliminated it (tests on both backends).
 5. **In-process index first, RediSearch for scale** → benchmark showed the O(n) cost was
@@ -183,15 +184,18 @@ and provides the interactive playground.
 
 ## 5. Likely viva questions → short answers
 
-- **What's novel? Doesn't GPTCache exist?** The *system* isn't novel; the *caching method* is:
-  adaptive per-query thresholding + a self-verifier + staleness detection, which eliminate the
-  false-hits static-threshold caches suffer. Proven: 0% false-hit vs 46.7% baseline.
+- **What's novel? Doesn't GPTCache exist?** GPTCache and later systems already explore
+  semantic caching and verification. VeriGate's proposed contribution is a fair,
+  answer-aware selective-verification study; it is not yet demonstrated. The old
+  0%/46.7% figure came from a tiny development fixture, not production answers.
 - **Semantic vs exact cache?** Exact matches identical text; semantic matches *meaning* (via
   embeddings), so paraphrases hit — but "close" can be wrong, which the verifier guards.
-- **How do you avoid serving a wrong answer?** Adaptive threshold rejects low-similarity; the
-  verifier rejects number/negation/entity mismatches and (Tier-2) non-entailing look-alikes.
-- **How does it scale?** Stateless replicas + shared Redis; in-process vector index for one node
-  (sub-ms), RediSearch/HNSW for millions across replicas.
+- **How do you avoid serving a wrong answer?** Exact matching is the default. Opt-in
+  semantic mode uses threshold and question checks to reduce some mismatches, but can
+  still serve a wrong or stale answer. No answer-correctness guarantee exists.
+- **How does it scale?** Stateless replicas can share Redis. The in-process vector
+  index is bounded per tenant; RediSearch offers another retrieval backend. Million-entry
+  recall and latency are not yet measured.
 - **Biggest security risk and fix?** Cross-tenant cache leakage; fixed by partitioning the cache
   per tenant (key + index namespace), verified by isolation tests.
 - **How is it evaluated?** A labelled benchmark of paraphrase pairs + hard negatives; measure

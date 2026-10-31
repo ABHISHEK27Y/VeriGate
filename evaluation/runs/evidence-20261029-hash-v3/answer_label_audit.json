@@ -1,0 +1,13 @@
+{
+  "schema_version": "answer-label-audit-v1",
+  "source": "NQ-open historical gold_answer_match proxy",
+  "source_sha256": "52aef4caca650b814523cc9b4f9951a8cce59d5f6613597d982e7fa199cdda67",
+  "selection_seed": 20261029,
+  "rows": 11586,
+  "historical_positive_rows": 6000,
+  "historical_positive_cached_text_absent": 124,
+  "review_diagnostic_rows": 200,
+  "review_random_rows": 150,
+  "label_meaning": "reference-string membership only; actual reuse needs human review",
+  "review_status": "unreviewed"
+}

@@ -1,0 +1,6 @@
+seed,train_n,val_n,cal_n,test_n,train_positive,val_positive,cal_positive,test_positive,label_type
+11,5793,1158,2896,1739,2947,623,1522,908,gold_answer_match
+23,5793,1159,2896,1738,2994,565,1510,931,gold_answer_match
+37,5793,1159,2896,1738,2973,554,1559,914,gold_answer_match
+53,5794,1158,2896,1738,3016,542,1515,927,gold_answer_match
+71,5793,1158,2896,1739,2960,629,1531,880,gold_answer_match

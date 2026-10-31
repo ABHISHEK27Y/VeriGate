@@ -1,0 +1,17 @@
+{
+  "policy": "static",
+  "capacity": "deployment",
+  "requests": 1000,
+  "completed": 1000,
+  "failed": 0,
+  "outcomes": {
+    "cold_miss": 183,
+    "correct_hit": 712,
+    "incorrect_acceptance": 90,
+    "bypass": 15
+  },
+  "reuse_opportunities": 712,
+  "successful_reuse_per_opportunity": 1.0,
+  "provider_calls": 198,
+  "startup_ms": 73632.288
+}

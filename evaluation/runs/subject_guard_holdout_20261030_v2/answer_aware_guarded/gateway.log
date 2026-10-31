@@ -1,0 +1,431 @@
+INFO:     Started server process [26584]
+INFO:     Waiting for application startup.
+{"version": "0.1.0", "event": "Starting VeriGate gateway", "level": "info", "timestamp": "2026-10-30T16:14:51.176024Z"}
+No device provided, using cpu
+Loading SentenceTransformer model from sentence-transformers/all-MiniLM-L6-v2.
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]Loading weights: 100%|##########| 103/103 [00:00<00:00, 6330.70it/s]
+[1mBertModel LOAD REPORT[0m from: sentence-transformers/all-MiniLM-L6-v2
+Key                     | Status     |  | 
+------------------------+------------+--+-
+embeddings.position_ids | UNEXPECTED |  | 
+
+[3mNotes:
+- UNEXPECTED[3m	:can be ignored when loading from different task/architecture; not ok if you expect identical arch.[0m
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 42.43it/s]
+No device provided, using cpu
+No modules.json found for cross-encoder/nli-deberta-v3-xsmall, initializing a new CrossEncoder model.
+Loading weights:   0%|          | 0/202 [00:00<?, ?it/s]Loading weights: 100%|##########| 202/202 [00:00<00:00, 4955.11it/s]
+[1mDebertaV2ForSequenceClassification LOAD REPORT[0m from: cross-encoder/nli-deberta-v3-xsmall
+Key                             | Status     |  | 
+--------------------------------+------------+--+-
+deberta.embeddings.position_ids | UNEXPECTED |  | 
+
+[3mNotes:
+- UNEXPECTED[3m	:can be ignored when loading from different task/architecture; not ok if you expect identical arch.[0m
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00,  8.27it/s]Batches: 100%|##########| 1/1 [00:00<00:00,  8.26it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 142.45it/s]
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://127.0.0.1:8767 (Press CTRL+C to quit)
+INFO:     127.0.0.1:52688 - "GET /ready HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 118.41it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 117.72it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "provider": "controlled-eval", "path": "miss", "event": "cache_miss", "request_id": "88b0420eb15f4734b9973f536b24e11e", "level": "info", "timestamp": "2026-10-30T16:15:21.406273Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 109.88it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 92.94it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "provider": "controlled-eval", "path": "miss", "event": "cache_miss", "request_id": "af61080293af48028bb7674adf31d596", "level": "info", "timestamp": "2026-10-30T16:15:21.556297Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 110.54it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 98.82it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "provider": "controlled-eval", "path": "miss", "event": "cache_miss", "request_id": "fe925154a4db463ea56bc306a478a579", "level": "info", "timestamp": "2026-10-30T16:15:21.607431Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 110.07it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 89.60it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "provider": "controlled-eval", "path": "miss", "event": "cache_miss", "request_id": "e93d6796e4d64038982e6bbae030bf50", "level": "info", "timestamp": "2026-10-30T16:15:21.661745Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 135.40it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 118.21it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "provider": "controlled-eval", "path": "miss", "event": "cache_miss", "request_id": "27ae20059ee6467694b093156348202a", "level": "info", "timestamp": "2026-10-30T16:15:21.714461Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 107.67it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 18.26it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9309413433075, "threshold": 0.35, "event": "cache_hit", "request_id": "1a077cbd32484782bc8923c53e56aff3", "level": "info", "timestamp": "2026-10-30T16:15:21.804584Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 96.68it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 99.41it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "provider": "controlled-eval", "path": "miss", "event": "cache_miss", "request_id": "2f53401bb92c450bb68812dc991a59d5", "level": "info", "timestamp": "2026-10-30T16:15:21.867476Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 95.26it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 92.08it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "provider": "controlled-eval", "path": "miss", "event": "cache_miss", "request_id": "58b583d113914847bc2a330fd7455f48", "level": "info", "timestamp": "2026-10-30T16:15:21.930145Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 74.34it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 98.86it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "provider": "controlled-eval", "path": "miss", "event": "cache_miss", "request_id": "ebddc53c80a641ceae9d2a2d220fd9aa", "level": "info", "timestamp": "2026-10-30T16:15:21.996850Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 107.51it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 18.59it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.865283489227, "threshold": 0.35, "event": "cache_hit", "request_id": "afc72999a1534d62b5c8fea359bcab74", "level": "info", "timestamp": "2026-10-30T16:15:22.088141Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 103.59it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 102.70it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "provider": "controlled-eval", "path": "miss", "event": "cache_miss", "request_id": "1bcbf3ff02f8460290119d94de726ab0", "level": "info", "timestamp": "2026-10-30T16:15:22.153127Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 81.01it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 119.50it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "provider": "controlled-eval", "path": "miss", "event": "cache_miss", "request_id": "eb71017bc9724b9bbb3b9870591ecc12", "level": "info", "timestamp": "2026-10-30T16:15:22.216089Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 103.76it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 116.10it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "provider": "controlled-eval", "path": "miss", "event": "cache_miss", "request_id": "f19577363de94e4ca7085e632bd81b9b", "level": "info", "timestamp": "2026-10-30T16:15:22.275493Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 101.87it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 115.49it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "provider": "controlled-eval", "path": "miss", "event": "cache_miss", "request_id": "21a06e7fa1bc40fca6980579ae2466d6", "level": "info", "timestamp": "2026-10-30T16:15:22.333734Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 112.24it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 92.76it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "provider": "controlled-eval", "path": "miss", "event": "cache_miss", "request_id": "eea134279e5546459b6ae1c90650922f", "level": "info", "timestamp": "2026-10-30T16:15:22.391189Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 115.84it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 118.27it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "provider": "controlled-eval", "path": "miss", "event": "cache_miss", "request_id": "9f9fe8b13377421cb2dbb29b1a7a6249", "level": "info", "timestamp": "2026-10-30T16:15:22.448988Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 110.19it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 123.20it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "provider": "controlled-eval", "path": "miss", "event": "cache_miss", "request_id": "b5d29e9a398b489ab5604678ca7de25f", "level": "info", "timestamp": "2026-10-30T16:15:22.504577Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 110.41it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 18.77it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9587797522545, "threshold": 0.35, "event": "cache_hit", "request_id": "d764bd35aa4d47c1a411276d5b2cf140", "level": "info", "timestamp": "2026-10-30T16:15:22.593462Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 117.31it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 15.81it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9139881134033, "threshold": 0.35, "event": "cache_hit", "request_id": "8750afe990794f62a1f9c21c3a3302af", "level": "info", "timestamp": "2026-10-30T16:15:22.691465Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 104.60it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 18.38it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9610645771027, "threshold": 0.35, "event": "cache_hit", "request_id": "4bb33c8804e44eb7b06ae799a1cdd783", "level": "info", "timestamp": "2026-10-30T16:15:22.788174Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 84.32it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 16.95it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9522700309753, "threshold": 0.35, "event": "cache_hit", "request_id": "7e1048ee59f449128ad8786272a5beeb", "level": "info", "timestamp": "2026-10-30T16:15:22.889783Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 108.01it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 120.61it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "provider": "controlled-eval", "path": "miss", "event": "cache_miss", "request_id": "f02b87808af74e51a07befa9a88078c6", "level": "info", "timestamp": "2026-10-30T16:15:22.951029Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 79.18it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 16.25it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9351788759232, "threshold": 0.35, "event": "cache_hit", "request_id": "d45935fd60b44219bc703b17ab11d956", "level": "info", "timestamp": "2026-10-30T16:15:23.053147Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 89.09it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 15.03it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9812794923782, "threshold": 0.35, "event": "cache_hit", "request_id": "0889ac6ce5c349608255487a11761804", "level": "info", "timestamp": "2026-10-30T16:15:23.161622Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 96.43it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 96.18it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "provider": "controlled-eval", "path": "miss", "event": "cache_miss", "request_id": "c4e14a1c1456443fb96afbdc2f3427b0", "level": "info", "timestamp": "2026-10-30T16:15:23.229750Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 83.29it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 85.12it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "provider": "controlled-eval", "path": "miss", "event": "cache_miss", "request_id": "32650ce56b384d729b6f665832636fd7", "level": "info", "timestamp": "2026-10-30T16:15:23.298406Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 83.52it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 16.34it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9829484224319, "threshold": 0.35, "event": "cache_hit", "request_id": "c6c479eff0074a63ad4f18b1b5551fe6", "level": "info", "timestamp": "2026-10-30T16:15:23.408754Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 85.53it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 50.02it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "provider": "controlled-eval", "path": "miss", "event": "cache_miss", "request_id": "b184c26ed5d14e3aabfc38f4afc4cc4a", "level": "info", "timestamp": "2026-10-30T16:15:23.497884Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 58.63it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 89.70it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "provider": "controlled-eval", "path": "miss", "event": "cache_miss", "request_id": "dc02f8f498234966960be25d7a0e45c6", "level": "info", "timestamp": "2026-10-30T16:15:23.579151Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 83.69it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 18.97it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9605043530464, "threshold": 0.35, "event": "cache_hit", "request_id": "eabe6a5febdd481081a01aeb3066d489", "level": "info", "timestamp": "2026-10-30T16:15:23.674135Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 113.31it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 18.22it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9665924310684, "threshold": 0.35, "event": "cache_hit", "request_id": "162ccae5d00d4e1aa9d0e12745cf2a39", "level": "info", "timestamp": "2026-10-30T16:15:23.769339Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 117.47it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 19.39it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.866833865643, "threshold": 0.35, "event": "cache_hit", "request_id": "04f2b9bf7db241eebdb6f9724b8eba50", "level": "info", "timestamp": "2026-10-30T16:15:23.856009Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 108.12it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 88.73it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "provider": "controlled-eval", "path": "miss", "event": "cache_miss", "request_id": "8f9b3c324e7d4064a455af93a8572deb", "level": "info", "timestamp": "2026-10-30T16:15:23.923508Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 114.89it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 18.40it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9385137557983, "threshold": 0.35, "event": "cache_hit", "request_id": "c3e8fda8aca34491927d42da280b6b6c", "level": "info", "timestamp": "2026-10-30T16:15:24.020420Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 82.76it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 74.79it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "provider": "controlled-eval", "path": "miss", "event": "cache_miss", "request_id": "f69a416811e54f4a885f2b762845f032", "level": "info", "timestamp": "2026-10-30T16:15:24.102962Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 102.16it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 11.12it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9521086215973, "threshold": 0.35, "event": "cache_hit", "request_id": "7ba365d1f3154106b66e741ac5943e7e", "level": "info", "timestamp": "2026-10-30T16:15:24.249642Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 40.99it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 67.88it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "provider": "controlled-eval", "path": "miss", "event": "cache_miss", "request_id": "98bdee51a8924731b298c37d62c7238e", "level": "info", "timestamp": "2026-10-30T16:15:24.358468Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 57.14it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 11.74it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9473968148232, "threshold": 0.35, "event": "cache_hit", "request_id": "94fda47af0174089a2abffa3ad4b7cc5", "level": "info", "timestamp": "2026-10-30T16:15:24.501977Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 57.78it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00,  9.97it/s]Batches: 100%|##########| 1/1 [00:00<00:00,  9.94it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9077114462852, "threshold": 0.35, "event": "cache_hit", "request_id": "c0baebc58fd44b259a018fc690118103", "level": "info", "timestamp": "2026-10-30T16:15:24.659554Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 96.59it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 14.49it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.827788710594, "threshold": 0.35, "event": "cache_hit", "request_id": "1bfaee1c6a4d48d89d6c46ee15cec937", "level": "info", "timestamp": "2026-10-30T16:15:24.774123Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 95.17it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 15.43it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9388327598572, "threshold": 0.35, "event": "cache_hit", "request_id": "b9ba6aa6702b4d9e8e112391ccd32a47", "level": "info", "timestamp": "2026-10-30T16:15:24.878767Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 92.84it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 17.47it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9207025766373, "threshold": 0.35, "event": "cache_hit", "request_id": "93ee8b3c447241269807ab1ed50492b9", "level": "info", "timestamp": "2026-10-30T16:15:24.980782Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 134.15it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 17.63it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.980778336525, "threshold": 0.35, "event": "cache_hit", "request_id": "c8254c48a4814d11b69d0270d4281913", "level": "info", "timestamp": "2026-10-30T16:15:25.076779Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 86.49it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 17.80it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.860851168633, "threshold": 0.35, "event": "cache_hit", "request_id": "3667eb9004f3460bb4f335406a1db6f9", "level": "info", "timestamp": "2026-10-30T16:15:25.180925Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 79.38it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 16.84it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9803568124771, "threshold": 0.35, "event": "cache_hit", "request_id": "e353e8dc86224864b81f8563496f6b50", "level": "info", "timestamp": "2026-10-30T16:15:25.288158Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 80.45it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 12.92it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9183635115623, "threshold": 0.35, "event": "cache_hit", "request_id": "9641acc0174a4843b0ca32a8e409bd0c", "level": "info", "timestamp": "2026-10-30T16:15:25.414457Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 101.08it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 18.27it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.872290372849, "threshold": 0.35, "event": "cache_hit", "request_id": "127269ba98164bf1a8c35a53bf8c9cec", "level": "info", "timestamp": "2026-10-30T16:15:25.510461Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 127.58it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 15.97it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9740295410156, "threshold": 0.35, "event": "cache_hit", "request_id": "1a6156a6648b48e491ef7cd36bce678d", "level": "info", "timestamp": "2026-10-30T16:15:25.618346Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 110.95it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 17.61it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.892208814621, "threshold": 0.35, "event": "cache_hit", "request_id": "564bafc33f294e5a933d71cfe0ecd460", "level": "info", "timestamp": "2026-10-30T16:15:25.717216Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 85.75it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 17.30it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9552552700043, "threshold": 0.35, "event": "cache_hit", "request_id": "8e6e24a21b564c5da6973b45ecfeff07", "level": "info", "timestamp": "2026-10-30T16:15:25.819728Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 85.89it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 18.81it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.891035556793, "threshold": 0.35, "event": "cache_hit", "request_id": "625f50acbd564107916e533445bba84c", "level": "info", "timestamp": "2026-10-30T16:15:25.921589Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 106.95it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 17.09it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9395027160645, "threshold": 0.35, "event": "cache_hit", "request_id": "6fa0f49a071a4e2790fd27ac78c68d11", "level": "info", "timestamp": "2026-10-30T16:15:26.021383Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 82.07it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 17.23it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9895177483559, "threshold": 0.35, "event": "cache_hit", "request_id": "1c251d5371684df5b7c7df5638270b7c", "level": "info", "timestamp": "2026-10-30T16:15:26.128192Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 108.37it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 17.03it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.943496286869, "threshold": 0.35, "event": "cache_hit", "request_id": "cf502d21d7ed47f88cc34e1db8346a23", "level": "info", "timestamp": "2026-10-30T16:15:26.226684Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 105.76it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 121.60it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "provider": "controlled-eval", "path": "miss", "event": "cache_miss", "request_id": "9ee09bb5fb004436a895752e6b4e93e9", "level": "info", "timestamp": "2026-10-30T16:15:26.283591Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 87.30it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 17.92it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9211208820343, "threshold": 0.35, "event": "cache_hit", "request_id": "73864eb7e1fa4dcba2d87adfc69c0335", "level": "info", "timestamp": "2026-10-30T16:15:26.382185Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 100.49it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 18.82it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9693245887756, "threshold": 0.35, "event": "cache_hit", "request_id": "b0fcb8f166da41dc8ffc2a9e6a8ae780", "level": "info", "timestamp": "2026-10-30T16:15:26.472896Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 107.86it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 101.71it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "provider": "controlled-eval", "path": "miss", "event": "cache_miss", "request_id": "e7efb742cb7341da906bfafdb78b27cd", "level": "info", "timestamp": "2026-10-30T16:15:26.531995Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 93.38it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 18.42it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9647234678268, "threshold": 0.35, "event": "cache_hit", "request_id": "afea541568134d1ca082f054c23c483c", "level": "info", "timestamp": "2026-10-30T16:15:26.627975Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 72.04it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 18.85it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9477172493935, "threshold": 0.35, "event": "cache_hit", "request_id": "bfbe126687214b5e872eb10edaae7947", "level": "info", "timestamp": "2026-10-30T16:15:26.723765Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 134.27it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 20.81it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9600646495819, "threshold": 0.35, "event": "cache_hit", "request_id": "36b7166075ec4a8ebeb28a127aaae549", "level": "info", "timestamp": "2026-10-30T16:15:26.809595Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 98.10it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 14.53it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9681854248047, "threshold": 0.35, "event": "cache_hit", "request_id": "68718d6a7fb74d648b04b57732f216bf", "level": "info", "timestamp": "2026-10-30T16:15:26.923712Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 81.91it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 13.12it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9337828755379, "threshold": 0.35, "event": "cache_hit", "request_id": "fad0dc593bf9481dab472403df59d7db", "level": "info", "timestamp": "2026-10-30T16:15:27.052461Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 67.51it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 12.28it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.879565477371, "threshold": 0.35, "event": "cache_hit", "request_id": "1db482d8235f49ffa6a4703e661ce5ba", "level": "info", "timestamp": "2026-10-30T16:15:27.193220Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 55.77it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 12.28it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9675301909447, "threshold": 0.35, "event": "cache_hit", "request_id": "071b7a57a1624872afc85412d7b8035f", "level": "info", "timestamp": "2026-10-30T16:15:27.338625Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 62.70it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 17.30it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9701024889945999, "threshold": 0.35, "event": "cache_hit", "request_id": "78572b39e9514eff982547a719b92a1a", "level": "info", "timestamp": "2026-10-30T16:15:27.453624Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 95.80it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 16.72it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9705675840378, "threshold": 0.35, "event": "cache_hit", "request_id": "7c0d51e2f44a4803addc0cfcca675424", "level": "info", "timestamp": "2026-10-30T16:15:27.558633Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 103.32it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 16.36it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 84.91it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "provider": "controlled-eval", "path": "miss", "event": "cache_miss", "request_id": "f4b7059f09fa44eb813858aa96c0391a", "level": "info", "timestamp": "2026-10-30T16:15:27.694184Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 91.30it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 16.17it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9480931758881, "threshold": 0.35, "event": "cache_hit", "request_id": "6911843436b74018b02e0be3c2318ecf", "level": "info", "timestamp": "2026-10-30T16:15:27.799826Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 67.72it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 12.08it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.84186065197, "threshold": 0.35, "event": "cache_hit", "request_id": "27d5b4f7eecb450c8c299f1887d729b7", "level": "info", "timestamp": "2026-10-30T16:15:27.935258Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 55.38it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 13.48it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.8527863025669999, "threshold": 0.35, "event": "cache_hit", "request_id": "6c19103fb1084e7cbc0427842d552f75", "level": "info", "timestamp": "2026-10-30T16:15:28.067414Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 66.72it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 11.23it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9155848622322, "threshold": 0.35, "event": "cache_hit", "request_id": "8cde86d72cd444c9a7a2ff54973dfa17", "level": "info", "timestamp": "2026-10-30T16:15:28.208236Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 109.66it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 18.46it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9881201982498, "threshold": 0.35, "event": "cache_hit", "request_id": "d1959388f44b40a68c06d47d432d6c74", "level": "info", "timestamp": "2026-10-30T16:15:28.305743Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 65.83it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 20.18it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9340304136276, "threshold": 0.35, "event": "cache_hit", "request_id": "9955d5b8774d4436abbab19a5dc632a4", "level": "info", "timestamp": "2026-10-30T16:15:28.402257Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 95.73it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 19.09it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.951665699482, "threshold": 0.35, "event": "cache_hit", "request_id": "194cbc3eec58423f876a441409375ad9", "level": "info", "timestamp": "2026-10-30T16:15:28.496008Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 109.72it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 19.37it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9636199474335, "threshold": 0.35, "event": "cache_hit", "request_id": "ce87275e09e5443282d7b720eb867d92", "level": "info", "timestamp": "2026-10-30T16:15:28.588157Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 108.92it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 21.17it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.878901600838, "threshold": 0.35, "event": "cache_hit", "request_id": "ff4766bf4b0e401babbd02ab0a4afd4e", "level": "info", "timestamp": "2026-10-30T16:15:28.674186Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 103.13it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 19.23it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.895323514938, "threshold": 0.35, "event": "cache_hit", "request_id": "83a6695e392d414b8ae67e5ec81a9710", "level": "info", "timestamp": "2026-10-30T16:15:28.767018Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 117.86it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 21.25it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9603664875030999, "threshold": 0.35, "event": "cache_hit", "request_id": "f2be970ecbb9426c8021d4e8a91e53b7", "level": "info", "timestamp": "2026-10-30T16:15:28.851941Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 94.04it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 19.27it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.807821810246, "threshold": 0.35, "event": "cache_hit", "request_id": "a2ad41b2c766431ea88405fb552e5755", "level": "info", "timestamp": "2026-10-30T16:15:28.945766Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 108.02it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 17.83it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9675325155258, "threshold": 0.35, "event": "cache_hit", "request_id": "0bfbad0eecfe40ecacd4e1b79d2cb220", "level": "info", "timestamp": "2026-10-30T16:15:29.042431Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 100.48it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 17.70it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.895313799381, "threshold": 0.35, "event": "cache_hit", "request_id": "63448d8dc1a54a659098242b4782c614", "level": "info", "timestamp": "2026-10-30T16:15:29.139781Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 83.39it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 17.30it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.893060922623, "threshold": 0.35, "event": "cache_hit", "request_id": "2727c142f62c4b0a822845fd09449b3f", "level": "info", "timestamp": "2026-10-30T16:15:29.243612Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 111.26it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 20.12it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9391909241676, "threshold": 0.35, "event": "cache_hit", "request_id": "b5439201d8a7463ebba0268a1d950d06", "level": "info", "timestamp": "2026-10-30T16:15:29.334580Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 115.92it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 19.21it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9643685221672, "threshold": 0.35, "event": "cache_hit", "request_id": "920c47953997401ca5d415917c7e8306", "level": "info", "timestamp": "2026-10-30T16:15:29.422392Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 117.45it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 16.89it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9718080759048, "threshold": 0.35, "event": "cache_hit", "request_id": "a6733cafe2784fb2ad6adfc51aca7e06", "level": "info", "timestamp": "2026-10-30T16:15:29.519434Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 120.62it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 19.45it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.930017888546, "threshold": 0.35, "event": "cache_hit", "request_id": "0d6c81ef960545d999d6792b851c370a", "level": "info", "timestamp": "2026-10-30T16:15:29.608894Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 103.37it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 18.30it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9201397299767, "threshold": 0.35, "event": "cache_hit", "request_id": "8279583a71e44dc8ae0e8a411ab0efbf", "level": "info", "timestamp": "2026-10-30T16:15:29.702789Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 114.54it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 20.16it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9563053846359, "threshold": 0.35, "event": "cache_hit", "request_id": "d43c72bfaa7048dd97b55d17ab6a21aa", "level": "info", "timestamp": "2026-10-30T16:15:29.789215Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 102.60it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 15.59it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.929319024086, "threshold": 0.35, "event": "cache_hit", "request_id": "0a6316664ade4c2a8df01e86bf09466f", "level": "info", "timestamp": "2026-10-30T16:15:29.891461Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 95.23it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 17.31it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.968027472496, "threshold": 0.35, "event": "cache_hit", "request_id": "f65292a6129646f38dd1aeb00474a85b", "level": "info", "timestamp": "2026-10-30T16:15:29.996314Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 110.48it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 16.94it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9697061181068, "threshold": 0.35, "event": "cache_hit", "request_id": "518fb7b05af74cc4887b4b5449887b74", "level": "info", "timestamp": "2026-10-30T16:15:30.095268Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 114.94it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 18.67it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.8323249816889999, "threshold": 0.35, "event": "cache_hit", "request_id": "fc921e8b83664bf6b91206ef4d8881a2", "level": "info", "timestamp": "2026-10-30T16:15:30.189460Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 91.69it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 18.79it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9260064363480001, "threshold": 0.35, "event": "cache_hit", "request_id": "ac6b73bcb7324f5aa2eb4108833915fb", "level": "info", "timestamp": "2026-10-30T16:15:30.284997Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 105.05it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 17.00it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 99.51it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "provider": "controlled-eval", "path": "miss", "event": "cache_miss", "request_id": "4b0156826d3c42b8b5efc30b2fba5c47", "level": "info", "timestamp": "2026-10-30T16:15:30.408636Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 113.09it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 16.25it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9136880636215, "threshold": 0.35, "event": "cache_hit", "request_id": "f62bc627a85245eb8ce0cc8f757e5d74", "level": "info", "timestamp": "2026-10-30T16:15:30.508383Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 80.10it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 12.59it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9398750662804, "threshold": 0.35, "event": "cache_hit", "request_id": "6e41d3e6a639488f8db6233527b75f49", "level": "info", "timestamp": "2026-10-30T16:15:30.636674Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 50.99it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 12.26it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.884486556053, "threshold": 0.35, "event": "cache_hit", "request_id": "61f8b88c03fa4c6580e0d326c85a569a", "level": "info", "timestamp": "2026-10-30T16:15:30.793257Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 86.02it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 18.16it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.9507327675819, "threshold": 0.35, "event": "cache_hit", "request_id": "f299f5409c2341638a0c92e91b760498", "level": "info", "timestamp": "2026-10-30T16:15:30.896508Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 72.10it/s]
+Batches:   0%|          | 0/1 [00:00<?, ?it/s]Batches: 100%|##########| 1/1 [00:00<00:00, 16.30it/s]
+{"tenant": "t_4bcfc2c9830c2e403d2ec4e39e8d1d24d7407130d0b58c80171f9031c523bcba", "similarity": 0.982817709446, "threshold": 0.35, "event": "cache_hit", "request_id": "a4de951361a04b74bcb481bca96e78dd", "level": "info", "timestamp": "2026-10-30T16:15:31.004806Z"}
+INFO:     127.0.0.1:52688 - "POST /v1/chat HTTP/1.1" 200 OK

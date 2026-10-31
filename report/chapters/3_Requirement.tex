@@ -17,7 +17,7 @@ Before designing VeriGate, existing semantic-caching and gateway solutions were 
 \begin{itemize}
     \item \textbf{Technical Feasibility:} The system is built entirely on mature open-source components --- FastAPI \cite{fastapi}, the sentence-transformers encoder \cite{sentencetransformers}, Redis, and standard scientific-Python libraries --- and requires no GPU for inference. The default in-process vector index runs in a single Python process, and the RediSearch backend uses a standard Redis Stack container. The project is therefore technically highly feasible.
     \item \textbf{Operational Feasibility:} The gateway is a drop-in HTTP proxy: an existing application changes only the base URL of its LLM client. An operator dashboard makes the cache's behaviour observable and testable without writing code, easing adoption.
-    \item \textbf{Economic Feasibility:} All dependencies are free and open-source, and the container runs on a single small instance. The system's \emph{purpose} is to save money --- each cache hit and each cheap-model route is avoided or reduced LLM spend --- so it is economically self-justifying. Estimated hosting cost on a free-tier or small cloud instance is approximately USD~0--7 per month.
+    \item \textbf{Economic Feasibility:} Core libraries are open-source, but hosting, Redis, model inference, and provider calls have deployment-dependent costs. Cache-hit and routing savings remain hypotheses until measured on representative traffic with current prices.
 \end{itemize}
 
 \section{System Requirements}
@@ -63,18 +63,18 @@ The stack is uniformly Python-based to keep the caching layer and the web server
     \item \textbf{Cost-aware cascade.} When enabled, the gateway must score query complexity and route easy queries to a cheap model, escalating hard queries to a strong model, keeping the unused tier as failover.
     \item \textbf{Provider abstraction and failover.} The gateway must front OpenAI-compatible providers (OpenAI, Gemini) selected by configuration, and must fail over to a mock provider so a provider outage never hard-fails a request.
     \item \textbf{Per-tenant isolation.} Each API key must map to a tenant whose cache is isolated; one tenant must never receive another tenant's cached answer.
-    \item \textbf{Per-key spend budget.} The system must cap provider calls per key per day; over-budget requests receive HTTP~429, and cache hits must not count against the budget.
+    \item \textbf{Per-key request budget.} The system must cap admitted cache misses and bypasses per key per day; over-budget requests receive HTTP~429, and cache hits do not count. This does not cap provider retries, tokens, or monetary spend.
     \item \textbf{Rate limiting.} The system must throttle bursts per API key via a token bucket, returning HTTP~429 when the bucket is empty.
     \item \textbf{Observability endpoints.} The system must expose \texttt{/health} (live configuration) and \texttt{/metrics} (Prometheus), and an operator dashboard at \texttt{/ui} for interactive testing and a cache-clear admin action.
 \end{enumerate}
 
 \section{Non-Functional Requirements}
 \begin{enumerate}
-    \item \textbf{Correctness (primary).} On the evaluation benchmark, the full system must achieve a false-hit rate substantially below the fixed-threshold baseline; the target is zero false hits (100\% precision) on the curated hard negatives.
+    \item \textbf{Correctness (primary).} Measure incorrect accepted reuse on independently labelled, held-out answer-aware examples. A configured risk target is not a guarantee; report observed risk and uncertainty separately.
     \item \textbf{Cache-hit latency.} A cache hit must complete at least an order of magnitude faster than a hosted-LLM call; the target hit path is $\sim$10~ms against an $\sim$800~ms reference call.
     \item \textbf{Verification overhead.} Tier-1 verification must impose negligible overhead ($<$1~ms) on the hit path so that safety is effectively free; the cost of Tier-2 must be quantified and its use made optional.
     \item \textbf{Scalability.} Lookup latency must remain sub-linear in cache size (near-flat and sub-millisecond to at least several thousand entries for the in-process index).
-    \item \textbf{Security.} API-key authentication on every request; secrets held only in environment/secret stores and never logged; per-tenant isolation verified by test; per-key spend caps to bound economic exposure.
+    \item \textbf{Security.} API-key authentication, secret handling, and per-tenant isolation require tests and deployment review. The daily request budget is an admission control, not a financial limit.
     \item \textbf{Reliability.} A failing provider must be skipped quickly by a circuit breaker rather than retried on every request; the cache must fail open (a cache error degrades to a provider call rather than an error).
     \item \textbf{Reproducibility.} The evaluation harness must share the exact \texttt{CachePolicy} used by the live gateway, so that measured results equal shipped behaviour; all figures and tables must be regenerable from the repository.
 \end{enumerate}

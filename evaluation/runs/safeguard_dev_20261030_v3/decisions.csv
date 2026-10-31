@@ -1,0 +1,21 @@
+pair_id,category,reuse_ok,cached_query,cached_answer,incoming_query,label_type,action,reason,nli_score
+mention_valid_1,answer_mentioned,true,Who authored Hamlet?,William Shakespeare,"Which playwright authored Hamlet, William Shakespeare or Christopher Marlowe?",authored_development,VERIFY,answer_mentioned_in_question,
+mention_valid_2,answer_mentioned,true,What city contains the Eiffel Tower?,Paris,"Which city contains the Eiffel Tower, Paris or London?",authored_development,VERIFY,answer_mentioned_in_question,
+mention_valid_3,answer_mentioned,true,Which planet is called the Red Planet?,Mars,"Which planet is called the Red Planet, Mars or Venus?",authored_development,VERIFY,answer_mentioned_in_question,
+mention_valid_4,answer_mentioned,true,Who discovered penicillin?,Alexander Fleming,"Which scientist discovered penicillin, Alexander Fleming or Louis Pasteur?",authored_development,VERIFY,answer_mentioned_in_question,
+mention_unsafe_1,answer_mentioned,false,Does Archie end up with Betty or Veronica in Riverdale?,Betty,Who does Betty end up with on Riverdale?,authored_development,VERIFY,answer_mentioned_in_question,
+mention_unsafe_2,answer_mentioned,false,Who married Alice in the story?,Bob,Who did Bob marry in the story?,authored_development,VERIFY,answer_mentioned_in_question,
+mention_unsafe_3,answer_mentioned,false,Who founded Acme in the story?,Clara,Who did Clara hire at Acme in the story?,authored_development,VERIFY,answer_mentioned_in_question,
+mention_unsafe_4,answer_mentioned,false,What city is the capital of France?,Paris,Which country has Paris as its capital?,authored_development,VERIFY,answer_mentioned_in_question,
+scope_valid_1,scope_change,true,Who was the first person to reach the South Pole?,Roald Amundsen,Who was the earliest person to reach the South Pole?,authored_development,ACCEPT,answer_entailment,0.9821408987045288
+scope_valid_2,scope_change,true,Who was the last king of Greece?,Constantine II,Who was the final king of Greece?,authored_development,ACCEPT,answer_entailment,0.9918503165245056
+scope_valid_3,scope_change,true,Who was the only author of the fictional Oak ledger?,Mira,Who was the sole author of the fictional Oak ledger?,authored_development,ACCEPT,answer_entailment,0.9870280027389526
+scope_valid_4,scope_change,true,Who scored the most goals in the fictional Oak league?,Mira,Who scored the maximum goals in the fictional Oak league?,authored_development,REJECT,answer_contradiction_or_irrelevance,0.07705720514059067
+scope_unsafe_1,scope_change,false,Who was the first person to walk on the Moon?,Neil Armstrong,Who was the last person to walk on the Moon?,authored_development,VERIFY,scope_changed,
+scope_unsafe_2,scope_change,false,Which team scored the most goals in the fictional Oak league?,Owls,Which team scored the least goals in the fictional Oak league?,authored_development,VERIFY,scope_changed,
+scope_unsafe_3,scope_change,false,Who was the first king of the fictional Oak realm?,Arun,Who was the last king of the fictional Oak realm?,authored_development,VERIFY,scope_changed,
+scope_unsafe_4,scope_change,false,Who was the only winner of the fictional Oak prize?,Mira,Who was the first winner of the fictional Oak prize?,authored_development,VERIFY,scope_changed,
+exact_mention_1,exact_repeat,true,Which planet is called Mars in the classroom chart?,Mars,Which planet is called Mars in the classroom chart?,authored_development,ACCEPT,answer_entailment,0.9877250790596008
+exact_mention_2,exact_repeat,true,Who is Bob in the fictional Oak story?,Bob,Who is Bob in the fictional Oak story?,authored_development,ACCEPT,answer_entailment,0.9888597726821899
+neutral_valid_1,paraphrase,true,Who wrote Hamlet?,William Shakespeare,Name the author of Hamlet.,authored_development,ACCEPT,answer_entailment,0.9704583287239075
+neutral_valid_2,paraphrase,true,What is the capital of France?,Paris,Name France's capital city.,authored_development,ACCEPT,answer_entailment,0.9721367359161377

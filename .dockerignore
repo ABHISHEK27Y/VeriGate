@@ -1,5 +1,10 @@
 .venv/
+.venv*/
 venv/
+.cache/
+models/
+data/
+report/
 .env
 __pycache__/
 *.pyc
@@ -12,6 +17,7 @@ docs/
 .gitignore
 
 audit/
+config/
 .coverage
 .mypy_cache/
 .ruff_cache/

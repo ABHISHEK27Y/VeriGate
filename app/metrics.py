@@ -8,17 +8,43 @@ from prometheus_client import CollectorRegistry, Counter, Histogram, generate_la
 
 REQUESTS = Counter("verigate_requests_total", "Total chat requests", ["outcome"])
 CACHE = Counter("verigate_cache_total", "Cache outcomes", ["result"])  # hit/miss/bypass
-FALSE_HIT_REJECTED = Counter(
-    "verigate_false_hit_rejected_total",
-    "Candidate hits rejected by the verifier",
+CACHE_FAILURES = Counter("verigate_cache_failures_total", "Cache operation failures", ["stage"])
+CACHE_WRITES = Counter(
+    "verigate_cache_writes_total", "Cache write outcomes; no answer quality label", ["result"]
+)
+CANDIDATE_VERIFIER_REJECTED = Counter(
+    "verigate_candidate_verifier_rejected_total",
+    "Candidate cache matches rejected by the verifier; correctness is unlabelled",
+)
+CANDIDATE_DECISION = Counter(
+    "verigate_candidate_decisions_total",
+    "Answer-aware candidate actions; no correctness judgment",
+    ["action"],
 )
 RATE_LIMITED = Counter("verigate_rate_limited_total", "Requests rejected by rate limiter")
 BUDGET_EXCEEDED = Counter("verigate_budget_exceeded_total", "Requests rejected by admission budget")
+SHADOW = Counter("verigate_shadow_total", "Shadow cache-hit audit samples", ["outcome"])
 LATENCY = Histogram(
     "verigate_latency_seconds",
     "End-to-end latency",
     ["path"],  # path=hit|miss|bypass
     buckets=(0.001, 0.005, 0.01, 0.05, 0.1, 0.25, 0.5, 1, 2, 5),
+)
+STAGE_LATENCY = Histogram(
+    "verigate_stage_latency_seconds",
+    "Bounded gateway stage durations",
+    ["stage"],
+    buckets=(0.0001, 0.001, 0.005, 0.01, 0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10),
+)
+CLIENT_TTFB = Histogram(
+    "verigate_client_first_byte_seconds",
+    "HTTP time until first nonempty body chunk",
+    buckets=(0.001, 0.01, 0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10),
+)
+CLIENT_COMPLETE = Histogram(
+    "verigate_client_complete_seconds",
+    "HTTP time until final body chunk",
+    buckets=(0.001, 0.01, 0.05, 0.1, 0.25, 0.5, 1, 2, 5, 10),
 )
 
 
