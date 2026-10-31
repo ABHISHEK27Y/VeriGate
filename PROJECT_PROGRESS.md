@@ -216,6 +216,42 @@ Scope: a single-turn FastAPI gateway with an exact cache default and opt-in
 semantic answer reuse. This page records implementation status; it is not an
 academic results report or a production-safety claim.
 
+## 1 November 2026 gateway follow-up
+
+The response-scope, expiry-accounting, private-demo, and provider-terminal fixes
+are committed in `a70023c`. A subsequent deadline checkpoint bounds cache
+lookup (including queue wait) and the overall request, starts JSON and streaming
+provider budgets after lookup/admission, and moves embedding and verification
+outside the broad tenant lookup lock. Separate single-slot inference gates retain
+their permits until cancelled worker threads finish. Stage timings distinguish
+inference queue and execution time; these components are nested within the
+overall embedding/policy timings and must not be added to them.
+
+The deadline checkpoint has focused regressions for same-scope contention,
+lookup fallback, no dispatch after an expired overall deadline, and a slow
+streaming lookup. The final local suite passed 256 tests with 7 Redis-only
+skips. The isolated Redis Stack suite passed 262 tests with 1 browser-only
+skip using `HF_HUB_OFFLINE=1`; without that setting, one test failed when the
+Hugging Face client attempted a network HEAD request in this offline runner.
+The opt-in dashboard Chromium test passed separately. Ruff lint/format, MyPy,
+the offline evaluator, and historical evidence/live-run validators passed.
+This is verification status, not a claimed latency improvement or production
+deadline.
+
+A later focused checkpoint adds bounded, content-free top-k candidate traces
+to authenticated JSON responses and streaming metadata. Candidate metrics now
+count each assessed candidate; the dashboard renders structured rank/action/
+reason/status/time fields and uses `provider_invoked` rather than parsing note
+prefixes. A focused two-candidate HTTP test and the retrieval-layer replay
+agree on selected rank and actions. A separate chronological exact-mode HTTP
+versus replay test agrees on MISS then HIT. Replay remains a retrieval/store
+simulation with supplied answers; it does not simulate HTTP authentication,
+admission, provider quality, or the private-overlay policy. Readiness now reports
+503 when an edited organization directory needs a restart, verified by a
+workspace-edit regression. Per-scope verifier memoization can be purged on
+cache clear in the current worker. Cross-worker purge and in-flight write
+fencing are not implemented; the clear contract is limited accordingly.
+
 | Phase | Implemented change and regression | Measured result or limitation | Next executable task |
 |---|---|---|---|
 | 1. Establish state | Verified PR #3 branch from `bd1e02b`; left pre-existing untracked `audit/` untouched. | Previous five CI jobs passed on that commit. | Review final PR diff and CI again. |

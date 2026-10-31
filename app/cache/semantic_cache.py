@@ -55,6 +55,7 @@ class LookupResult:
     candidate_count: int = 0
     selected_rank: int | None = None
     stage_latency_ms: dict[str, float] = field(default_factory=dict)
+    candidate_trace: tuple[dict[str, object], ...] = ()
 
 
 class SemanticCache:
@@ -66,7 +67,9 @@ class SemanticCache:
         # in-process vectorised index, keyed by tenant
         self._index: dict[str, dict] = OrderedDict()
         self._locks = [asyncio.Lock() for _ in range(64)]
-        self._inference_gate = asyncio.Semaphore(1)
+        self._embedding_gate = asyncio.Semaphore(1)
+        self._verifier_gate = asyncio.Semaphore(1)
+        self._inference_gate = self._verifier_gate  # compatibility for existing diagnostics
         self._versions: dict[str, str | None] = {}
         self._policy = CachePolicy(
             use_adaptive=not get_settings().cache_policy_static,
@@ -276,8 +279,7 @@ class SemanticCache:
     async def lookup(self, query: str, tenant: str) -> LookupResult:
         token = verifier_scope.set(tenant)
         try:
-            async with self._locks[hash(tenant) % len(self._locks)]:
-                return await self._lookup(query, tenant)
+            return await self._lookup(query, tenant)
         finally:
             verifier_scope.reset(token)
 
@@ -338,18 +340,34 @@ class SemanticCache:
             selected_rank=1,
         )
 
-    async def _infer(self, function, *args):
+    async def _infer(self, function, *args, kind: str = "verifier", stage_ms=None):
         # Cancellation must not release capacity while the underlying thread still runs.
-        await self._inference_gate.acquire()
+        gate = self._embedding_gate if kind == "embedding" else self._verifier_gate
+        queue_started = time.perf_counter()
+        await gate.acquire()
+        queue_ms = (time.perf_counter() - queue_started) * 1000
+        STAGE_LATENCY.labels(stage=f"{kind}_queue").observe(queue_ms / 1000)
+        if stage_ms is not None:
+            key = f"{kind}_queue"
+            stage_ms[key] = round(stage_ms.get(key, 0) + queue_ms, 3)
         task = asyncio.create_task(asyncio.to_thread(function, *args))
+        inference_started = time.perf_counter()
 
         def finished(completed):
-            self._inference_gate.release()
+            gate.release()
+            STAGE_LATENCY.labels(stage=f"{kind}_execution").observe(
+                time.perf_counter() - inference_started
+            )
             if not completed.cancelled():
                 completed.exception()  # retrieve abandoned exceptions after request cancellation
 
         task.add_done_callback(finished)
-        return await asyncio.shield(task)
+        result = await asyncio.shield(task)
+        if stage_ms is not None:
+            key = f"{kind}_execution"
+            execution_ms = (time.perf_counter() - inference_started) * 1000
+            stage_ms[key] = round(stage_ms.get(key, 0) + execution_ms, 3)
+        return result
 
     async def _lookup(self, query: str, tenant: str) -> LookupResult:  # noqa: PLR0911, PLR0912, PLR0915
         stage_ms: dict[str, float] = {}
@@ -368,6 +386,11 @@ class SemanticCache:
             stage_ms["exact_lookup"] = round(elapsed * 1000, 3)
             if row and row.get("query") == query:
                 await storage.touch(self.redis, tenant, eid)
+                exact_current = await hash_fields(self.redis, self._entry_key(tenant, eid))
+                if exact_current != row:
+                    return LookupResult(
+                        status="MISS", reason="exact_candidate_changed", stage_latency_ms=stage_ms
+                    )
                 return LookupResult(
                     status="HIT",
                     answer=row["answer"],
@@ -420,22 +443,24 @@ class SemanticCache:
                 status="MISS", reason="exact_candidate_changed", stage_latency_ms=stage_ms
             )
 
-        # Ensure index is built from Redis before searching
-        if get_settings().vector_backend != "redisearch":
-            # Redis is authoritative, including writes/clears made by other workers.
-            stage_started = time.perf_counter()
-            await self._ensure(tenant)
-            elapsed = time.perf_counter() - stage_started
-            STAGE_LATENCY.labels(stage="index_sync").observe(elapsed)
-            stage_ms["index_sync"] = round(elapsed * 1000, 3)
-
         stage_started = time.perf_counter()
-        qvec = await self._infer(self.embedder.embed, query)
+        qvec = await self._infer(self.embedder.embed, query, kind="embedding", stage_ms=stage_ms)
         elapsed = time.perf_counter() - stage_started
         STAGE_LATENCY.labels(stage="embedding").observe(elapsed)
         stage_ms["embedding"] = round(elapsed * 1000, 3)
-        stage_started = time.perf_counter()
-        candidates, density = await self._ranked(qvec, tenant)  # tenant-scoped
+        if get_settings().vector_backend == "redisearch":
+            stage_started = time.perf_counter()
+            candidates, density = await self._ranked(qvec, tenant)
+        else:
+            # Redis is authoritative; serialize only index snapshots and rebuilds.
+            async with self._locks[hash(tenant) % len(self._locks)]:
+                sync_started = time.perf_counter()
+                await self._ensure(tenant)
+                sync_elapsed = time.perf_counter() - sync_started
+                STAGE_LATENCY.labels(stage="index_sync").observe(sync_elapsed)
+                stage_ms["index_sync"] = round(sync_elapsed * 1000, 3)
+                stage_started = time.perf_counter()
+                candidates, density = await self._ranked(qvec, tenant)
         elapsed = time.perf_counter() - stage_started
         STAGE_LATENCY.labels(stage="retrieval").observe(elapsed)
         stage_ms["retrieval"] = round(elapsed * 1000, 3)
@@ -466,6 +491,7 @@ class SemanticCache:
             reason = "no_acceptable_candidate"
         stage_started = time.perf_counter()
         hit = bool(exact)
+        candidate_trace: list[dict[str, object]] = []
         if not exact and self._answer_policy is not None:
             threshold = self._answer_policy.min_similarity
             accepted = []
@@ -476,6 +502,7 @@ class SemanticCache:
                 if remaining <= 0:
                     reason = "verification_budget_exhausted"
                     break
+                decision_started = time.perf_counter()
                 try:
                     decision = await asyncio.wait_for(
                         self._infer(
@@ -487,13 +514,42 @@ class SemanticCache:
                             self._policy.verifier,
                             get_settings().answer_policy_subject_guard,
                             get_settings().answer_policy_technical_guard,
+                            stage_ms=stage_ms,
                         ),
                         timeout=remaining,
                     )
                 except TimeoutError:
                     reason = "verification_budget_exhausted"
+                    candidate_trace.append(
+                        {
+                            "rank": candidate_rank,
+                            "similarity": round(score, 4),
+                            "action": "VERIFY",
+                            "reason": reason,
+                            "verifier_status": "timed_out",
+                            "nli_score": None,
+                            "elapsed_ms": round((time.perf_counter() - decision_started) * 1000, 3),
+                        }
+                    )
                     break
                 decision_reason = f"answer_{decision.action.lower()}:{decision.reason}"
+                candidate_trace.append(
+                    {
+                        "rank": candidate_rank,
+                        "similarity": round(score, 4),
+                        "action": decision.action,
+                        "reason": decision.reason,
+                        "verifier_status": (
+                            "scored"
+                            if decision.score is not None
+                            else "unavailable"
+                            if decision.reason == "verifier_unavailable"
+                            else "not_called"
+                        ),
+                        "nli_score": decision.score,
+                        "elapsed_ms": round((time.perf_counter() - decision_started) * 1000, 3),
+                    }
+                )
                 if candidate_rank == 1:
                     reason = decision_reason
                     nli_score = decision.score
@@ -515,7 +571,7 @@ class SemanticCache:
                     hit = True
         elif not exact:
             hit, reason, threshold = await self._infer(
-                self._policy.decide, query, best["query"], sim, density
+                self._policy.decide, query, best["query"], sim, density, stage_ms=stage_ms
             )
             verifier_invoked = get_settings().verifier_nli and "nli" in reason
         elapsed = time.perf_counter() - stage_started
@@ -532,6 +588,7 @@ class SemanticCache:
                 verifier_invoked=verifier_invoked,
                 candidate_count=count,
                 stage_latency_ms=stage_ms,
+                candidate_trace=tuple(candidate_trace),
             )
         stage_started = time.perf_counter()
         if get_settings().vector_backend == "redisearch":
@@ -547,6 +604,7 @@ class SemanticCache:
                 reason="expired_or_evicted",
                 candidate_count=count,
                 stage_latency_ms=stage_ms,
+                candidate_trace=tuple(candidate_trace),
             )
         if (
             candidate_row.get("query") != best["query"]
@@ -557,6 +615,7 @@ class SemanticCache:
                 reason="candidate_changed",
                 candidate_count=count,
                 stage_latency_ms=stage_ms,
+                candidate_trace=tuple(candidate_trace),
             )
         if get_settings().vector_backend == "redisearch":
             await rs.touch_candidate(best["key"], tenant)
@@ -574,16 +633,35 @@ class SemanticCache:
             candidate_count=count,
             selected_rank=rank,
             stage_latency_ms=stage_ms,
+            candidate_trace=tuple(candidate_trace),
         )
 
     async def store(
         self, query: str, answer: str, tenant: str, *, metadata: dict[str, str] | None = None
     ) -> bool:
+        if not answer.strip() or not get_settings().cache_enabled or is_volatile(query):
+            return False
+        if (
+            len(query.encode("utf-8")) + len(answer.encode("utf-8"))
+            > get_settings().max_cache_entry_bytes
+        ):
+            return False
+        vec = (
+            await self._infer(self.embedder.embed, query, kind="embedding")
+            if get_settings().cache_match_mode == "semantic"
+            else None
+        )
         async with self._locks[hash(tenant) % len(self._locks)]:
-            return await self._store(query, answer, tenant, metadata=metadata)
+            return await self._store(query, answer, tenant, metadata=metadata, vec=vec)
 
     async def _store(
-        self, query: str, answer: str, tenant: str, *, metadata: dict[str, str] | None = None
+        self,
+        query: str,
+        answer: str,
+        tenant: str,
+        *,
+        metadata: dict[str, str] | None = None,
+        vec: np.ndarray | None = None,
     ) -> bool:
         if not answer.strip() or not get_settings().cache_enabled or is_volatile(query):
             return False
@@ -599,7 +677,7 @@ class SemanticCache:
                 hashlib.sha256(query.encode("utf-8")).hexdigest(),
                 {"query": query, "answer": answer, "vec": "", **(metadata or {})},
             )
-        vec = await self._infer(self.embedder.embed, query)
+        assert vec is not None
 
         if get_settings().vector_backend == "redisearch":
             await rs.ensure_index(len(vec))
@@ -632,6 +710,7 @@ class SemanticCache:
             return
         async with self._locks[hash(tenant) % len(self._locks)]:
             await self._clear(tenant)
+        await asyncio.to_thread(self._policy.verifier.purge_scope, tenant)
 
     async def _clear(self, tenant: str | None = None) -> None:
         """Clear one tenant's cache, or ALL tenants when tenant is None."""

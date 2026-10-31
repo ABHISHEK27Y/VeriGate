@@ -68,6 +68,15 @@ memberships, and evictions. It never lists answer text. Browser counters on
 `/ui` are per tab, not server totals. The displayed TTL is the configured
 value, not the remaining TTL of an individual answer.
 
+`CACHE_LOOKUP_TIMEOUT_SEC` (default 5) bounds the lookup including inference
+queue wait. `REQUEST_DEADLINE_SEC` (default 45) bounds the gateway request after
+handler entry. A lookup timeout may fall through to the provider only while
+that overall deadline remains. JSON and streaming start `PROVIDER_TIMEOUT`
+after lookup/admission; the overall deadline still applies. Candidate and
+stage timings are nested measurements, so do not sum them as independent
+components. The candidate trace contains rank, score, decision, reason,
+verifier status, and time; it contains no cached question or answer text.
+
 An approved application has an administrator-configured default workspace.
 Without one, standard requests remain private; the server does not choose the
 first workspace implicitly. `cache_scope=private` narrows access and
@@ -104,12 +113,22 @@ python -m scripts.provision_organization rotate config/organizations-live.json
 
 `revoke` uses `VERIGATE_OLD_GATEWAY_KEY`. The running gateway reloads key
 status and rotated digests after the file's atomic replacement; a changed
-provider profile or workspace definition requires restart. Rotation retains
+provider profile or workspace definition requires restart. Readiness returns
+503 after such a change until the gateway restarts with a validated complete
+directory. A malformed replacement also fails closed; stage and validate edits
+before atomically replacing the live file. Rotation retains
 the subject and authorized cache identity. A user-level clear only clears that
 subject's private entries, not the shared workspace. Revoked keys are rejected
 before cache lookup or provider access. Rate limits and the optional admitted
 request budget follow the stable organization/subject/application identity
 through rotation; the budget is not a monetary spending cap.
+
+Cache clear removes entries present in the selected private scope when the
+operation runs and purges that worker's verifier memoization for the scope.
+Another worker's process-local memoization is not remotely purged, and an
+already-running provider call may write a new answer afterward. Do not use this
+endpoint as a secure erasure guarantee. Stop writes and restart workers before
+any operational deletion requiring that stronger guarantee.
 
 ## Real-provider startup
 

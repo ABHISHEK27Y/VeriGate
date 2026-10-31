@@ -44,6 +44,8 @@ class Settings(BaseSettings):
     semantic_retrieval_k: int = Field(default=5, ge=1, le=20)
     semantic_verify_limit: int = Field(default=5, ge=1, le=20)
     semantic_verify_budget_ms: int = Field(default=1500, gt=0, le=30000)
+    cache_lookup_timeout_sec: float = Field(default=5.0, gt=0, le=60)
+    request_deadline_sec: float = Field(default=45.0, gt=0, le=300)
     # Base threshold T_base. Calibrated for the "minilm" backend (semantic scores sit
     # lower than lexical ones). The adaptive logic raises it for risky queries.
     cache_similarity_base: float = 0.72

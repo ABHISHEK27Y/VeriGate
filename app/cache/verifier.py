@@ -302,6 +302,13 @@ class NliVerifier:
             raise RuntimeError("Pinned NLI model failed startup prewarm")
         self.prewarmed = True
 
+    def purge_scope(self, scope: str) -> None:
+        """Drop memoized question/answer assertions for one cache scope."""
+        with self.lock:
+            for key in tuple(self.cache):
+                if key[0] == scope:
+                    del self.cache[key]
+
     def assess(self, premise: str, hypothesis: str) -> NliAssessment:
         """Score only when the complete paired input fits the model window."""
         key = (verifier_scope.get(), premise, hypothesis)

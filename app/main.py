@@ -286,19 +286,25 @@ async def _cache_lookup(request: Request, prompt: str, tenant: str, bypass: bool
         return result
 
 
-async def _cache_store(
+async def _cache_store(  # noqa: PLR0913 - explicit cache write context
     request: Request,
     prompt: str,
     answer: str,
     tenant: str,
     *,
     metadata: dict[str, str] | None = None,
+    deadline: float | None = None,
 ) -> str:
     started = time.perf_counter()
     try:
-        stored = await request.app.state.semantic_cache.store(
-            prompt, answer, tenant, metadata=metadata
-        )
+        async with asyncio.timeout_at(deadline):
+            stored = await request.app.state.semantic_cache.store(
+                prompt, answer, tenant, metadata=metadata
+            )
+    except TimeoutError:
+        CACHE_FAILURES.labels(stage="write_timeout").inc()
+        CACHE_WRITES.labels(result="failed").inc()
+        return "write_timeout"
     except Exception:
         CACHE_FAILURES.labels(stage="write").inc()
         CACHE_WRITES.labels(result="failed").inc()
@@ -345,6 +351,32 @@ async def _lookup_with_overlay(  # noqa: PLR0913, PLR0917 - explicit scope conte
     return await _cache_lookup(request, prompt, tenant, bypass), decision.scope
 
 
+async def _bounded_lookup(  # noqa: PLR0913, PLR0917 - explicit scope context
+    request: Request,
+    prompt: str,
+    principal: Principal,
+    registry: ProviderRegistry,
+    tenant: str,
+    decision: ScopeDecision,
+    bypass: bool,
+    overall_deadline: float,
+) -> tuple[LookupResult, str]:
+    loop = asyncio.get_running_loop()
+    remaining = min(get_settings().cache_lookup_timeout_sec, overall_deadline - loop.time())
+    if remaining <= 0:
+        raise HTTPException(status_code=504, detail="request deadline exceeded")
+    try:
+        async with asyncio.timeout(remaining):
+            return await _lookup_with_overlay(
+                request, prompt, principal, registry, tenant, decision, bypass
+            )
+    except TimeoutError:
+        CACHE_FAILURES.labels(stage="lookup_timeout").inc()
+        if loop.time() >= overall_deadline:
+            raise HTTPException(status_code=504, detail="request deadline exceeded") from None
+        return LookupResult(status="MISS", reason="cache_lookup_timeout"), decision.scope
+
+
 def _downgrade_metadata(principal: Principal, decision: ScopeDecision) -> dict[str, str]:
     return {
         "origin_scope": "workspace",
@@ -356,6 +388,14 @@ def _downgrade_metadata(principal: Principal, decision: ScopeDecision) -> dict[s
 
 
 def _count_candidate_decision(result: LookupResult) -> None:
+    if result.candidate_trace:
+        for candidate in result.candidate_trace:
+            action = str(candidate["action"]).lower()
+            if action in {"accept", "verify", "reject"}:
+                CANDIDATE_DECISION.labels(action=action).inc()
+            if action == "reject" and candidate["verifier_status"] == "scored":
+                CANDIDATE_VERIFIER_REJECTED.inc()
+        return
     reason = result.reason or ""
     if reason.startswith("answer_"):
         action = reason.split(":", 1)[0].removeprefix("answer_")
@@ -374,14 +414,22 @@ class ResponseTooLargeError(Exception):
     """The configured upstream response limit was exceeded."""
 
 
-async def _generate_answer(
-    prompt: str, request: Request, registry: ProviderRegistry | None = None
+async def _generate_answer(  # noqa: PLR0912 - terminal-event state machine
+    prompt: str,
+    request: Request,
+    registry: ProviderRegistry | None = None,
+    *,
+    overall_deadline: float,
 ) -> tuple[str, str, ProviderEvent]:
     """Call the provider (with failover) and assemble the full answer."""
     stream = None
     generation_started = time.perf_counter()
     try:  # noqa: TRY301 - streaming event validation belongs to this stateful loop
-        async with asyncio.timeout(get_settings().provider_timeout):
+        deadline = min(
+            overall_deadline,
+            asyncio.get_running_loop().time() + get_settings().provider_timeout,
+        )
+        async with asyncio.timeout_at(deadline):
             route_started = time.perf_counter()
             provider_name, stream = await (
                 registry or request.app.state.provider_registry
@@ -411,6 +459,8 @@ async def _generate_answer(
     except ResponseTooLargeError as exc:
         log.warning("upstream_response_too_large")
         raise HTTPException(status_code=502, detail="upstream response too large") from exc
+    except HTTPException:
+        raise
     except Exception as exc:
         log.warning("upstream_failed", error_type=type(exc).__name__)
         raise HTTPException(status_code=502, detail="upstream unavailable") from exc
@@ -549,6 +599,12 @@ async def config_details(request: Request, x_api_key: str | None = Header(defaul
 
 async def _health_details(request: Request) -> dict:
     try:
+        request.app.state.organization_directory._refresh_credentials()
+    except (OSError, ValueError, TypeError, KeyError) as exc:
+        raise HTTPException(
+            status_code=503, detail="organization configuration requires restart"
+        ) from exc
+    try:
         await request.app.state.redis.ping()
         if (
             get_settings().vector_backend == "redisearch"
@@ -638,6 +694,7 @@ async def chat(  # noqa: PLR0915 - main gateway request path
     req: ChatRequest, request: Request, x_api_key: str | None = Header(default=None)
 ):
     """Non-streaming JSON endpoint — easiest to test/inspect (see X-Cache in the body)."""
+    overall_deadline = asyncio.get_running_loop().time() + get_settings().request_deadline_sec
     api_key = _auth(x_api_key, request)
     principal = _principal(request, api_key)
     registry = _registry_for(request, principal)
@@ -656,7 +713,7 @@ async def chat(  # noqa: PLR0915 - main gateway request path
     effective_scope = scope_decision.scope
     intended_provider = registry.intended_route(prompt)
     lookup_started = time.perf_counter()
-    result, lookup_scope = await _lookup_with_overlay(
+    result, lookup_scope = await _bounded_lookup(
         request,
         prompt,
         principal,
@@ -664,6 +721,7 @@ async def chat(  # noqa: PLR0915 - main gateway request path
         cache_tenant,
         scope_decision,
         req.cache_bypass,
+        overall_deadline,
     )
     stage_ms = {"cache_lookup": round((time.perf_counter() - lookup_started) * 1000, 3)}
     _count_candidate_decision(result)
@@ -711,6 +769,7 @@ async def chat(  # noqa: PLR0915 - main gateway request path
             provider_profile=None if principal.legacy else principal.provider_profile,
             candidate_count=result.candidate_count,
             selected_rank=result.selected_rank,
+            candidate_trace=list(result.candidate_trace),
             storage_outcome="cache_hit",
         )
 
@@ -728,7 +787,9 @@ async def chat(  # noqa: PLR0915 - main gateway request path
     async def generate_and_store() -> tuple[str, str, ProviderEvent]:
         nonlocal storage_outcome, storage_scope, storage_reason
         provider_started = time.perf_counter()
-        provider_name, answer, completion = await _generate_answer(prompt, request, registry)
+        provider_name, answer, completion = await _generate_answer(
+            prompt, request, registry, overall_deadline=overall_deadline
+        )
         stage_ms["provider"] = round((time.perf_counter() - provider_started) * 1000, 3)
         response_eligibility = content_eligibility(answer)
         if not _still_authorized(request, api_key, principal):
@@ -750,7 +811,12 @@ async def chat(  # noqa: PLR0915 - main gateway request path
                     metadata = _downgrade_metadata(principal, scope_decision)
             write_started = time.perf_counter()
             storage_outcome = await _cache_store(
-                request, prompt, answer, write_tenant, metadata=metadata
+                request,
+                prompt,
+                answer,
+                write_tenant,
+                metadata=metadata,
+                deadline=overall_deadline,
             )
             if storage_outcome != "stored":
                 storage_scope = None
@@ -765,7 +831,9 @@ async def chat(  # noqa: PLR0915 - main gateway request path
 
     if result.status == "BYPASS":
         provider_started = time.perf_counter()
-        provider_name, answer, completion = await _generate_answer(prompt, request, registry)
+        provider_name, answer, completion = await _generate_answer(
+            prompt, request, registry, overall_deadline=overall_deadline
+        )
         stage_ms["provider"] = round((time.perf_counter() - provider_started) * 1000, 3)
         joined = False
         storage_outcome = "bypassed"
@@ -776,7 +844,10 @@ async def chat(  # noqa: PLR0915 - main gateway request path
             (provider_name, answer, completion), joined = await request.app.state.singleflight.run(
                 flight_key,
                 generate_and_store,
-                get_settings().provider_timeout + 2,
+                min(
+                    get_settings().provider_timeout + 2,
+                    max(0.001, overall_deadline - asyncio.get_running_loop().time()),
+                ),
             )
         except TimeoutError as exc:
             raise HTTPException(status_code=504, detail="coalesced request timeout") from exc
@@ -821,6 +892,7 @@ async def chat(  # noqa: PLR0915 - main gateway request path
         provider_profile=None if principal.legacy else principal.provider_profile,
         candidate_count=result.candidate_count,
         selected_rank=result.selected_rank,
+        candidate_trace=list(result.candidate_trace),
         storage_outcome="coalesced" if joined else storage_outcome,
     )
 
@@ -831,7 +903,7 @@ async def chat_stream(  # noqa: PLR0915, PLR0912 - streaming state machine
 ):
     """Streaming endpoint (Server-Sent Events). Cache hits stream instantly."""
     started = time.perf_counter()
-    deadline = asyncio.get_running_loop().time() + get_settings().provider_timeout
+    overall_deadline = asyncio.get_running_loop().time() + get_settings().request_deadline_sec
     api_key = _auth(x_api_key, request)
     principal = _principal(request, api_key)
     registry = _registry_for(request, principal)
@@ -847,7 +919,7 @@ async def chat_stream(  # noqa: PLR0915, PLR0912 - streaming state machine
     )
     effective_scope = scope_decision.scope
     intended_provider = registry.intended_route(prompt)
-    result, lookup_scope = await _lookup_with_overlay(
+    result, lookup_scope = await _bounded_lookup(
         request,
         prompt,
         principal,
@@ -855,6 +927,7 @@ async def chat_stream(  # noqa: PLR0915, PLR0912 - streaming state machine
         cache_tenant,
         scope_decision,
         req.cache_bypass,
+        overall_deadline,
     )
     _count_candidate_decision(result)
     if result.status == "HIT" and _principal(request, api_key) != principal:
@@ -863,6 +936,12 @@ async def chat_stream(  # noqa: PLR0915, PLR0912 - streaming state machine
         if _principal(request, api_key) != principal:
             raise HTTPException(status_code=401, detail="credential changed during request")
         await _check_budget(admission_identity, request)  # charge before streaming starts
+        deadline = min(
+            overall_deadline,
+            asyncio.get_running_loop().time() + get_settings().provider_timeout,
+        )
+        if asyncio.get_running_loop().time() >= deadline:
+            raise HTTPException(status_code=504, detail="request deadline exceeded")
         try:  # noqa: TRY301 - completion must be validated in the streaming state machine
             async with asyncio.timeout_at(deadline):
                 route_started = time.perf_counter()
@@ -897,6 +976,7 @@ async def chat_stream(  # noqa: PLR0915, PLR0912 - streaming state machine
                         "storage_outcome": "cache_hit",
                         "provider_invoked": False,
                         "provider_usage": None,
+                        "candidate_trace": result.candidate_trace,
                     }
                 )
                 + "\n\n"
@@ -971,7 +1051,12 @@ async def chat_stream(  # noqa: PLR0915, PLR0912 - streaming state machine
                     if effective_scope == "workspace":
                         metadata = _downgrade_metadata(principal, scope_decision)
                 storage_outcome = await _cache_store(
-                    request, prompt, answer, write_tenant, metadata=metadata
+                    request,
+                    prompt,
+                    answer,
+                    write_tenant,
+                    metadata=metadata,
+                    deadline=overall_deadline,
                 )
                 if storage_outcome == "stored":
                     storage_scope = intended_storage_scope
@@ -1002,6 +1087,7 @@ async def chat_stream(  # noqa: PLR0915, PLR0912 - streaming state machine
                     "provider_model": completion.model,
                     "finish_reason": completion.finish_reason,
                     "provider_usage": completion.usage,
+                    "candidate_trace": result.candidate_trace,
                 }
             )
             + "\n\n"

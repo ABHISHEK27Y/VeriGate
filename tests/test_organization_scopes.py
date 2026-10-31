@@ -420,8 +420,8 @@ def test_revocation_after_generation_prevents_shared_write(tmp_path: Path, monke
     path.write_text(json.dumps(raw), encoding="utf-8")
     original = gateway_main._generate_answer
 
-    async def revoke_after_generation(prompt, request, registry):
-        generated = await original(prompt, request, registry)
+    async def revoke_after_generation(prompt, request, registry, **kwargs):
+        generated = await original(prompt, request, registry, **kwargs)
         updated = json.loads(path.read_text(encoding="utf-8"))
         updated["credentials"][0]["status"] = "revoked"
         replacement = tmp_path / "revoked-after-generation.json"
@@ -439,6 +439,22 @@ def test_revocation_after_generation_prevents_shared_write(tmp_path: Path, monke
             == HTTPStatus.UNAUTHORIZED
         )
         assert ask(client, CAROL, "Explain deterministic retries.").json()["cache"] == "MISS"
+
+
+def test_readiness_fails_when_workspace_edit_requires_restart(tmp_path: Path) -> None:
+    path = tmp_path / "organizations.json"
+    config = settings_for(path, "workspace-restart-test-salt")
+    directory_file(path, config.api_key_salt)
+    with TestClient(create_app(config)) as client:
+        assert client.get("/ready").status_code == HTTPStatus.OK
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        raw["organizations"]["example"]["workspaces"]["engineering"]["members"].remove("carol")
+        replacement = tmp_path / "edited-organizations.json"
+        replacement.write_text(json.dumps(raw), encoding="utf-8")
+        replacement.replace(path)
+        response = client.get("/ready")
+        assert response.status_code == HTTPStatus.SERVICE_UNAVAILABLE
+        assert response.json()["detail"] == "organization configuration requires restart"
 
 
 def test_concurrent_profiles_are_isolated(tmp_path: Path) -> None:

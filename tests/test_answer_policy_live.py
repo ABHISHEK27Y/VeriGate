@@ -257,8 +257,8 @@ def test_changed_inproc_answer_after_policy_decision_calls_provider(client) -> N
             await cache.store(stored, "Paris", tenant)
             original_infer = cache._infer
 
-            async def mutate_after_decision(function, *args):
-                result = await original_infer(function, *args)
+            async def mutate_after_decision(function, *args, **kwargs):
+                result = await original_infer(function, *args, **kwargs)
                 if function == cache._answer_policy.decide:
                     ids = await cache.redis.smembers(cache._ids_key(tenant))
                     eid = next(iter(ids))

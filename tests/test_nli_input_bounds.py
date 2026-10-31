@@ -80,3 +80,17 @@ def test_nli_memoization_is_partitioned_by_authorized_cache_scope() -> None:
         finally:
             verifier_scope.reset(token)
     assert verifier.model.predict_calls == TWO_SCOPES
+
+
+def test_purge_scope_removes_only_its_memoized_assertions() -> None:
+    verifier = NliVerifier()
+    verifier.model = PairModel()
+    for scope in ("private-alice", "private-bob"):
+        token = verifier_scope.set(scope)
+        try:
+            verifier.assess("one two", "three four")
+        finally:
+            verifier_scope.reset(token)
+    verifier.purge_scope("private-alice")
+    assert all(key[0] != "private-alice" for key in verifier.cache)
+    assert any(key[0] == "private-bob" for key in verifier.cache)

@@ -296,7 +296,7 @@ footer{border-top:1px solid var(--line);padding:34px 0 60px;color:var(--faint);f
           <div><span>effective scope</span><b id="rscope">—</b></div>
           <div><span>provider profile</span><b id="rprofile">—</b></div>
           <div><span>candidates / selected rank</span><b id="rcandidates">—</b></div>
-          <div><span>policy detail</span><b id="rstructure">—</b></div>
+          <div><span>candidate decisions</span><b id="rstructure">—</b></div>
           <div><span>NLI model evidence</span><b id="rnli">—</b></div>
           <div><span>storage outcome</span><b id="rstorage">—</b></div>
           <div><span>configured TTL</span><b id="rttl">—</b></div>
@@ -408,18 +408,20 @@ async function ask(exampleOptions={}){const q=$("query").value.trim();if(!q)retu
     if(r.status===429){s.errors++;$("err").textContent="Rate limited (429).";return;}
     if(r.status===401){s.errors++;$("err").textContent="Invalid API key (401).";return;}
     if(!r.ok)throw new Error("Gateway returned HTTP "+r.status);
-    const d=await r.json();const browserMs=(performance.now()-started).toFixed(2);const decision=d.note&&d.note.startsWith("answer_")?d.note.split(":")[0].slice(7).toUpperCase():"";
-    const declined=decision==="VERIFY"||decision==="REJECT"||(d.note||"").startsWith("verify_rejected");
+    const d=await r.json();const browserMs=(performance.now()-started).toFixed(2);const trace=d.candidate_trace||[];
+    const selected=trace.find(c=>c.rank===d.selected_rank);
+    const decision=selected?selected.action:trace.length&&d.cache!=="HIT"?trace[0].action:"";
+    const declined=d.cache!=="HIT"&&trace.some(c=>c.action==="VERIFY"||c.action==="REJECT");
     const b=$("rbadge");b.textContent=(decision?decision+" · ":declined?"DECLINED · ":"")+d.cache;b.className="rbadge b-"+(declined?"REJECT":d.cache);
     $("ranswer").textContent=d.answer;$("rprov").textContent=d.provider;
     $("rsource").textContent=d.provider==="cache"?(DEMO_ANSWERS.has(d.answer)?"matches seeded fixture":"cached answer"):(d.provider.startsWith("mock")?"mock placeholder":"generated answer");
-    $("rupstream").textContent=d.provider==="cache"?"no":(d.note||"").startsWith("coalesced:")?"shared call":"yes";
+    $("rupstream").textContent=d.provider==="cache"?"no":d.provider_invoked?"yes":"shared call";
     $("rintended").textContent=d.intended_provider||"—";$("rfallback").textContent=d.fallback_used?"yes":"no";$("rlat").textContent=(d.latency_ms??0)+" ms";$("rhttp").textContent=browserMs+" ms";
     $("rsim").textContent=d.similarity!=null?d.similarity.toFixed(3):"—";$("rthr").textContent=d.threshold!=null?d.threshold.toFixed(3):"—";
     $("ridentity").textContent=d.organization_id&&d.subject_id?d.organization_id+" / "+d.subject_id:"legacy private key";
     $("rscope").textContent=d.cache_scope||"—";$("rprofile").textContent=d.provider_profile||d.intended_provider||"—";
     $("rcandidates").textContent=(d.candidate_count??"—")+" / "+(d.selected_rank??"—");
-    $("rstructure").textContent=(d.note||"—").split(":").slice(1).join(":")||d.note||"—";
+    $("rstructure").textContent=trace.map(c=>`#${c.rank} ${c.action} (${c.reason}; ${c.verifier_status}; ${c.elapsed_ms} ms)`).join(" · ")||"—";
     $("rnli").textContent=d.nli_score!=null?d.nli_score.toFixed(3)+" (model evidence)":d.verifier_invoked?"invoked; score unavailable":"not invoked";
     $("rstorage").textContent=d.storage_outcome||"—";$("rttl").textContent=configuredTtl!=null?configuredTtl+" s configured (not remaining TTL)":"—";
     $("rstages").textContent=Object.entries(d.stage_latency_ms||{}).map(([name,ms])=>name+" "+ms+" ms").join(" · ")||"—";

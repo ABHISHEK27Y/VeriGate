@@ -215,6 +215,11 @@ def test_later_valid_candidate_wins(client) -> None:
     assert response["answer"] == "Right"
     assert response["candidate_count"] == SECOND_CANDIDATE
     assert response["selected_rank"] == SECOND_CANDIDATE
+    assert [(item["rank"], item["action"]) for item in response["candidate_trace"]] == [
+        (1, "REJECT"),
+        (2, "ACCEPT"),
+    ]
+    assert all("query" not in item and "answer" not in item for item in response["candidate_trace"])
     replayed = client.portal.call(
         replay_rows,
         cache,
@@ -225,6 +230,9 @@ def test_later_valid_candidate_wins(client) -> None:
     assert replayed.status == response["cache"]
     assert replayed.answer == response["answer"]
     assert replayed.selected_rank == response["selected_rank"]
+    assert [item["action"] for item in replayed.candidate_trace] == [
+        item["action"] for item in response["candidate_trace"]
+    ]
 
 
 test_later_valid_candidate_wins.config_overrides = {
@@ -268,10 +276,10 @@ def test_verification_budget_timeout_is_a_miss(client) -> None:
     client.portal.call(set_candidates, cache, [("Who wrote the song Silver River?", "Alice", 0.95)])
     original = cache._infer
 
-    async def slow_policy(function, *args):
+    async def slow_policy(function, *args, **kwargs):
         if function == cache._answer_policy.decide:
             await asyncio.sleep(0.05)
-        return await original(function, *args)
+        return await original(function, *args, **kwargs)
 
     cache._infer = slow_policy
     response = client.post(

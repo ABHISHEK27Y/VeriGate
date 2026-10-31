@@ -73,4 +73,5 @@ class ChatResponse(BaseModel):
     provider_profile: str | None = None
     candidate_count: int | None = None
     selected_rank: int | None = None
+    candidate_trace: list[dict[str, object]] | None = None
     storage_outcome: str | None = None
