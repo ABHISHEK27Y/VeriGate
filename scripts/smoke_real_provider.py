@@ -144,7 +144,7 @@ def run(output: Path, settings: Settings) -> dict:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--execute", action="store_true", help="allow up to two real provider calls"
+        "--execute", action="store_true", help="allow up to three real provider calls"
     )
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()

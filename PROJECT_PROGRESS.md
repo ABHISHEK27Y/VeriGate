@@ -1,5 +1,58 @@
 # VeriGate software progress — 31 October 2026
 
+## Technical verifier input comparison — 31 October 2026
+
+The current checkout was confirmed at `69c6e683acaa94a4b02ab0eebd70168623cd2678`
+on `codex/evaluation-integrity`; unrelated untracked `audit/` was left alone.
+The three valid misses in technical HTTP v2 are now development cases. Their
+intended candidate was retrieved with MiniLM similarities 0.947, 0.752, and
+0.888. The answer assertion entered the pinned NLI model in full (49, 41, and
+37 tokens); there was no truncation or structural rejection. Its entailment
+scores were 0.749, 0.565, and 0.879, below the frozen 0.90 accept threshold.
+The stored answers are short stipulated controls, not independently verified
+complete technical answers; wording such as “setup” and “recover” may itself
+be ambiguous. The exact inputs, alternative scores, and CPU timings are saved
+in `evaluation/runs/technical_nli_development_20261031_v1/trace.json`.
+
+Before running the alternative, we froze 30 new rows from 10 separate
+technical families under `evaluation/runs/technical_nli_holdout_20261031_v1/`.
+The workload hash is `a4772f2e8eb068de79ebbaba3a4f86963b94d6aba04938dc7749233f1fceaff2`.
+Each family has one stored answer and a valid paraphrase, changed-action/entity/
+permission/environment/quantity invalid neighbor, and an underspecified
+question with an explicit abstention expectation. Labels are authored
+stipulated procedural controls; ambiguous rows are excluded from valid/invalid
+accuracy. The fixed candidate and real MiniLM similarity were identical for
+both NLI inputs; the frozen policy and thresholds were unchanged. This is
+pairwise fixed-candidate evaluation, not live top-k or factual validation.
+
+| Frozen input | Valid reuse | Missed valid | Incorrect accept | Ambiguous ACCEPT / VERIFY / REJECT |
+|---|---:|---:|---:|---:|
+| Current answer assertion | 6/10 | 4/10 | 1/10 invalid | 4 / 5 / 1 of 10 |
+| Experimental question-only NLI | 8/10 | 2/10 | 2/10 invalid | 8 / 1 / 1 of 10 |
+
+All 10 valid candidates cleared the MiniLM retrieval threshold in each mode;
+all missed valid reuse occurred after retrieval. The question-only input gained
+two valid hits but also accepted a PostgreSQL restore request against a backup
+answer, while both inputs accepted a Terraform apply request against a plan
+answer. It accepted more underspecified questions. The experimental input is
+**not enabled**; the current answer-aware policy and exact-match deployment
+default remain unchanged. Saved row decisions and summary include the
+denominators. On this Windows CPU run, initial RSS was 53.1 MB, after loading
+and encoding with MiniLM 567.8 MB, and after NLI prewarm 794.2 MB. MiniLM load
+plus encoding took 45.607 s, NLI prewarm 1.893 s with cached files; the
+separate first development process took 88.440 s to prewarm NLI. Warm decision
+median/p95 was 66.569/80.681 ms for current and 60.098/67.811 ms for the
+question-only input. These are local process timings, not HTTP or real-provider
+latency.
+
+The non-spending real-provider preflight reports missing disposable Redis,
+semantic artifact and model settings, a non-demo gateway key, and an externally
+enforced spending cap/approved amount in this environment. It did not perform
+an upstream probe. Existing tests cover profile-secret failure and mock routing;
+the actual provider response and billed usage remain unverified. The provider
+stream adapter currently does not surface usage metadata, so no real-provider
+usage or cost claim is made. No paid calls were made.
+
 ## Organization workspace checkpoint (verified locally)
 
 This branch adds a digest-only credential directory, stable organization and
