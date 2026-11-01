@@ -1,0 +1,26 @@
+\documentclass[tikz,border=6pt]{standalone}
+\input{diagram_styles}
+\definecolor{vgNavy}{HTML}{6A4796}
+\begin{document}
+\begin{tikzpicture}
+
+\node[boundary,minimum width=12cm,minimum height=7cm,fill=violet!12] at (0,0) {};
+\node[font=\large\bfseries] at (0,2.9) {Organization A};
+\node[component] (alice) at (-3,1.7) {Alice};
+\node[component] (carol) at (3,1.7) {Carol};
+\node[component,text width=3.3cm,fill=teal!22] (shared) at (0,-.3) {Authorized shared workspace};
+\node[component,text width=2.6cm] (private) at (-3,-2.4) {Alice private scope};
+\draw[link,<->] (alice)--node[linklabel,left]{eligible reuse}(shared);
+\draw[link,<->] (carol)--node[linklabel,right]{eligible reuse}(shared);
+\draw[link] (alice.west)--(-5,1.7)|-(private.west);
+\node[linklabel,anchor=east] at (-5,-.5) {private};
+\node[font=\small,text width=4cm,align=center] at (2,-2.4) {No private read path from Carol};
+\node[boundary,minimum width=12cm,minimum height=3.5cm,fill=teal!12] at (0,-7) {};
+\node[font=\large\bfseries] at (0,-5.9) {Organization B};
+\node[component] (bob) at (-3,-7.3) {Bob};
+\node[component,text width=3cm] (other) at (2.5,-7.3) {Organization B cache};
+\draw[link,<->] (bob)--node[linklabel,above]{own authorized scope}(other);
+\node[font=\normalsize,align=center,text width=10cm] at (0,-4.5) {Cross-organization reuse is denied by scope identity,\\not by a similarity threshold.};
+
+\end{tikzpicture}
+\end{document}

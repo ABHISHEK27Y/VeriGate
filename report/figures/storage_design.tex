@@ -1,0 +1,20 @@
+\documentclass[tikz,border=6pt]{standalone}
+\input{diagram_styles}
+\definecolor{vgNavy}{HTML}{087E8B}
+\begin{document}
+\begin{tikzpicture}
+
+\node[component,text width=4cm] (ns) at (-3,0) {Versioned namespace\\policy / model / route};
+\node[component,text width=4cm] (scope) at (3,0) {Opaque authorized scope\\organization / workspace / private};
+\node[component,text width=9cm,fill=teal!22] (entry) at (0,-3) {Redis entry hash\\namespace:entry:scope:digest\\question, answer, tenant, metadata\\semantic mode: binary FLOAT32 vector\\finite TTL};
+\draw[link] (ns)--node[linklabel,left]{key version}(entry);
+\draw[link] (scope)--node[linklabel,right]{scope identity}(entry);
+\node[component,text width=4cm,fill=orange!20] (index) at (-3,-6.4) {RedisSearch HNSW index\\tenant TAG filter\\COSINE distance};
+\node[component,text width=4cm,fill=orange!20] (metadata) at (3,-6.4) {Scope accounting\\ID set, recency / size sorted sets, byte total};
+\node[component,text width=6cm,fill=orange!20] (org) at (0,-9.5) {Organization accounting\\recency / size / expiry sorted sets; byte total};
+\draw[link] (entry.south west)--node[linklabel,left]{index fields}(index);
+\draw[link] (entry.south east)--node[linklabel,right]{membership}(metadata);
+\draw[link] (entry.south)--node[linklabel,right,pos=.7]{quota metadata}(org);
+
+\end{tikzpicture}
+\end{document}

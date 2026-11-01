@@ -1,0 +1,32 @@
+\documentclass[tikz,border=6pt]{standalone}
+\input{diagram_styles}
+\begin{document}
+\begin{tikzpicture}
+\node[fcstart] (start) at (0,0) {Process startup};
+\node[fcstep] (config) at (0,-1.8) {Load settings; validate production configuration};
+\node[fcstep] (redis) at (0,-3.7) {Connect and PING Redis; check finite production memory};
+\node[fcstep] (construct) at (0,-5.6) {Construct cache, directory, registries and local locks};
+\node[fcdecision] (semantic) at (0,-8.2) {semantic mode?};
+\node[fcstep] (warm) at (5.5,-8.2) {Warm MiniLM if selected; prewarm NLI if configured};
+\node[fcdecision] (search) at (5.5,-11) {RedisSearch backend?};
+\node[fcstep] (index) at (5.5,-13.6) {Probe dimension; create or validate index schema};
+\node[fcstart] (serve) at (0,-16.2) {Serve requests};
+\node[fcstart] (fail1) at (-5.5,-3.7) {Config / Redis failure: startup fails};
+\node[fcstart] (fail2) at (10.2,-13.6) {Model / schema failure: startup fails};
+\node[component,text width=5.6cm] (probes) at (0,-19.2) {/live: process response. /ready and /health: dependency checks or 503. Docker HEALTHCHECK calls /health.};
+\draw[fcarrow] (start)--(config);
+\draw[fcarrow] (config)--(redis);
+\draw[fcarrow] (redis)--(construct);
+\draw[fcarrow] (construct)--(semantic);
+\draw[fcarrow] (semantic)--node[fclabel,left]{exact mode}(serve);
+\draw[fcarrow] (semantic.east)--node[fclabel,above]{yes}(warm.west);
+\draw[fcarrow] (warm)--(search);
+\draw[fcarrow] (search)--node[fclabel,right]{yes}(index);
+\draw[fcarrow] (search.west) to[out=180,in=0] node[fclabel,above]{no}(serve.east);
+\draw[fcarrow] (index.south) to[out=270,in=0] node[fclabel,below]{valid}(serve.east);
+\draw[fcarrow,dashed] (redis.west)--node[fclabel,above]{failure}(fail1.east);
+\draw[fcarrow,dashed] (index.east)--node[fclabel,above]{failure}(fail2.west);
+\draw[fcarrow,dashed] (warm.east) to[out=0,in=90] node[fclabel,right]{prewarm failure}(fail2.north);
+\draw[fcarrow] (serve)--(probes);
+\end{tikzpicture}
+\end{document}

@@ -1,25 +1,9 @@
-VeriGate demonstrates a working LLM gateway with exact-match caching as its conservative
-default and semantic reuse as an opt-in experiment. The gateway implements tenant-aware
-storage, rate limiting, provider routing, streaming, and observability. Unit and integration
-tests support specific behaviours, but passing tests do not establish that cached answers
-are generally safe to reuse.
+\section{Conclusion}
+VeriGate is an implemented organization-aware LLM gateway with exact caching by default and optional answer-aware semantic reuse. It authenticates a gateway principal, restricts workspace and private cache scopes, resolves a server-owned provider profile, checks response eligibility, and records candidate decisions and request outcomes. MiniLM and RedisSearch retrieve a shortlist; structural checks and a pinned NLI signal assess the particular stored answer before a semantic hit. A final entry read limits stale selection races, while explicit provider and admission errors avoid a fictitious successful fallback.
 
-The current candidate-pair experiment in Chapter~6 is a smoke fixture. It compares query
-decision policies on a small set of examples chosen during development. It does not
-evaluate answer compatibility, real retrieval, a changing cache, provider correctness,
-or measured monetary savings. Its thresholds were not tuned on a separate validation
-set. Therefore this report does not claim a formal error guarantee, a production quality
-bound, or that adaptive thresholds and verification were invented by this project.
+The saved tests support defined gateway behaviors, and the controlled evaluations expose the quality trade-off. The earlier live 25-probe run found 4/15 valid reuses despite complete shortlist retrieval. A fresh 25-probe run with combined guards reached 8/15 versus 6/15 for its baseline, with no observed invalid accepts among five cases, but it missed the predeclared promotion gate. These results justify continued experimentation, not a production answer-quality or monetary-savings claim. The work also demonstrates that similarity, question equivalence, and answer applicability are distinct decisions.
 
-New public pair-proxy experiments now use group-separated partitions, learned and
-calibrated accept scores, a filling-cache replay, and a synthetic risk-control exercise.
-The QQP-to-PAWS transfer is weak, and strict pair-proxy risk targets lead to reject-all.
-Those findings challenge the earlier smoke-set optimism; they still cannot validate
-answer reuse. The next research step is independent review of actual cached answers,
-followed by a held-out replay and a costed provider comparison. Only then should a
-learned or risk-controlled semantic policy be considered for deployment.
+The intended product remains a shared gateway for multiple organizations, with reuse confined to each authorized workspace and private responses kept separate. Its practical value would come from avoiding repeated generation across employees while retaining a provider path for new or unsuitable requests. The current implementation establishes that workflow; the remaining work is to improve and measure the quality and economics of its reuse decisions, rather than change the product into a standalone chatbot.
 
-Operationally, public deployment still requires production secrets, a real provider,
-shared Redis, monitoring, load tests, and a release check for the exact revision being
-deployed. The current work is a tested major-project prototype and a basis for rigorous
-experimentation, not a completed production service.
+\section{Future Work}
+Broader deployment requires independently reviewed answer-level labels, family-disjoint calibration and holdout sets, and realistic HTTP retrieval with competing candidates. A task-specific suitability model should be trained and promoted only after its artifact, calibration, and held-out gate are fixed and verified. Further work should handle long answers and multi-step tasks, improve privacy and scope detection, test cross-worker concurrency and model memory, measure real-provider completion and billing, and validate capacity under realistic load. Those are planned studies; the current prototype remains an experimental gateway.

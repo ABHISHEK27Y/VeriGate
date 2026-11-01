@@ -1,0 +1,36 @@
+\documentclass[tikz,border=6pt]{standalone}
+\input{diagram_styles}
+
+\begin{document}
+\begin{tikzpicture}
+
+\node[fcstep,text width=4cm] (input) at (0,0) {Incoming task + stored question / answer + similarity};
+\node[fcstep,text width=4cm] (pre) at (0,-1.8) {Structural and named-work prechecks};
+\node[fcdecision] (early) at (0,-4) {action decided?};
+\node[fcstep,text width=4cm] (guards) at (0,-6.3) {Configured technical and applicability guards};
+\node[fcdecision] (gdec) at (0,-8.5) {action decided?};
+\node[fcstep,text width=4cm] (nli) at (0,-10.8) {Pinned answer-assertion NLI; uncertain / unavailable / too long: VERIFY};
+\node[fcstep,text width=3cm] (actions) at (5.5,-10.8) {Collect candidate actions: ACCEPT / VERIFY / REJECT};
+\node[fcstep,text width=4cm] (aggregate) at (0,-13.2) {Aggregate bounded top-$k$; check conflicts, unassessed candidates and deadline};
+\node[fcdecision] (chosen) at (0,-15.7) {one suitable answer?};
+\node[fcstart,text width=2.7cm] (miss) at (5.5,-15.7) {MISS: generation path};
+\node[fcstep,text width=4cm] (read) at (0,-18) {Re-read selected question and answer; compare candidate identity};
+\node[fcdecision] (current) at (0,-20.3) {entry current?};
+\node[fcstart,text width=4cm] (hit) at (0,-22.7) {Touch LRU; HIT only after gateway authorization recheck};
+\draw[fcarrow] (input)--(pre); \draw[fcarrow] (pre)--(early);
+\draw[fcarrow] (early)--node[fclabel,left]{no}(guards);
+\draw[fcarrow] (early.east)-|node[fclabel,near start,above]{yes}(actions.north);
+\draw[fcarrow] (guards)--(gdec);
+\draw[fcarrow] (gdec.east)-|node[fclabel,near start,above]{yes}(actions.north west);
+\draw[fcarrow] (gdec)--node[fclabel,left]{no}(nli);
+\draw[fcarrow] (nli)--(actions);
+\draw[fcarrow] (actions.south)|-(aggregate.east);
+\draw[fcarrow] (aggregate)--(chosen);
+\draw[fcarrow] (chosen.east)--node[fclabel,above]{no}(miss);
+\draw[fcarrow] (chosen)--node[fclabel,left]{yes}(read);
+\draw[fcarrow] (read)--(current);
+\draw[fcarrow] (current.east)-|node[fclabel,near start,above]{no}(miss.south);
+\draw[fcarrow] (current)--node[fclabel,left]{yes}(hit);
+
+\end{tikzpicture}
+\end{document}

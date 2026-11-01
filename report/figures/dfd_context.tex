@@ -1,0 +1,24 @@
+\documentclass[tikz,border=6pt]{standalone}
+\input{diagram_styles}
+\definecolor{vgNavy}{HTML}{195CA8}
+\definecolor{vgTeal}{HTML}{E9A23B}
+\begin{document}
+\begin{tikzpicture}
+\node[dfdprocess,minimum size=4cm,text width=3.2cm] (g) at (0,0) {0\\VeriGate LLM Gateway};
+\node[dfdentity] (client) at (-6.2,0) {Integrated client\\application};
+\node[dfdentity] (provider) at (6.2,0) {External LLM provider\\(configured variant)};
+\node[dfdentity] (operator) at (0,-5.1) {Operator /\\administrator};
+\draw[dfdflow] (client.north east) to[out=18,in=160]
+ node[dfdlabel,above]{gateway credential\\and prompt} (g.160);
+\draw[dfdflow] (g.200) to[out=200,in=342]
+ node[dfdlabel,below]{answer, outcome\\metadata, or error} (client.south east);
+\draw[dfdflow] (g.20) to[out=20,in=162]
+ node[dfdlabel,above]{generation request} (provider.north west);
+\draw[dfdflow] (provider.south west) to[out=198,in=340]
+ node[dfdlabel,below]{completion, usage,\\or provider error} (g.340);
+\draw[dfdflow] (operator.north west) to[out=150,in=250]
+ node[dfdlabel,left]{admin key and cache action;\\health or metrics request} (g.250);
+\draw[dfdflow] (g.290) to[out=290,in=30]
+ node[dfdlabel,right]{cache status; health /\\readiness / metrics data} (operator.north east);
+\end{tikzpicture}
+\end{document}

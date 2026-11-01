@@ -1,51 +1,18 @@
-\section{Scope of the Comparison}
-Semantic answer caching stores a response with a prior request and retrieves it for a
-later, related request. The central question is whether the \emph{particular stored answer}
-is reusable, not merely whether two question embeddings are close. The systems below
-already cover important parts of adaptive and verified caching; VeriGate does not claim
-to have invented either idea.
+\section{Caching and Verification}
+Exact caching uses request identity as its reuse condition. Semantic caching retrieves neighbors in an embedding space and adds a decision rule. Sentence embeddings make related requests easier to retrieve \cite{reimers2019sentencebert}, and approximate nearest-neighbor indexes such as HNSW can search vector collections \cite{malkov2018hnsw}. Neither technique decides whether a recorded answer satisfies the later request. Verification can act on the two questions, on a stored answer and incoming task, or on a newly generated response; these evaluate different objects and incur different latency and provider cost.
 
-\section{Directly Relevant Systems}
-GPTCache is an open-source cache framework with configurable embeddings, vector storage,
-similarity evaluation, thresholds, and an optional LLM verifier in post-processing.
-It is therefore inaccurate to describe GPTCache as a system that can only use a fixed
-threshold or can never verify a candidate. The feature set is documented in its
-\url{https://github.com/zilliztech/GPTCache/blob/main/examples/README.md}.
+GPTCache provides configurable embedding, storage, similarity, and post-processing components rather than a single mandatory fixed threshold \cite{bang2023gptcache,gptcache_docs}. vCache learns cache-entry-specific boundaries online and reports a user-specified error-rate bound under its paper's modelling and feedback assumptions \cite{schroeder2026vcache}. Its published benchmarks and guarantee are not reproduced by VeriGate. Krites combines static and dynamic tiers; a near miss can trigger an asynchronous LLM judge and later promotion without putting that judge on the current request's critical path \cite{krites2026}. This differs from VeriGate's synchronous, optional candidate assessment. These systems make it inaccurate to claim that existing caches uniformly trust similarity alone.
 
-vCache, published as an ICLR paper, learns cache-entry-specific decision boundaries
-online and studies user-specified error bounds under its stated model and assumptions.
-It compares responses obtained during exploration with cached responses and evaluates
-several benchmark distributions. VeriGate's hand-set query threshold has no analogous
-guarantee. The paper is available at
-\url{https://arxiv.org/html/2502.03771v5}.
-
-Krites studies a static/dynamic cache with a similarity grey zone. It runs an LLM judge
-asynchronously after a miss, then promotes approved static responses into the dynamic
-cache. Its objective includes preserving critical-path latency and accounting for judge
-cost. VeriGate does not implement this policy. The paper is available at
-\url{https://arxiv.org/html/2602.13165v2}.
-
-\begin{table}[H]
-\centering
-\footnotesize
-\caption{Verified scope of directly relevant caching approaches. A checkmark describes a
-reported method, not an independently reproduced result in this project.}
-\label{tab:lit_comparison}
-\begin{tabular}{|p{2.2cm}|p{3.2cm}|p{3.3cm}|p{4.0cm}|}
-\hline
-System & Match/decision & Verification & Error and cost scope \\ \hline
-GPTCache & Configurable embedding and similarity evaluation & Optional LLM post-processor & No guarantee claimed here; configuration dependent \\ \hline
-vCache & Online, cache-entry-specific boundary & Exploration compares generated and cached responses & Error bound under published assumptions; exploration has inference cost \\ \hline
-Krites & Threshold plus grey-zone trigger & Asynchronous LLM judge after a miss & Studies static-answer coverage, error and judge overhead \\ \hline
-VeriGate (current) & Hand-set query threshold; exact mode by default & Structural query checks; optional bidirectional question NLI & Small pair fixture only; no answer-level or formal risk validation \\ \hline
+\begin{table}[htbp]\centering\small
+\caption{Literature methods and VeriGate's implemented scope. Published outcomes are not VeriGate experiments.}\label{tab:lit_comparison}
+\begin{tabular}{p{2.1cm}p{3.1cm}p{3.4cm}p{3.5cm}}\toprule
+System & Candidate boundary & Suitability signal & Cost and evidence boundary \\\midrule
+GPTCache & Configurable similarity evaluator & Optional post-processor & Depends on configured pipeline \\
+vCache & Learned entry-specific boundary & Online response comparison & Published bound under stated assumptions \\
+Krites & Static threshold plus grey zone & Asynchronous LLM judge & Judge cost moves off current request path \\
+VeriGate & Exact default; optional top-$k$ semantic mode & Stored question, answer, incoming question; checks and pinned NLI & Synchronous verifier latency; controlled evidence only \\\bottomrule
 \end{tabular}
 \end{table}
 
-\section{Research Position}
-The defensible next question for VeriGate is whether an \emph{answer-aware and cost-aware}
-selective verifier can improve the trade-off between valid reuse, incorrect reuse, and
-verification latency on a held-out workload. This is a hypothesis, not a current result.
-It overlaps with prior verification work, so any eventual contribution must be stated
-narrowly: a particular policy and evaluation protocol, with direct comparisons and
-negative results included. Query-only NLI is a question-equivalence signal, not proof
-that a cached answer is still correct.
+\section{Position of This Work}
+VeriGate's engineering contribution is the explicit authorized scope, provider-profile compatibility, final candidate identity recheck, and an answer-aware selection path with visible abstentions. Its research contribution is a bounded comparison of baseline and experimental policies on labelled technical tasks and real retrieval paths. It does not introduce semantic caching, adaptive thresholds, or verification as general ideas. A zero-error count on a small selected set is descriptive and is not a formal risk guarantee. Query-pair labels test paraphrase decisions; answer-level labels test whether one stored answer fits a new request. Chapter~6 keeps those denominators separate.

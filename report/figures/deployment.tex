@@ -1,0 +1,28 @@
+\documentclass[tikz,border=6pt]{standalone}
+\input{diagram_styles}
+\begin{document}
+\begin{tikzpicture}
+
+\node[boundary,minimum width=12cm,minimum height=7cm,fill=blue!7] (gateway) at (0,0) {};
+\node[font=\large\bfseries,align=center] at (0,2.8) {\textless\textless executionEnvironment\textgreater\textgreater\\Gateway container};
+\node[component,text width=3.5cm] (api) at (-3,1) {FastAPI routes\\provider registry};
+\node[component,text width=3.5cm] (models) at (3,1) {Worker-local\\MiniLM / NLI};
+\node[component,text width=3.5cm] (mock) at (-3,-1.6) {Local mock adapter\\development profile};
+\node[component,text width=3.5cm] (local) at (3,-1.6) {Worker-local locks,\\memo, singleflight};
+\draw[link] (api)--node[linklabel,above]{local inference}(models);
+\draw[link] (api)--(mock); \draw[link] (api.south east)--(local.north west);
+\node[boundary,minimum width=5.4cm,minimum height=3.5cm,fill=teal!10] (redisbox) at (-3.5,-7) {};
+\node[font=\normalsize\bfseries,align=center] at (-3.5,-6.1) {\textless\textless executionEnvironment\textgreater\textgreater\\Redis Stack};
+\node[component,text width=4cm] (redis) at (-3.5,-7.5) {Scoped hashes + HNSW\\quotas + admission};
+\node[component,text width=4cm,fill=orange!18] (external) at (3.5,-7) {Hosted LLM provider\\external-profile variant};
+\draw[link,<->] (gateway.south west)--(-3.5,-4.5)--node[linklabel,left]{Redis protocol}(redisbox.north);
+\draw[link,<->] (gateway.south east)--(3.5,-4.5)--node[linklabel,right,align=center]{HTTPS when\\configured}(external.north);
+\node[component,text width=4cm] (volume) at (-3.5,-10.6) {Named volume\\redis-data: /data};
+\draw[link,<->] (redis)--node[linklabel,left]{persistence}(volume);
+\node[component,text width=4cm,fill=green!15] (config) at (-3.5,-14) {Read-only org config\\./config: /app/config};
+\node[component,text width=4cm,fill=green!15] (weights) at (3.5,-14) {Named model-cache\\Hugging Face cache};
+\node[font=\normalsize,align=center,text width=11cm] at (0,-12.5) {Gateway mounts supplied by the organization-demo overlay:};
+\node[font=\small,align=center,text width=11cm] at (0,-16) {Mounts are configuration dependencies, not network services.\\The local mock adapter makes no external generation request.};
+
+\end{tikzpicture}
+\end{document}

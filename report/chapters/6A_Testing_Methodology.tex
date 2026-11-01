@@ -1,0 +1,89 @@
+\section{Testing Strategy and Execution Layers}
+Testing was organized around claims rather than a single pass count. A unit test isolates a rule such as scope resolution, request schema rejection, numeric mismatch, answer-policy action, freshness bypass, TTL accounting, or overlong verifier input. It can detect a deterministic branch error but does not prove the assembled service behaves the same way. Integration tests add Redis or RedisSearch and exercise candidate identity, scope filtering, quota eviction, and shared state. HTTP tests use FastAPI's client or a real local server to test authentication, request outcomes, provider completion, metadata, and storage. Failure and concurrency tests inject slow or broken components so the system reaches paths that a normal demonstration would rarely encounter.
+
+The repository CI separates ordinary tests, Redis-backed tests, lint/type checks, a dependency audit, a Docker build, and selected live-path benchmarks. The archived \texttt{checks.json} summary of 303 passed and seven skipped is a saved local historical result. Skips can reflect unavailable disposable Redis Stack or other optional integration conditions. It is not an exact-revision release test for the moving checkout. The current working tree contains concurrent application and UI changes outside report ownership; no fresh suite total is claimed here. A final release must save an exact-commit test report, including skip reasons, before its count replaces the archived one.
+
+\begin{table}[htbp]\centering\small
+\caption{Testing layers and what their evidence can establish.}\label{tab:test_layers}
+\begin{tabular}{p{2.2cm}p{4.0cm}p{4.2cm}p{2.2cm}}\toprule
+Layer & Representative assertions inspected & Setup and evidence & Boundary \\\midrule
+Unit & Input constraints, guard decisions, freshness and verifier length & Gateway reliability, technical-constraint and NLI-bounds tests & Rule behavior only \\
+Redis & Scope filter, mutation, expiry, LRU and quota & Top-$k$ policy and scoped-capacity tests & Selected fixtures \\
+HTTP/API & Auth, HIT/MISS/BYPASS, storage, metadata & Gateway/organization tests and isolated release probe & Local mock profile \\
+Failure & Deadline, incomplete stream, write failure, coalescing & Reliability, deadline, completion and singleflight tests & No broad traffic load \\
+UI/browser & Ordinary payload, developer override, outcome labels & Dashboard tests and UI at \texttt{1cdb80a} & Final browser state pending \\
+Semantic quality & Labelled fixed candidate and live top-$k$ & Frozen authored workloads and saved rows & Not production truth \\
+Performance & Stage, HTTP, prewarm, RSS, Redis read & Saved manifests and timing arrays & Local hardware and mock provider \\\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Representative Functional and Failure Cases}
+Tables~\ref{tab:representative_cases_a} and \ref{tab:representative_cases_b} list inspected assertions and saved HTTP observations rather than assigning success to every desirable behavior. An expected MISS prevents unsafe reuse when the task changes; an undesired MISS loses a valid opportunity. An error response is correct when admission or provider completion fails. A selected fixture is evidence for its mechanism, not a frequency estimate. Test assertions and saved probes are marked separately.
+
+\begin{table}[p]\centering\footnotesize
+\caption{Representative test cases, part 1.}\label{tab:representative_cases_a}
+\begin{tabular}{p{0.8cm}p{2.4cm}p{2.6cm}p{2.5cm}p{3.3cm}}
+\toprule ID & Scenario and setup & Expected behavior & Observed result & Evidence and status \\\midrule
+T01 & Missing gateway credential; local POST & Reject before body work & 401 in assertion & Gateway tests; archived suite \\
+T02 & Carol, authorized workspace; seeded answer & Share eligible answer & Semantic HIT, rank 1, no provider & Isolated mock release probe \\
+T03 & Organization B asks same task & Separate scope & MISS in other scope & Same selected probe \\
+T04 & Carol requests Alice private content & No cross-subject reuse & Private requests remained separate & Same probe; no general leak bound \\
+T05 & Ordinary UI request, no scope override & Server chooses scope & Inspected payload omits override & Committed in 1cdb80a; browser test source inspected \\
+T06 & Identical prompt in one scope & Exact shortcut HIT & First MISS, next HIT & Gateway test assertion \\
+T07 & Valid paraphrase to seeded answer & Answer-aware HIT & HIT with NLI score 0.9208 & Selected release probe \\
+T08 & Changed task constraints & Decline unsuitable entry & Provider fallback in probe & Mock output is not answer truth \\
+T09 & Ambiguous technical request & Do not assume narrow answer applies & One baseline approval in five fresh ambiguous cases & Fresh controlled run; known negative \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[p]\centering\footnotesize
+\caption{Representative test cases, part 2.}\label{tab:representative_cases_b}
+\begin{tabular}{p{0.8cm}p{2.4cm}p{2.6cm}p{2.5cm}p{3.3cm}}
+\toprule ID & Scenario and setup & Expected behavior & Observed result & Evidence and status \\\midrule
+T10 & Empty scoped cache & Provider MISS & MISS in gateway assertion & Gateway test; archived suite \\
+T11 & 596-token assertion, 512-token window & VERIFY, no truncation & VERIFY on frozen long case & Timed bidirectional lockbox \\
+T12 & Verifier unavailable & Abstain and use provider & Conservative action in verifier tests & Recovery needs final review \\
+T13 & Exact entry replaced during touch & Do not serve old answer & MISS, changed-entry reason & Top-$k$ policy injected mutation \\
+T14 & Provider omits terminal completion & Error; no cache entry & 502 JSON or stream error; retry MISS & Provider completion tests \\
+T15 & Completed answer, cache write raises & Keep answer, report failed write & 200 JSON with mock answer & Reliability injected failure \\
+T16 & Scope/org quota pressure & Evict LRU within limits & Victim removed, occupancy bounded & Scoped-capacity assertions \\
+T17 & Duplicate concurrent JSON miss & Coalesce in one process & One upstream call in saved benchmark & Cross-worker duplication persists \\
+T18 & Stream interruption/cancellation & No partial stored answer & Interrupted stream retry MISS; early disconnect not fully established & Reliability test and review ledger F14 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+
+\section{Semantic Evaluation Protocol}
+The answer-reuse unit is a triple: stored question, its stored answer, and an incoming probe. A valid label means the particular answer is stipulated to satisfy the incoming task. An invalid label means it is stipulated unsuitable, for example a plan instruction for an apply action. Ambiguous means the new request lacks enough scope to approve reuse. These authored labels are independent of model output but are not independently human-reviewed production judgments. Public NQ questions and references appear in the song stress set; authored templates and swaps create request variations. Public QQP/PAWS/STS-B labels are pair relations and cannot be converted into answer-reuse truth.
+
+Fixed-candidate tests force the designated stored answer into the decision rule. They reveal whether checks and NLI approve that candidate, but cannot measure whether a real index would retrieve it or whether a competing answer would win. The live top-$k$ HTTP challenges seed multiple answers into isolated Redis scopes, make actual HTTP calls, and retain candidate traces. Each valid candidate's presence in the shortlist is counted separately from its acceptance. This distinction matters: in the earlier 25-probe run all 15 suitable candidates were retrieved, while 11 valid requests missed because NLI declined their suitable answer. The source diagnosis records five VERIFY and six REJECT actions for those 11 suitable candidates. There was no retrieval failure on that selected workload.
+
+Development examples were inspected to diagnose failures; later task families were frozen before evaluating variants. The applicability fixed-candidate set had 32 tasks from eight families. The bidirectional lockbox had 30 tasks from ten families with task-contract labels; its reverse check was an experiment, not a deployed method. The fresh combined-guard HTTP set had 25 tasks from five new families and a predeclared gate: at least three more valid HITs out of 15, no increase in five invalid or five ambiguous approvals, a bounded warm-latency criterion on balanced runs, and preservation of isolation regressions. Its forward and reverse orderings used the same underlying tasks. Because the combined guards added only two valid HITs, the gate failed even though the observed counts looked better. Retuning on inspected cases would turn a held-out comparison into development data.
+
+\section{The 1,000-Request Stress Study}
+The saved \texttt{nq\_song\_stress\_20261030\_v3} workload contains 200 song-writer families from NQ-Open train. Each family contributes one original question, three authored paraphrase forms, and one authored song-title swap. One seed shuffled the 1,000 unique request texts. Each policy used a fresh evaluation scope, Redis Stack, pinned MiniLM, and a fixed-answer controlled provider after a genuine miss; the answer-aware variant also used pinned NLI. The exact, static-0.72, and answer-aware configurations ran sequentially at sufficient and deployment capacity. The saved workload, freeze, manifests, request rows, and analysis preserve input and policy hashes. No paid calls were made.
+
+At sufficient capacity, exact mode made 1,000 provider calls because no question text repeated. Static semantic mode made 198 provider calls, recorded 712 reference-matching hits and 90 suspected wrong hits. Answer-aware mode made 264 provider calls, with 682 reference-matching hits and 54 suspected wrong hits. Those suspected wrong hits are short-reference mismatches requiring source review, not adjudicated answer errors; NQ references may omit aliases or co-writers. The answer-aware policy also missed 58 opportunities relative to its controlled reference criteria. Compared with static reuse, verification removed 36 suspected mismatches while losing 30 reference-matching hits and adding 66 provider calls. The variant reduced suspected mismatches while adding provider calls and verifier cost. It did not produce an accuracy figure for technical applications.
+
+The deployment-capacity arm produced the same semantic-policy outcomes as sufficient capacity; it did not demonstrate semantic behavior under binding eviction pressure. The two policies see the same ordered requests, so a statistical comparison should use paired family-level differences. Separate overlapping intervals do not establish a significant advantage.
+
+The common potential-reuse denominator is 800 requests whose reference answer had appeared earlier in the frozen order. Policy-specific live-cache opportunities differ because admission and capacity change which entries remain stored. The recorded p50/p95 warm HTTP timings at sufficient capacity were 35.193/51.006 ms exact, 63.894/142.934 ms static, and 211.609/364.226 ms answer-aware, each based on 999 post-first requests on one sequential local runner. These timings include local HTTP, Redis, embedding, and verifier work when active, plus controlled-provider generation on misses. They do not price or time a real cloud provider. Comparing their medians alone would hide long verifier paths and different hit/miss mixes.
+
+\section{Positive, Negative, and Resource Findings}
+The isolated 13-request release probe used an image built from commit \texttt{37dc7a7}, real Redis Stack, pinned MiniLM and NLI, required prewarm, and two mock profiles. Its seeded decorator answer was reused by Carol at rank one without provider invocation, with reported gateway latency 13.64 ms. In the same probe Alice's completed mock answer was stored in the workspace, but Carol's valid paraphrase was declined by the model; the two relevant requests took 234.64 and 277.73 ms. That is a valid-reuse miss, not an answer-quality mistake estimate. Other-organization and private requests stayed separate; an unauthorized workspace request returned 403; a secret-bearing request bypassed storage. Streaming completed and an exact repeat hit in its selected case. These are useful path checks, not a representative workload.
+
+The 24-case authored freshness development set had 12 stable and 12 volatile requests. All 12 volatile requests bypassed, but six stable questions also bypassed. The heuristic therefore loses reuse on some technical procedure questions even before retrieval. The saved 596-token paired assertion against a 512-token verifier window produced a conservative VERIFY rather than silent truncation. That protects the decision boundary but loses a valid opportunity. Neither case should be rewritten as a model-quality success.
+
+The Redis shortlist-read microbenchmark measured 80 rounds of hash validation: sequential median 3.357 ms, pipelined median 0.896 ms. Only those Redis reads were timed; the numbers exclude embedding, NLI, HTTP, and provider generation. Pinned NLI prewarm raised one process's resident memory by about 681 MB from import, and a 30-trial CI benchmark moved the first model-load cost into startup. These establish a local resource trade-off, not an end-to-end production speedup. Multiple workers duplicate model memory while Redis entries remain shared.
+
+\section{Latency and Conditional Cost Model}
+The JSON response's reported gateway time starts after authentication and rate admission in the handler. A browser HTTP duration begins before fetch and includes client scheduling, request transfer, server admission, response transfer, and browser processing. Streaming has a different reporting boundary. Internal stage timers isolate cache lookup, embedding, retrieval, verifier, provider, admission, and write when present. A p50 is the middle observation; p95 describes a slow-tail threshold. Neither is a universal service-level guarantee, and comparing percentiles from different datasets, cold/warm states, or provider mixes is misleading.
+
+Let \(C_p\) denote expected provider generation cost per request, \(C_g\) the gateway's average embedding, verification, Redis, hosting and operation cost per request, and \(h\) the fraction of requests that avoid a provider call while serving a suitable answer. A simplified break-even condition is \(h C_p > C_g\), assuming the gateway is an added cost and ignoring fixed migration costs. If verification also increases miss latency, the design must satisfy a latency and quality constraint in addition to that inequality. Controlled runs measure provider invocation counts but do not supply billed token totals, provider prices actually paid, or infrastructure amortization. The report therefore states avoided controlled-provider calls, not currency savings.
+
+\section{Testing Summary and Remaining Gates}
+The inspected unit, integration, and HTTP tests support specific parsing, authorization, scoped storage, completion, timeout, and failure behaviors. The selected mock HTTP probe demonstrates authorized workspace sharing and separation in a small scenario. Semantic reuse works on some controlled paraphrases and fails on others even when retrieval finds the suitable candidate. The fixed-candidate guard comparison reduced unsafe and ambiguous approvals on its authored set, while the fresh combined HTTP guard missed its promotion gate. Redis pipelining reduced the measured local shortlist-read stage, and prewarming moved cold model load into startup. Neither finding is a general provider-cost or throughput result.
+
+Broader deployment still needs an exact-final-commit suite and browser check, independently reviewed answer-level labels, a larger family-disjoint top-$k$ workload, realistic long answers, real-provider completion/billing smoke, privacy review, cross-worker concurrency and cancellation tests, and capacity measurements at the intended organization count. The dashboard and runtime implementation are changing concurrently; any later fix must be reconciled with its own commit and evidence before this report describes it as complete.

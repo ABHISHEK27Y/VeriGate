@@ -1,98 +1,75 @@
-This chapter distinguishes a small candidate-pair smoke fixture from a final evaluation of
-answer reuse. The figures and tables below are generated from repository scripts and recorded
-CSV files. They do not establish a production error rate, a formal risk guarantee, or an
-original algorithmic result. The default gateway mode is exact matching; semantic matching
-is an opt-in experimental mode.
+\section{Evidence Types and Metrics}
+The results are separated by what they actually observe. Functional tests check code behavior; pair-proxy studies label relations between questions; controlled answer studies stipulate whether a particular recorded answer fits a later task; HTTP studies include retrieval, selection, and provider fallback. Valid reuse divides suitable answers served by labelled valid opportunities. Incorrect acceptance divides invalid requests served from cache by labelled invalid requests; ambiguous approvals have their own denominator. A VERIFY count denotes abstention from a candidate, whereas provider fallbacks include all requests without a hit. Latency percentiles are reported with their path and measurement boundary.
 
-\section{Functional Checks}
-The default local pytest summary is generated from pytest's JUnit XML. Skipped integration
-tests need a disposable Redis Stack; the repository's CI exercises that path separately.
-These counts are functional-check evidence, not a statistical quality result.
+\section{Functional and Integration Verification}
+The archived generated check table records 303 passed, seven skipped, zero failed, and zero errors in 310 collected tests. Its source is \texttt{evaluation/results/checks.json}; it is a historical local run, not a fresh test result for this report's source commit. Saved organization HTTP observations using mock profiles show authorized cross-employee workspace reuse and private or other-organization isolation for their selected cases. Gateway tests cover auth, completion, streaming, deadlines, scope, and candidate identity. None of these counts measures answer correctness in general. A final exact-revision test run and CI check remain a release gate.
 
-\input{generated/checks}
+\section{Historical Query-Pair and Proxy Experiments}
+The initial candidate-pair smoke fixture and later QQP, PAWS, and STS-B studies used question-pair or sentence-similarity labels. Their candidate was often stipulated rather than retrieved, and no actual cached answer was judged for the new request. The filling-cache replay added TTL, LRU, and tenant partitions but marked cross-pair outcomes unknown when labels did not cover the retrieved candidate. Five overlapping seed splits are descriptive, not five independent production samples. PAWS transfer of the QQP-trained scorer was weak, and the strict pair-proxy risk selector chose reject-all at tested targets. The archived tables are retained in Appendix~\ref{app:historical}; they do not establish a deployed answer-error bound.
 
-\section{Candidate-Pair Smoke Fixture}
-The input to this experiment is a stored query and an incoming query, labelled by whether
-they were intended to be paraphrases. It does not include the actual cached answer or a
-human judgement that the answer remains usable. The experiment calls the same
-\texttt{CachePolicy.decide} function used by the gateway, but passes zero neighbourhood
-density and always supplies the designated stored query as the candidate. It therefore
-tests a decision rule in isolation, not candidate retrieval or a changing cache.
+\section{Judge Validation and Public-Query Pilots}
+The initial judge experiment evaluated 15 authored binary controls plus one ambiguous case. FLAN-T5-small answered NO for every binary control and scored 7/15, with zero recall on eight valid cases. Pinned DeBERTa NLI scored 13/15, accepting six of eight valid cases and rejecting all seven invalid controls, but gave a high acceptance score to the separate ambiguous case. This was model selection evidence, not a general answer-quality certification. On a separate unlabelled queue of 200 diagnostic and 150 random pairs, the judges disagreed on 95 and 73 rows respectively. Those 168 disagreements cannot be counted as factual errors. The saved \href{https://github.com/ABHISHEK27Y/VeriGate/blob/1cdb80a/docs/AUTOMATED_JUDGE_RESULTS.md}{judge-validation record} preserves that distinction.
 
-Positive recall divides accepted positive pairs by all positive pairs. Negative acceptance
-divides accepted negative pairs by all negative pairs. Precision divides accepted positive
-pairs by all accepted pairs and is undefined when there are no accepts. Neither positive
-recall nor negative acceptance is an end-to-end workload cache-hit or monetary-savings rate.
+A public NQ-Open dev pilot used 60 stored questions, 50 distinct incoming questions and ten exact repeats, excluding recorded development overlap. It used real MiniLM vectors and nearest-neighbour selection, but no independently validated reuse labels. In version 1, exact, static and adaptive policies accepted the ten repeats; answer-aware reuse accepted only five because floating-point cosine values slightly above one were rejected. A separately versioned numerical-tolerance fix accepted all ten repeats while retaining rejection of all 50 distinct random neighbours. Of those 50, 41 were below the retrieval threshold: the workload mostly tested distant candidates, not difficult paraphrases. Version 3 warm local lookup p95 was 58.46 ms; it excluded Redis, HTTP, generation and model loading. The \href{https://github.com/ABHISHEK27Y/VeriGate/blob/1cdb80a/docs/RESULTS_REALISTIC_PILOT.md}{pilot record} retains the failed original run and the follow-up rather than replacing old evidence.
 
-\input{generated/ablation}
+These stages explain why later evaluations moved to answer-bearing technical tasks, competing candidates and real HTTP paths. Public input provenance alone does not make the labels independent or make an offline timing equivalent to gateway latency.
 
-The current fixture is deliberately small and was used during development. Thresholds and
-heuristic weights were not selected on a separate validation split. The displayed differences
-are descriptive results on this fixture; they cannot establish generalisation or a fair
-comparison with published systems.
+\section{Controlled Answer-Aware Evaluations}
+The authored \texttt{answer\_aware\_20261029\_v6} set contains 60 binary cases from 20 fact families and two ambiguous cases. With a fixed designated candidate, lexical hash embeddings, and warm decision timing, the answer-aware policy accepted 16/20 valid paraphrases, 0/40 changed or conflicting cases, and 0/2 ambiguous cases. Its 48.91/62.54 ms p50/p95 excludes embedding, retrieval, HTTP, and generation. The static and adaptive query-only baselines answer different questions; their errors on this development set cannot be read as a deployed comparison.
 
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.82\textwidth,keepaspectratio]{tradeoff.png}
-\caption{Threshold sweep on the candidate-pair smoke fixture. Axes are negative-pair
-acceptance and positive-pair recall, not real workload risk and savings.}
+The frozen 32-case, eight-family technical applicability set supplied one fixed candidate per request, real MiniLM similarity, and pinned NLI. The baseline served 9/16 valid cases, accepted 1/8 invalid and 5/8 ambiguous cases; the optional applicability guard served the same 9/16 valid and accepted 0/8 invalid and 0/8 ambiguous. Its VERIFY count rose from 7/32 to 14/32. These authored task contracts support a narrow action/environment check, not broad factual accuracy. A separate 30-case, ten-family bidirectional assertion test served 4/10 valid with the current forward check and 3/10 with the reverse addition, with 3/10 ambiguous approvals in both. The reverse addition was not promoted.
+
+\begin{figure}[htbp]\centering
+\begin{tikzpicture}[node distance=8mm and 10mm, every node/.style={font=\footnotesize}]
+\node[vgacc] (dev) {Development\\examples};
+\node[vgacc,right=of dev] (freeze) {Frozen family\\and task labels};
+\node[vgacc,right=of freeze] (run) {Fixed candidate or\\HTTP top-$k$ run};
+\node[vgacc,below=of run] (metrics) {Valid / invalid /\\ambiguous denominators};
+\draw[vgflow] (dev)--(freeze);
+\draw[vgflow] (freeze)--(run);
+\draw[vgflow] (run)--(metrics);
+\end{tikzpicture}
+\caption{Evaluation provenance. Development examples are diagnosed separately; frozen authored labels remain a limited substitute for independent real-user review.}\label{fig:evalsplit}
 \end{figure}
 
-\section{Public Query-Pair Proxy Experiments}
-Separate scripts load QQP, PAWS, and STS-B query or sentence pairs and keep repeated
-normalized queries in the same train, validation, calibration, or test group. Five fixed
-seeds evaluate learned accept scorers and transfer. The model was trained on QQP, so PAWS
-is a distribution-shift challenge. The table gives the mean per-seed coverage and false
-\emph{pair} acceptance among served pairs; it does not say whether a specific cached
-answer would have satisfied a request. The strong deterioration on PAWS is a negative
-result, not evidence that learned semantic reuse is ready to deploy.
+\section{Real Retrieval and HTTP Path}
+The 25-probe applicability challenge used five authored families: 15 valid, five invalid, and five ambiguous requests, with three seeded answers per probe. It ran through HTTP, RedisSearch top-$k=5$, MiniLM, pinned NLI, and a controlled provider. Suitable candidates appeared in every valid shortlist, yet both baseline and guarded variants served only 4/15 valid answers; 11 valid misses came after retrieval. Both had 0/5 invalid accepts and 0/5 ambiguous approvals, 21/25 misses after candidate assessment, and 21 controlled-provider calls. Candidate traces yield 10/25 request-level VERIFY abstentions; the historical summary field called \texttt{verification\_abstentions} actually counted all 21 assessed misses, including rejections. That field is preserved in source data and clarified here.
 
-\input{generated/learned_proxy}
+The later fresh \texttt{technical\_combined\_fresh\_20261101\_v1} workload froze 25 new authored probes before the run. It compared the pinned NLI baseline with both technical and applicability guards enabled through HTTP, RedisSearch, MiniLM, and a controlled provider. On the saved forward-verified run, baseline valid reuse was 6/15 and combined-guard reuse 8/15; invalid acceptance was 0/5 in both, ambiguous approvals 1/5 versus 0/5, and retrieval failures 0/15 in both. VERIFY request abstentions were 11/25 versus 9/25; reject-only misses were 7/25 versus 8/25; provider fallbacks were 18/25 versus 17/25. The predeclared promotion gate demanded at least three additional valid hits, so the observed two did not pass. The reverse-order run repeated the same outcome counts. These are two orderings of the same 25 authored tasks, not 50 independent cases.
 
-A chronological replay fills tenant-partitioned caches under TTL and LRU constraints.
-It exercises real neighbourhood density. The source dataset only labels the designated
-pair; when retrieval crosses pairs, the outcome is marked unknown rather than correct.
-The replay counts below therefore cannot be converted into a true workload answer-error
-rate or a monetary saving claim.
+\begin{table}[htbp]\centering\footnotesize
+\caption{Distinct HTTP workloads with controlled provider. Counts are per frozen workload; rows must not be pooled.}\label{tab:answer_http}
+\begin{tabular}{p{3.3cm}ccccc}\toprule
+Run and variant & Valid & Invalid & Ambiguous & Retrieval & Provider \\
+ & reuse & accepts & approvals & failures & calls \\\midrule
+Earlier applicability OFF & 4/15 & 0/5 & 0/5 & 0/15 & 21 \\
+Earlier applicability ON & 4/15 & 0/5 & 0/5 & 0/15 & 21 \\
+Fresh baseline & 6/15 & 0/5 & 1/5 & 0/15 & 18 \\
+Fresh combined guards & 8/15 & 0/5 & 0/5 & 0/15 & 17 \\\bottomrule
+\end{tabular}
+\end{table}
 
-\input{generated/stream_proxy}
+\section{Latency and Resource Measurements}
+The earlier 25-probe run measured subsequent HTTP completion at 341.792/1458.667 ms p50/p95 with the guard off and 155.311/279.052 ms on. It was one sequential OFF-then-ON run on a Windows machine; warm state and scheduling may differ, so this is not a repeatable speedup estimate. The fresh forward-verified run measured warm HTTP p50/p95 of 340.254/519.109 ms baseline and 154.414/329.077 ms combined, also with a controlled provider. Its reverse ordering measured 410.687/597.544 ms and 180.123/307.189 ms respectively. The runs show synchronous verifier cost can dominate local mock generation, but do not measure paid-provider savings.
 
-An exact binomial upper bound with a finite threshold grid was exercised on synthetic IID
-data. The table records how often a nonempty threshold was selected and whether its
-known synthetic true risk exceeded the target. Reject-all runs have zero coverage and no
-defined conditional risk. Public QQP-to-PAWS pair-proxy calibration selected reject-all
-at the tested targets, so it gives no evidence of a useful answer-level guarantee.
+The saved 30-trial prewarm benchmark used Redis Stack and delayed mock generation on one CI runner. A first NLI hit took 1334.897 ms with lazy load and 59.196 ms after prewarm; warm same-query hit p50/p95 was about 12.5/19 ms in both modes. Prewarm moved model work into startup rather than making inference free. A separate one-process memory snapshot rose by 680.9 MB from import to pinned NLI prewarm; models are process-local, so worker count matters. The saved Redis shortlist microbenchmark measured 80 local rounds of candidate-hash validation only: sequential median 3.357 ms and pipelined median 0.896 ms. It is not full HTTP latency or a scaling result.
 
-\input{generated/risk_synthetic}
+\section{When Caching Can Reduce Cost}
+Cost effectiveness is the design objective, not a measured monetary result in these experiments. Let $N$ be the number of requests in a fixed billing period, $h$ the fraction served from cache, $c_p$ the average avoided provider charge per hit, $c_g$ the average incremental gateway cost per request, and $C_f$ the fixed incremental hosting cost for the period. Under the simplifying assumption of a comparable provider workload, the net saving is
+\begin{equation}
+S = N h c_p - N c_g - C_f.
+\end{equation}
+The break-even condition is $h c_p > c_g + C_f/N$. Gateway cost includes embedding, verification, Redis, and hosting rather than treating HIT as zero-cost. In practice token counts and provider charges vary by request, so a billing study must sum the avoided charges of the particular requests that hit. The equation is an analytical model, not a fitted result.
 
-\section{Stage and Backend Timings}
-The following archived timing CSV files were produced by the repository's latency and
-backend scripts. They are stage measurements on a particular machine, not an end-to-end
-service-level objective. The backend experiment did not measure the crossover size or
-retrieval recall; no scaling claim follows from it.
+For illustration only, suppose 100 eligible requests would each cause one provider call without caching and 30 are correctly reused. The gateway would make 70 generation calls, assuming no retries or additional provider-based judging. That is 30 avoided calls, not automatically a 30\% reduction in the total bill. Organizational sharing increases the pool of potentially repeated tasks within an authorized workspace; it does not pool private answers or cross organization boundaries.
 
-\input{generated/latency}
-\input{generated/backend}
+Latency has a similar condition. Let $L_d$ be mean completion latency for a comparable direct-provider workload, $L_h$ mean gateway HIT latency, and $L_m$ mean gateway MISS latency, including generation. Ignoring bypasses for this simplified model,
+\begin{equation}
+L_{\mathrm{gateway}} = hL_h + (1-h)L_m.
+\end{equation}
+The gateway improves mean completion time only when this quantity is below $L_d$. This weighted-mean calculation must not be applied to p95 values. Slow verification can erase the benefit of avoided calls, especially when valid reuse is low. A real-provider study should therefore measure charges and latency for the same request mix, model, output limits, and operating conditions.
 
-\section{Illustrative Cascade Experiment}
-The cascade experiment uses a hand-labelled easy/hard query list and an assumed relative
-price for weak and strong providers. Its quality metric is the fraction of queries labelled
-hard that were routed to the strong provider. It does not compare actual provider answers or
-measure billed spend. The numbers are useful for testing the router's mechanics only.
+\section{Limitations and Threats to Validity}
+All technical suitability labels above are authored stipulations, not independent adjudication of real employee traffic. They do not test truth of the cached answer, prevalence of changed actions, privacy detection recall, or long multi-step tasks. The earlier 4/15 and fresh 8/15 results differ in task families and policy variants; they are not a before/after improvement on one dataset. A model score or judge disagreement is not an answer-error rate. Zero observed invalid accepts among five examples cannot support a low general error bound. The task-specific verifier has an executable pipeline but no promoted validated artifact. Real-provider compatibility, billed cost, broad concurrency, and scale remain unverified at this checkpoint. Revocation during generation prevents storage at the recorded revision but does not necessarily suppress the completed response; the semantic identity read and recency update are also separate operations.
 
-\input{generated/cascade}
-
-\section{Threats to Validity and Limitations}
-QQP duplicate flags, PAWS paraphrases, and a binarized STS-B similarity score are
-query-pair proxies, not labels for answer reuse. Source class balance differs from real
-gateway traffic, and QQP labels can be noisy. Related examples may share semantic
-families that normalized-text grouping cannot detect. Five overlapping random splits
-and their bootstrap intervals do not substitute for an independently collected workload.
-Synthetic IID risk-control behavior depends on exchangeability; tenant traffic, provider
-updates, domain drift, and adaptive cache state can violate that assumption. The current
-review queue has no independently reviewed answer labels. The opt-in shadow sampler
-collects fresh/cached answer pairs, but a different fresh answer is not itself a correctness
-judgment and no drift controller is active. The single main embedding model, optional NLI
-availability, missing real-provider quality comparison, limited backend scale, and absent
-measured end-to-end cost prevent a production semantic-reuse claim. Exact matching stays
-the default while answer-aware review and held-out evaluation remain unfinished.
+\input{chapters/6A_Testing_Methodology}

@@ -2,7 +2,7 @@
 \usepackage[left=1in, right=1in, top=1in, bottom=1in]{geometry}
 \newcommand{\plogo}{\fbox{$\mathcal{PL}$}}
 \usepackage{graphicx}
-\graphicspath{{../evaluation/results/}{figures/}}
+\graphicspath{{figures/}}
 \usepackage{graphics}
 \usepackage{float}
 \usepackage[table,xcdraw]{xcolor}
@@ -39,7 +39,8 @@
 \usepackage{longtable}
 \usepackage[nottoc]{tocbibind}
 \usepackage{url}
-\usepackage{hyperref}
+\usepackage[colorlinks=true,linkcolor=blue!45!black,citecolor=teal!55!black,urlcolor=blue!60!black,breaklinks=true]{hyperref}
+\hypersetup{pdftitle={VeriGate: Organization-Aware Answer Reuse Gateway},pdfauthor={Abhishek Yadav},bookmarksnumbered=true}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{pgfgantt} % For Gantt charts
@@ -48,7 +49,6 @@
 \usepackage{multirow}
 \usepackage[boxed]{algorithm}
 \usepackage{algpseudocode}
-\usepackage[none]{hyphenat}
 \usepackage{listings}
 
 \lstset{
@@ -153,20 +153,29 @@ In this submission, I have expressed my idea in my own words, and I have adequat
 
 
 \newpage
-\addcontentsline{toc}{chapter}{Abstract}
+\phantomsection\addcontentsline{toc}{chapter}{Abstract}
 \begin{center}
     { \LARGE \textbf{Abstract}}
 \end{center}
 \vspace{1.5cm}
 {\large
-VeriGate is an LLM gateway with an experimental semantic answer cache. Its conservative
-default reuses only exact prompts; approximate reuse is opt-in. The gateway also provides
-tenant separation, rate limiting, provider routing, streaming, and observability. This
-report documents the implementation and a small candidate-pair smoke experiment. That
-experiment does not measure whether a specific cached answer remains correct on a new
-request, and its results do not establish a production error rate or a novel algorithmic
-contribution. The research direction is to evaluate answer-aware, cost-aware selective
-verification against fairly tuned baselines on independently reviewed, held-out data.
+VeriGate is an organization-aware LLM gateway for internal developer tools, technical
+support, and applications across separately configured organizations. Authorized employees
+share eligible workspace answers while private responses remain isolated. It addresses repeated
+technical requests while avoiding reuse of a nearby but unsuitable recorded answer.
+The gateway authenticates a principal, limits reuse to authorized workspace or private
+scope, retrieves exact or semantic candidates, and uses an optional answer-aware policy
+to assess the stored question, stored answer, and incoming task before a cache hit.
+Otherwise it calls the configured provider. Avoiding repeated generation is the intended
+cost benefit; gateway computation and storage still incur overhead. Self-verifying denotes this suitability
+assessment, not guaranteed factual truth. Exact matching remains the default.
+Functional tests, controlled answer labels, and saved MiniLM/RedisSearch HTTP runs
+evaluate different parts of the design. In a fresh 25-probe authored HTTP workload,
+combined technical guards served 8 of 15 valid opportunities versus 6 of 15 for the
+baseline, with no invalid accept among five examples; the improvement missed its
+predeclared promotion gate. Mock-provider timings do not establish billed savings
+or broad scalability. Independent answer-level review and real-provider validation
+remain necessary before production semantic reuse.
 }
 
 \newpage
@@ -190,8 +199,8 @@ verification against fairly tuned baselines on independently reviewed, held-out 
 
 	\vspace{1cm}
 
-	\addcontentsline{toc}{chapter}{Acknowledgement}
-	\tableofcontents
+	\phantomsection\addcontentsline{toc}{chapter}{Acknowledgement}
+	{\small\setlength{\parskip}{0pt}\tableofcontents}
 	\listoffigures
         \listoftables
 	\chapter{Introduction}
@@ -208,6 +217,10 @@ verification against fairly tuned baselines on independently reviewed, held-out 
         \input{chapters/6_Results}
         \chapter{Conclusion}
         \input{chapters/7_Conclusion}
+
+        \appendix
+        \chapter{Historical Proxy Tables}\label{app:historical}
+        \input{chapters/A_Historical_Proxy}
 
         \bibliography{report}
 	\bibliographystyle{plain}

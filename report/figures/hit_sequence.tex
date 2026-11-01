@@ -1,0 +1,29 @@
+\documentclass[tikz,border=6pt]{standalone}
+\input{diagram_styles}
+\definecolor{vgNavy}{HTML}{176C52}\definecolor{vgTeal}{HTML}{52B788}
+\begin{document}
+\begin{tikzpicture}
+\tikzset{sqhead/.append style={text width=2.5cm},sqlabel/.append style={font=\small}}
+\node[sqhead] at (0,0) {Client};\draw[sqlife] (0,-.6)--(0,-20);
+\node[sqhead] at (4,0) {Gateway};\draw[sqlife] (4,-.6)--(4,-20);
+\node[sqhead] at (8,0) {Cache coordinator\\+ local models};\draw[sqlife] (8,-.6)--(8,-20);
+\node[sqhead] at (12,0) {Redis};\draw[sqlife] (12,-.6)--(12,-20);
+\draw[sqcall] (0,-1.5)--node[sqlabel,above,align=center]{request + credential}(4,-1.5);
+\draw[sqcall] (4,-3.3)--node[sqlabel,above,align=center]{authorized lookup}(8,-3.3);
+\draw[sqcall] (8,-4.7)--node[sqlabel,above,align=center]{scoped exact read}(12,-4.7);
+\draw[sqreply] (12,-5.8)--node[sqlabel,above,align=center]{no current entry}(8,-5.8);
+\draw[sqcall] (8,-8.3)--node[sqlabel,above,align=center]{filtered top-$k$ search}(12,-8.3);
+\draw[sqreply] (12,-9.4)--node[sqlabel,above,align=center]{candidates + scores}(8,-9.4);
+\draw[sqcall] (8,-14)--node[sqlabel,above,align=center]{selected-entry re-read}(12,-14);
+\draw[sqreply] (12,-15.2)--node[sqlabel,above,align=center]{current question + answer}(8,-15.2);
+\draw[sqcall] (8,-16.4)--node[sqlabel,above,align=center]{touch recency; not TTL}(12,-16.4);
+\draw[sqreply] (8,-17.6)--node[sqlabel,above,align=center]{HIT + decision trace}(4,-17.6);
+\draw[sqreply] (4,-19.4)--node[sqlabel,above,align=center]{answer + HIT metadata}(0,-19.4);
+\node[draw=vgSlate,fill=vgTeal!10,align=center,text width=10cm,font=\small] at (8,-2.4) {Gateway: authenticate, rate check, resolve scope and provider profile};
+\node[draw=vgSlate,fill=vgTeal!10,align=center,text width=10cm,font=\small] at (8,-7) {Coordinator: embed incoming question locally};
+\node[draw=vgSlate,fill=vgTeal!10,align=center,text width=10cm,font=\small] at (8,-11.4) {loop [bounded candidates]: structural checks and local NLI; collect ACCEPT / VERIFY / REJECT};
+\node[draw=vgSlate,fill=vgTeal!10,align=center,text width=10cm,font=\small] at (8,-12.8) {Coordinator: check conflicts, limits and deadline before selection};
+\node[draw=vgSlate,fill=vgTeal!10,align=center,text width=10cm,font=\small] at (8,-18.5) {Gateway: recheck principal before returning HIT};
+
+\end{tikzpicture}
+\end{document}
