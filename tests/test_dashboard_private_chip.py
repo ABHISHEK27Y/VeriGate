@@ -1,4 +1,4 @@
-"""The development private chip must send its scope with the panel collapsed."""
+"""Normal dashboard requests defer scope choice to the authenticated server policy."""
 
 from __future__ import annotations
 
@@ -12,8 +12,12 @@ from test_organization_scopes import ALICE, directory_file, settings_for
 
 from app.main import create_app
 
+EXPECTED_ORG_CHIPS = 2
 
-def test_private_chip_posts_private_scope_with_panel_collapsed(tmp_path: Path) -> None:
+
+def test_normal_dashboard_omits_scope_and_developer_override_is_explicit(  # noqa: PLR0915
+    tmp_path: Path,
+) -> None:
     if os.environ.get("VERIGATE_BROWSER_TEST") != "1":
         pytest.skip("Run opt-in browser regression with VERIGATE_BROWSER_TEST=1")
     playwright = pytest.importorskip("playwright.sync_api")
@@ -26,6 +30,7 @@ def test_private_chip_posts_private_scope_with_panel_collapsed(tmp_path: Path) -
     }
     path.write_text(json.dumps(directory), encoding="utf-8")
     observed = []
+    observed_stream = []
 
     with TestClient(create_app(config)) as client, playwright.sync_playwright() as engine:
         try:
@@ -39,6 +44,8 @@ def test_private_chip_posts_private_scope_with_panel_collapsed(tmp_path: Path) -
                 request = route.request
                 if request.url.endswith("/v1/chat"):
                     observed.append(request.post_data_json)
+                if request.url.endswith("/v1/chat/stream"):
+                    observed_stream.append(request.post_data_json)
                 path_and_query = request.url.removeprefix("http://verigate.test")
                 headers = {"x-api-key": request.headers.get("x-api-key", "")}
                 response = client.request(
@@ -49,7 +56,7 @@ def test_private_chip_posts_private_scope_with_panel_collapsed(tmp_path: Path) -
                 )
                 route.fulfill(
                     status=response.status_code,
-                    content_type=response.headers.get("content-type", "text/plain"),
+                    headers=dict(response.headers),
                     body=response.content,
                 )
 
@@ -57,11 +64,47 @@ def test_private_chip_posts_private_scope_with_panel_collapsed(tmp_path: Path) -
             page.goto("http://verigate.test/ui")
             page.locator("#apikey").fill(ALICE)
             page.locator("#apikey").dispatch_event("change")
-            page.get_by_text("private isolation").wait_for()
-            assert not page.locator("#dev-overrides").evaluate("element => element.open")
-            page.locator("#chips .chip").nth(2).click()
+            page.get_by_text("shared factual fixture").wait_for()
+            assert page.locator("#dev-overrides").is_hidden()
+            assert page.locator("#chips .chip").count() == EXPECTED_ORG_CHIPS
+            page.locator("#query").fill("Explain how Python decorators work.")
+            page.locator("#ask").click()
             page.locator("#result").wait_for(state="visible")
-            assert observed[-1]["cache_scope"] == "private"
-            assert page.locator("#rscope").inner_text() == "private"
+            assert observed[-1] == {"prompt": "Explain how Python decorators work."}
+            assert page.locator("#rlat-label").text_content() == "gateway time (after admission)"
+            page.get_by_text("How this request was handled").click()
+            assert page.locator("#rscope").inner_text() == "workspace"
+            assert page.locator("#rstoragewhy").inner_text().startswith("workspace ·")
+            assert page.get_by_text("How this request was handled").count() == 1
+            page.screenshot(path=str(tmp_path / "dashboard.png"), full_page=True)
+            page.goto("http://verigate.test/ui?developer=1")
+            page.locator("#apikey").fill(ALICE)
+            page.locator("#apikey").dispatch_event("change")
+            assert page.locator("#dev-overrides").is_visible()
+            page.locator("#dev-overrides summary").click()
+            page.locator("#scope").select_option("private")
+            page.locator("#query").fill("Explain Python functions.")
+            page.locator("#ask").click()
+            page.locator("#result").wait_for(state="visible")
+            assert observed[-1] == {
+                "prompt": "Explain Python functions.",
+                "cache_scope": "private",
+            }
+            page.locator("#scope").select_option("auto")
+            page.locator("#stream-response").check()
+            page.locator("#query").fill("Explain how Python generators work.")
+            page.locator("#ask").click()
+            page.get_by_text(
+                "[mock:mock-example-mock] Answer to: Explain how Python generators work."
+            ).wait_for()
+            assert observed_stream[-1] == {"prompt": "Explain how Python generators work."}
+            assert page.locator("#rbadge").inner_text() == "MISS"
+            assert (
+                page.locator("#rlat-label").text_content()
+                == "stream gateway time (after handler entry)"
+            )
+            page.get_by_text("How this request was handled").click()
+            assert page.locator("#rscope").inner_text() == "workspace"
+            assert page.locator("#rstorage").inner_text() == "stored"
         finally:
             browser.close()

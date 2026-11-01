@@ -132,6 +132,9 @@ textarea{resize:vertical;min-height:56px;line-height:1.5}
 .chip:hover{border-color:var(--accent);color:var(--text)}
 .chip small{color:var(--faint);margin-left:2px}
 .result{margin-top:18px;border-top:1px solid var(--line);padding-top:18px;display:none}
+.request-details{margin-top:14px;border:1px solid var(--line2);border-radius:8px;padding:10px 12px}
+.request-details summary{cursor:pointer;color:var(--muted);font-size:13px}
+.request-details .meta{margin-top:12px}
 .rbadge{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500;border-radius:6px;
   padding:5px 10px;letter-spacing:.03em}
 .b-HIT{background:var(--accent-soft);color:var(--hit);border:1px solid rgba(87,217,138,.3)}
@@ -254,17 +257,17 @@ footer{border-top:1px solid var(--line);padding:34px 0 60px;color:var(--faint);f
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px">
         <div style="flex:1;min-width:160px"><label>API key</label><input id="apikey" type="password" placeholder="Enter your API key" autocomplete="off"></div>
       </div>
-      <label>Query</label>
+      <label for="query">Question</label>
       <textarea id="query" placeholder="how do I reset my password"></textarea>
-      <details id="dev-overrides" hidden><summary>Development scope override</summary>
+      <details id="dev-overrides" hidden><summary>Developer scope override</summary>
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px">
           <div><label for="scope">Requested scope</label><select id="scope"><option value="auto">Automatic</option><option value="private">Private</option><option value="workspace">Authorized workspace</option><option value="none">No store</option></select></div>
           <div><label for="workspace">Workspace</label><input id="workspace" placeholder="engineering" autocomplete="off"></div>
         </div>
+        <label style="margin-top:12px"><input id="stream-response" type="checkbox" style="width:auto"> Exercise streaming API</label>
       </details>
-      <div class="hint">The gateway derives organization, user, and authorized workspace from the key and server policy. The displayed effective scope comes from the response.</div>
       <div class="actions" style="margin-top:12px">
-        <button class="btn pri sm" id="ask">Ask</button>
+        <button class="btn pri sm" id="ask">Send</button>
         <button class="btn sec sm" id="clear">Clear cache</button>
         <button class="btn sec sm" id="restore" hidden>Restore demo fixtures</button>
         <button class="btn sec sm" id="reset">Reset stats</button>
@@ -283,27 +286,32 @@ footer{border-top:1px solid var(--line);padding:34px 0 60px;color:var(--faint);f
         <span class="rbadge" id="rbadge">—</span>
         <div class="answer" id="ranswer"></div>
         <div class="meta">
-          <div><span>provider</span><b id="rprov">—</b></div>
+          <div><span id="rlat-label">gateway decision + generation time</span><b id="rlat">—</b></div>
           <div><span>answer source</span><b id="rsource">—</b></div>
+        </div>
+        <details class="request-details"><summary>How this request was handled</summary>
+        <div class="meta">
+          <div><span>provider</span><b id="rprov">—</b></div>
           <div><span>upstream call</span><b id="rupstream">—</b></div>
           <div><span>intended route</span><b id="rintended">—</b></div>
           <div><span>fallback used</span><b id="rfallback">—</b></div>
-          <div><span>gateway time</span><b id="rlat">—</b></div>
           <div><span>browser HTTP time</span><b id="rhttp">—</b></div>
           <div><span>top retrieved similarity</span><b id="rtopsim">—</b></div>
           <div><span>explained candidate similarity</span><b id="rsim">—</b></div>
           <div><span>threshold</span><b id="rthr">—</b></div>
           <div><span>authenticated identity</span><b id="ridentity">—</b></div>
-          <div><span>effective scope</span><b id="rscope">—</b></div>
+          <div><span>actual lookup scope</span><b id="rscope">—</b></div>
           <div><span>provider profile</span><b id="rprofile">—</b></div>
           <div><span>candidates / selected rank / explanation rank</span><b id="rcandidates">—</b></div>
           <div><span>candidate decisions</span><b id="rstructure">—</b></div>
           <div><span>NLI model evidence</span><b id="rnli">—</b></div>
           <div><span>storage outcome</span><b id="rstorage">—</b></div>
+          <div><span>storage scope / explanation</span><b id="rstoragewhy">—</b></div>
           <div><span>configured TTL</span><b id="rttl">—</b></div>
           <div style="grid-column:1/-1"><span>measured stages</span><b id="rstages">—</b></div>
           <div style="grid-column:1/-1"><span>reason</span><b id="rreason">—</b></div>
         </div>
+        </details>
       </div>
     </div>
     <div>
@@ -373,10 +381,9 @@ const SEMANTIC_EX=[
 const ORG_EX=[
   {t:"Explain how Python decorators work.",d:"shared factual fixture"},
   {t:"How do Python generators work?",d:"misleading near-match"},
-  {t:"Explain Python functions.",d:"private isolation",options:{cache_scope:"private"}},
 ];
 function showChips(examples){$("chips").innerHTML="";examples.forEach(e=>{const c=document.createElement("div");c.className="chip";
-  c.innerHTML=`${e.t}<small>${e.d}</small>`;c.onclick=()=>{$("query").value=e.t;ask(developmentDemoAvailable?e.options||{}:{});};$("chips").appendChild(c);});
+  c.innerHTML=`${e.t}<small>${e.d}</small>`;c.onclick=()=>{$("query").value=e.t;ask();};$("chips").appendChild(c);});
 }
 showChips(EX);
 
@@ -387,7 +394,7 @@ async function health(){try{const r=await fetch("/health");if(!r.ok)throw new Er
   configuredTtl=h.cache_ttl_sec??null;
   developmentDemoAvailable=Boolean(h.organization_demo_available||h.demo_restore_available);
   $("restore").hidden=!h.demo_restore_available;
-  $("dev-overrides").hidden=!(h.organization_demo_available||h.demo_restore_available);
+  $("dev-overrides").hidden=!(developmentDemoAvailable&&new URLSearchParams(location.search).get("developer")==="1");
   showChips(h.organization_demo_available?ORG_EX:h.demo_restore_available?SEMANTIC_EX:EX);
   $("demo-note").hidden=!h.demo_restore_available;
   $("org-demo-note").hidden=!h.organization_demo_available;
@@ -404,12 +411,27 @@ function setS(){$("s-total").textContent=s.total;const d=s.hits+s.miss;
   $("s-rate").textContent=d?Math.round(100*s.hits/d)+"%":"0%";
   $("s-hits").textContent=s.hits;$("s-miss").textContent=s.miss;$("s-bypass").textContent=s.bypass;$("s-declined").textContent=s.declined;$("s-errors").textContent=s.errors;}
 
-async function ask(exampleOptions={}){const q=$("query").value.trim();if(!q)return;$("ask").disabled=true;$("err").textContent="";s.total++;const started=performance.now();
-  try{const payload={prompt:q};if(developmentDemoAvailable&&$("dev-overrides").open&&$("scope").value!=="auto"){payload.cache_scope=$("scope").value;if(payload.cache_scope==="workspace")payload.workspace=$("workspace").value.trim();}if(developmentDemoAvailable)Object.assign(payload,exampleOptions);const r=await fetch("/v1/chat",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":$("apikey").value},body:JSON.stringify(payload)});
+async function ask(){const q=$("query").value.trim();if(!q)return;$("ask").disabled=true;$("err").textContent="";s.total++;const started=performance.now();
+  try{const payload={prompt:q};const devOpen=!$("dev-overrides").hidden&&$("dev-overrides").open;if(devOpen&&$("scope").value!=="auto"){payload.cache_scope=$("scope").value;if(payload.cache_scope==="workspace")payload.workspace=$("workspace").value.trim();}const streamMode=devOpen&&$("stream-response").checked;const r=await fetch(streamMode?"/v1/chat/stream":"/v1/chat",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":$("apikey").value},body:JSON.stringify(payload)});
     if(r.status===429){s.errors++;$("err").textContent="Rate limited (429).";return;}
     if(r.status===401){s.errors++;$("err").textContent="Invalid API key (401).";return;}
     if(!r.ok)throw new Error("Gateway returned HTTP "+r.status);
-    const d=await r.json();const browserMs=(performance.now()-started).toFixed(2);const trace=d.candidate_trace||[];
+    let d;
+    if(streamMode){
+      const raw=await r.text(),chunks=[];let meta=null,event="message",finished=false;
+      for(const line of raw.split(/\r?\n/)){
+        if(line.startsWith("event: ")){event=line.slice(7);continue;}
+        if(!line.startsWith("data: "))continue;
+        const value=line.slice(6);
+        if(event==="error")throw new Error("Stream failed: "+(JSON.parse(value).error||"upstream error"));
+        if(event==="meta"){meta=JSON.parse(value);event="message";continue;}
+        if(value==="[DONE]"){finished=true;continue;}
+        chunks.push(JSON.parse(value));
+      }
+      if(!finished||!meta)throw new Error("Stream ended without complete metadata");
+      d={...meta,answer:chunks.join(""),cache:meta.cache_decision,provider:r.headers.get("x-provider"),intended_provider:r.headers.get("x-intended-provider"),scope_reason:r.headers.get("x-scope-reason"),lookup_scope:meta.lookup_scope,fallback_used:r.headers.get("x-provider")!==r.headers.get("x-intended-provider")&&r.headers.get("x-provider")!=="cache"};
+    }else d=await r.json();
+    const browserMs=(performance.now()-started).toFixed(2);const trace=d.candidate_trace||[];
     const selected=trace.find(c=>c.rank===d.selected_rank);
     const decision=selected?selected.action:trace.length&&d.cache!=="HIT"?trace[0].action:"";
     const declined=d.cache!=="HIT"&&trace.some(c=>c.action==="VERIFY"||c.action==="REJECT");
@@ -417,15 +439,15 @@ async function ask(exampleOptions={}){const q=$("query").value.trim();if(!q)retu
     $("ranswer").textContent=d.answer;$("rprov").textContent=d.provider;
     $("rsource").textContent=d.provider==="cache"?(DEMO_ANSWERS.has(d.answer)?"matches seeded fixture":"cached answer"):(d.provider.startsWith("mock")?"mock placeholder":"generated answer");
     $("rupstream").textContent=d.provider==="cache"?"no":d.provider_invoked?"yes":"shared call";
-    $("rintended").textContent=d.intended_provider||"—";$("rfallback").textContent=d.fallback_used?"yes":"no";$("rlat").textContent=(d.latency_ms??0)+" ms";$("rhttp").textContent=browserMs+" ms";
+    $("rintended").textContent=d.intended_provider||"—";$("rfallback").textContent=d.fallback_used?"yes":"no";$("rlat-label").textContent=streamMode?"stream gateway time (after handler entry)":"gateway time (after admission)";$("rlat").textContent=d.latency_ms!=null?d.latency_ms+" ms":"not reported";$("rhttp").textContent=browserMs+" ms";
     $("rtopsim").textContent=d.top_retrieved_similarity!=null?d.top_retrieved_similarity.toFixed(3):"—";
     $("rsim").textContent=d.similarity!=null?d.similarity.toFixed(3):"—";$("rthr").textContent=d.threshold!=null?d.threshold.toFixed(3):"—";
     $("ridentity").textContent=d.organization_id&&d.subject_id?d.organization_id+" / "+d.subject_id:"legacy private key";
-    $("rscope").textContent=d.cache_scope||"—";$("rprofile").textContent=d.provider_profile||d.intended_provider||"—";
+    $("rscope").textContent=d.lookup_scope||d.cache_scope||"—";$("rprofile").textContent=d.provider_profile||d.intended_provider||"—";
     $("rcandidates").textContent=(d.candidate_count??"—")+" / "+(d.selected_rank??"—")+" / "+(d.explanation_rank??"—");
     $("rstructure").textContent=trace.map(c=>`#${c.rank} ${c.action} (${c.reason}; ${c.verifier_status}; ${c.elapsed_ms} ms)`).join(" · ")||"—";
     $("rnli").textContent=d.nli_score!=null?d.nli_score.toFixed(3)+" (model evidence)":d.verifier_invoked?"invoked; score unavailable":"not invoked";
-    $("rstorage").textContent=d.storage_outcome||"—";$("rttl").textContent=configuredTtl!=null?configuredTtl+" s configured (not remaining TTL)":"—";
+    $("rstorage").textContent=d.storage_outcome||"—";$("rstoragewhy").textContent=(d.storage_scope||"not stored")+" · "+(d.storage_reason||d.scope_reason||"no explanation supplied");$("rttl").textContent=configuredTtl!=null?configuredTtl+" s configured (not remaining TTL)":"—";
     $("rstages").textContent=Object.entries(d.stage_latency_ms||{}).map(([name,ms])=>name+" "+ms+" ms").join(" · ")||"—";
     $("rreason").textContent=d.note||"—";$("result").style.display="block";
     if(d.cache==="HIT")s.hits++;else if(d.cache==="BYPASS")s.bypass++;else s.miss++;if(declined)s.declined++;setS();

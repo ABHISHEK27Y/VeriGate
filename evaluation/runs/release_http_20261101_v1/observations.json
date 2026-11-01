@@ -1,0 +1,572 @@
+{
+  "kind": "isolated_mock_semantic_http_not_answer_quality",
+  "source_revision": "37dc7a7400c1811cbf501d596d3535286ce81e17",
+  "ready": {
+    "status": "ok",
+    "version": "0.1.0",
+    "redis": "real-redis",
+    "embedding_backend": "minilm",
+    "vector_backend": "redisearch",
+    "cache_enabled": true,
+    "cache_match_mode": "semantic",
+    "cache_ttl_sec": 3600,
+    "cache_policy_version": "token-diff-v2",
+    "answer_policy_version": "4e3733ec95ca",
+    "answer_policy_prewarm": true,
+    "answer_verifier_kind": "pinned_nli",
+    "answer_policy_applicability_guard": false,
+    "answer_verifier_state": "loaded",
+    "answer_verifier_failure": null,
+    "demo_restore_available": false,
+    "organization_demo_available": true,
+    "verifier_nli_enabled": false,
+    "provider_health": "configured_not_called",
+    "providers": [
+      "mock",
+      "mock"
+    ]
+  },
+  "rows": [
+    {
+      "case": "carol_fixture_paraphrase",
+      "status": 200,
+      "cache": "HIT",
+      "provider": "cache",
+      "lookup_scope": "workspace",
+      "storage_scope": null,
+      "storage_outcome": "cache_hit",
+      "scope_reason": "authorized_default",
+      "note": "answer_accept:answer_entailment",
+      "candidate_count": 1,
+      "selected_rank": 1,
+      "similarity": 0.986249089241,
+      "trace": [
+        {
+          "rank": 1,
+          "similarity": 0.9862,
+          "action": "ACCEPT",
+          "reason": "answer_entailment",
+          "verifier_status": "scored",
+          "nli_score": 0.9208077192306519,
+          "elapsed_ms": 0.504
+        }
+      ],
+      "provider_invoked": false,
+      "finish_reason": null,
+      "latency_ms": 13.64,
+      "stage_latency_ms": {
+        "exact_lookup": 0.168,
+        "embedding_queue": 0.004,
+        "embedding_execution": 9.837,
+        "embedding": 9.867,
+        "retrieval": 1.134,
+        "structural_check": 0.104,
+        "verifier_queue": 0.004,
+        "verifier_execution": 0.33,
+        "policy_decision": 0.52,
+        "candidate_identity": 0.303,
+        "cache_lookup": 12.777
+      }
+    },
+    {
+      "case": "alice_generated_complete",
+      "status": 200,
+      "cache": "MISS",
+      "provider": "mock-example-mock",
+      "lookup_scope": "workspace",
+      "storage_scope": "workspace",
+      "storage_outcome": "stored",
+      "scope_reason": "authorized_default",
+      "note": "answer_reject:below_retrieval_threshold",
+      "candidate_count": 1,
+      "selected_rank": null,
+      "similarity": 0.13673949241600003,
+      "trace": [
+        {
+          "rank": 1,
+          "similarity": 0.1367,
+          "action": "REJECT",
+          "reason": "below_retrieval_threshold",
+          "verifier_status": "not_called",
+          "nli_score": null,
+          "elapsed_ms": 0.014
+        }
+      ],
+      "provider_invoked": true,
+      "finish_reason": "stop",
+      "latency_ms": 234.64,
+      "stage_latency_ms": {
+        "exact_lookup": 0.231,
+        "embedding_queue": 0.004,
+        "embedding_execution": 12.74,
+        "embedding": 12.775,
+        "retrieval": 0.997,
+        "structural_check": 0.01,
+        "policy_decision": 0.026,
+        "cache_lookup": 14.38,
+        "admission": 0.567,
+        "provider": 204.063,
+        "cache_write": 14.652
+      }
+    },
+    {
+      "case": "carol_generated_paraphrase",
+      "status": 200,
+      "cache": "MISS",
+      "provider": "mock-example-mock",
+      "lookup_scope": "workspace",
+      "storage_scope": "workspace",
+      "storage_outcome": "stored",
+      "scope_reason": "authorized_default",
+      "note": "answer_reject:answer_contradiction_or_irrelevance",
+      "candidate_count": 2,
+      "selected_rank": null,
+      "similarity": 0.9390740990639,
+      "trace": [
+        {
+          "rank": 1,
+          "similarity": 0.9391,
+          "action": "REJECT",
+          "reason": "answer_contradiction_or_irrelevance",
+          "verifier_status": "scored",
+          "nli_score": 0.013271634466946125,
+          "elapsed_ms": 0.343
+        },
+        {
+          "rank": 2,
+          "similarity": 0.1447,
+          "action": "REJECT",
+          "reason": "below_retrieval_threshold",
+          "verifier_status": "not_called",
+          "nli_score": null,
+          "elapsed_ms": 0.008
+        }
+      ],
+      "provider_invoked": true,
+      "finish_reason": "stop",
+      "latency_ms": 277.73,
+      "stage_latency_ms": {
+        "exact_lookup": 0.267,
+        "embedding_queue": 0.006,
+        "embedding_execution": 10.387,
+        "embedding": 10.433,
+        "retrieval": 0.971,
+        "structural_check": 0.07,
+        "verifier_queue": 0.003,
+        "verifier_execution": 0.21,
+        "policy_decision": 0.362,
+        "cache_lookup": 12.477,
+        "admission": 0.514,
+        "provider": 244.315,
+        "cache_write": 19.587
+      }
+    },
+    {
+      "case": "different_org",
+      "status": 200,
+      "cache": "MISS",
+      "provider": "mock-other-mock",
+      "lookup_scope": "private",
+      "storage_scope": "private",
+      "storage_outcome": "stored",
+      "scope_reason": "no_default_workspace",
+      "note": "empty_cache",
+      "candidate_count": 0,
+      "selected_rank": null,
+      "similarity": null,
+      "trace": [],
+      "provider_invoked": true,
+      "finish_reason": "stop",
+      "latency_ms": 190.96,
+      "stage_latency_ms": {
+        "exact_lookup": 0.271,
+        "embedding_queue": 0.003,
+        "embedding_execution": 9.709,
+        "embedding": 9.741,
+        "retrieval": 0.499,
+        "cache_lookup": 10.6,
+        "admission": 0.536,
+        "provider": 164.161,
+        "cache_write": 14.939
+      }
+    },
+    {
+      "case": "unauthorized_workspace",
+      "status": 403,
+      "error": "The remote server returned an error: (403) Forbidden."
+    },
+    {
+      "case": "alice_private",
+      "status": 200,
+      "cache": "MISS",
+      "provider": "mock-example-mock",
+      "lookup_scope": "private",
+      "storage_scope": "private",
+      "storage_outcome": "stored",
+      "scope_reason": "private_context",
+      "note": "empty_cache",
+      "candidate_count": 0,
+      "selected_rank": null,
+      "similarity": null,
+      "trace": [],
+      "provider_invoked": true,
+      "finish_reason": "stop",
+      "latency_ms": 176.9,
+      "stage_latency_ms": {
+        "exact_lookup": 0.249,
+        "embedding_queue": 0.004,
+        "embedding_execution": 12.431,
+        "embedding": 12.464,
+        "retrieval": 0.674,
+        "cache_lookup": 13.521,
+        "admission": 0.563,
+        "provider": 143.075,
+        "cache_write": 18.782
+      }
+    },
+    {
+      "case": "carol_private_isolated",
+      "status": 200,
+      "cache": "MISS",
+      "provider": "mock-example-mock",
+      "lookup_scope": "private",
+      "storage_scope": "private",
+      "storage_outcome": "stored",
+      "scope_reason": "private_context",
+      "note": "empty_cache",
+      "candidate_count": 0,
+      "selected_rank": null,
+      "similarity": null,
+      "trace": [],
+      "provider_invoked": true,
+      "finish_reason": "stop",
+      "latency_ms": 171.01,
+      "stage_latency_ms": {
+        "exact_lookup": 0.301,
+        "embedding_queue": 0.004,
+        "embedding_execution": 9.649,
+        "embedding": 9.683,
+        "retrieval": 0.602,
+        "cache_lookup": 10.698,
+        "admission": 0.522,
+        "provider": 144.227,
+        "cache_write": 14.771
+      }
+    },
+    {
+      "case": "secret_no_store",
+      "status": 200,
+      "cache": "BYPASS",
+      "provider": "mock-example-mock",
+      "lookup_scope": "private",
+      "storage_scope": null,
+      "storage_outcome": "bypassed",
+      "scope_reason": "sensitive_or_disabled",
+      "note": "no_store_request",
+      "candidate_count": 0,
+      "selected_rank": null,
+      "similarity": null,
+      "trace": [],
+      "provider_invoked": true,
+      "finish_reason": "stop",
+      "latency_ms": 82.7,
+      "stage_latency_ms": {
+        "cache_lookup": 0.03,
+        "admission": 0.488,
+        "provider": 81.95
+      }
+    },
+    {
+      "case": "changed_action",
+      "status": 200,
+      "cache": "MISS",
+      "provider": "mock-example-mock",
+      "lookup_scope": "workspace",
+      "storage_scope": "workspace",
+      "storage_outcome": "stored",
+      "scope_reason": "authorized_default",
+      "note": "answer_reject:answer_contradiction_or_irrelevance",
+      "candidate_count": 3,
+      "selected_rank": null,
+      "similarity": 0.725639402866,
+      "trace": [
+        {
+          "rank": 1,
+          "similarity": 0.7256,
+          "action": "REJECT",
+          "reason": "answer_contradiction_or_irrelevance",
+          "verifier_status": "scored",
+          "nli_score": 0.0021013387013226748,
+          "elapsed_ms": 0.368
+        },
+        {
+          "rank": 2,
+          "similarity": 0.0886,
+          "action": "REJECT",
+          "reason": "below_retrieval_threshold",
+          "verifier_status": "not_called",
+          "nli_score": null,
+          "elapsed_ms": 0.009
+        },
+        {
+          "rank": 3,
+          "similarity": 0.0629,
+          "action": "REJECT",
+          "reason": "below_retrieval_threshold",
+          "verifier_status": "not_called",
+          "nli_score": null,
+          "elapsed_ms": 0.004
+        }
+      ],
+      "provider_invoked": true,
+      "finish_reason": "stop",
+      "latency_ms": 237.05,
+      "stage_latency_ms": {
+        "exact_lookup": 0.268,
+        "embedding_queue": 0.004,
+        "embedding_execution": 11.102,
+        "embedding": 11.141,
+        "retrieval": 1.106,
+        "structural_check": 0.063,
+        "verifier_queue": 0.004,
+        "verifier_execution": 0.244,
+        "policy_decision": 0.394,
+        "cache_lookup": 13.421,
+        "admission": 0.923,
+        "provider": 204.688,
+        "cache_write": 17.157
+      }
+    },
+    {
+      "case": "changed_environment",
+      "status": 200,
+      "cache": "MISS",
+      "provider": "mock-example-mock",
+      "lookup_scope": "workspace",
+      "storage_scope": "workspace",
+      "storage_outcome": "stored",
+      "scope_reason": "authorized_default",
+      "note": "answer_reject:answer_contradiction_or_irrelevance",
+      "candidate_count": 4,
+      "selected_rank": null,
+      "similarity": 0.890044569969,
+      "trace": [
+        {
+          "rank": 1,
+          "similarity": 0.89,
+          "action": "REJECT",
+          "reason": "answer_contradiction_or_irrelevance",
+          "verifier_status": "scored",
+          "nli_score": 0.0016792882233858109,
+          "elapsed_ms": 0.476
+        },
+        {
+          "rank": 2,
+          "similarity": 0.6557,
+          "action": "REJECT",
+          "reason": "answer_contradiction_or_irrelevance",
+          "verifier_status": "scored",
+          "nli_score": 0.0019344028551131487,
+          "elapsed_ms": 0.308
+        },
+        {
+          "rank": 3,
+          "similarity": 0.1038,
+          "action": "REJECT",
+          "reason": "below_retrieval_threshold",
+          "verifier_status": "not_called",
+          "nli_score": null,
+          "elapsed_ms": 0.009
+        },
+        {
+          "rank": 4,
+          "similarity": 0.088,
+          "action": "REJECT",
+          "reason": "below_retrieval_threshold",
+          "verifier_status": "not_called",
+          "nli_score": null,
+          "elapsed_ms": 0.005
+        }
+      ],
+      "provider_invoked": true,
+      "finish_reason": "stop",
+      "latency_ms": 244.37,
+      "stage_latency_ms": {
+        "exact_lookup": 0.206,
+        "embedding_queue": 0.003,
+        "embedding_execution": 12.89,
+        "embedding": 12.921,
+        "retrieval": 1.361,
+        "structural_check": 0.125,
+        "verifier_queue": 0.009,
+        "verifier_execution": 0.492,
+        "policy_decision": 0.817,
+        "cache_lookup": 15.751,
+        "admission": 0.533,
+        "provider": 207.804,
+        "cache_write": 19.11
+      }
+    },
+    {
+      "case": "changed_version",
+      "status": 200,
+      "cache": "MISS",
+      "provider": "mock-example-mock",
+      "lookup_scope": "workspace",
+      "storage_scope": "workspace",
+      "storage_outcome": "stored",
+      "scope_reason": "authorized_default",
+      "note": "answer_reject:number_mismatch",
+      "candidate_count": 5,
+      "selected_rank": null,
+      "similarity": 0.9711373448372,
+      "trace": [
+        {
+          "rank": 1,
+          "similarity": 0.9711,
+          "action": "REJECT",
+          "reason": "number_mismatch",
+          "verifier_status": "not_called",
+          "nli_score": null,
+          "elapsed_ms": 0.05
+        },
+        {
+          "rank": 2,
+          "similarity": 0.8783,
+          "action": "REJECT",
+          "reason": "number_mismatch",
+          "verifier_status": "not_called",
+          "nli_score": null,
+          "elapsed_ms": 0.045
+        },
+        {
+          "rank": 3,
+          "similarity": 0.7245,
+          "action": "REJECT",
+          "reason": "number_mismatch",
+          "verifier_status": "not_called",
+          "nli_score": null,
+          "elapsed_ms": 0.017
+        },
+        {
+          "rank": 4,
+          "similarity": 0.128,
+          "action": "REJECT",
+          "reason": "below_retrieval_threshold",
+          "verifier_status": "not_called",
+          "nli_score": null,
+          "elapsed_ms": 0.007
+        },
+        {
+          "rank": 5,
+          "similarity": 0.1217,
+          "action": "REJECT",
+          "reason": "below_retrieval_threshold",
+          "verifier_status": "not_called",
+          "nli_score": null,
+          "elapsed_ms": 0.006
+        }
+      ],
+      "provider_invoked": true,
+      "finish_reason": "stop",
+      "latency_ms": 268.68,
+      "stage_latency_ms": {
+        "exact_lookup": 0.276,
+        "embedding_queue": 0.004,
+        "embedding_execution": 23.119,
+        "embedding": 23.161,
+        "retrieval": 1.85,
+        "structural_check": 0.103,
+        "policy_decision": 0.151,
+        "cache_lookup": 25.985,
+        "admission": 0.607,
+        "provider": 224.438,
+        "cache_write": 16.728
+      }
+    },
+    {
+      "case": "stream_complete",
+      "status": 200,
+      "provider": "mock-example-mock",
+      "complete": true,
+      "error": false,
+      "meta": {
+        "lookup_scope": "workspace",
+        "request_eligibility": "shared_eligible",
+        "response_eligibility": "shared_eligible",
+        "storage_scope": "workspace",
+        "storage_reason": "response_eligible",
+        "storage_outcome": "stored",
+        "provider_invoked": true,
+        "provider_model": null,
+        "finish_reason": "stop",
+        "provider_usage": null,
+        "candidate_trace": [
+          {
+            "rank": 1,
+            "similarity": 0.4969,
+            "action": "REJECT",
+            "reason": "answer_contradiction_or_irrelevance",
+            "verifier_status": "scored",
+            "nli_score": 0.0051615601405501366,
+            "elapsed_ms": 0.421
+          },
+          {
+            "rank": 2,
+            "similarity": 0.4757,
+            "action": "REJECT",
+            "reason": "answer_contradiction_or_irrelevance",
+            "verifier_status": "scored",
+            "nli_score": 0.0038134201895445585,
+            "elapsed_ms": 0.364
+          },
+          {
+            "rank": 3,
+            "similarity": 0.253,
+            "action": "REJECT",
+            "reason": "below_retrieval_threshold",
+            "verifier_status": "not_called",
+            "nli_score": null,
+            "elapsed_ms": 0.009
+          },
+          {
+            "rank": 4,
+            "similarity": 0.2211,
+            "action": "REJECT",
+            "reason": "below_retrieval_threshold",
+            "verifier_status": "not_called",
+            "nli_score": null,
+            "elapsed_ms": 0.004
+          },
+          {
+            "rank": 5,
+            "similarity": 0.2028,
+            "action": "REJECT",
+            "reason": "below_retrieval_threshold",
+            "verifier_status": "not_called",
+            "nli_score": null,
+            "elapsed_ms": 0.004
+          }
+        ]
+      }
+    },
+    {
+      "case": "stream_exact_repeat",
+      "status": 200,
+      "provider": "cache",
+      "complete": true,
+      "error": false,
+      "meta": {
+        "lookup_scope": "workspace",
+        "request_eligibility": "shared_eligible",
+        "response_eligibility": "shared_eligible",
+        "storage_scope": null,
+        "storage_reason": "cache_hit",
+        "storage_outcome": "cache_hit",
+        "provider_invoked": false,
+        "provider_usage": null,
+        "candidate_trace": []
+      }
+    }
+  ]
+}

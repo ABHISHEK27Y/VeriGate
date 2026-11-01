@@ -171,6 +171,13 @@ def test_server_default_shares_generic_technical_requests_without_scope_fields(
         assert ask(client, ALICE, prompt, cache_scope="private").json()["cache"] == "MISS"
         assert ask(client, CAROL, prompt, cache_scope="private").json()["cache"] == "MISS"
         assert ask(client, ALICE, prompt, cache_scope="none").json()["cache"] == "BYPASS"
+        assert (
+            ask(client, ALICE, prompt, cache_scope="workspace").status_code == HTTPStatus.FORBIDDEN
+        )
+        assert (
+            ask(client, CAROL, prompt, cache_scope="workspace", workspace="").status_code
+            == HTTPStatus.FORBIDDEN
+        )
 
 
 def test_application_default_never_grants_missing_shared_permission(tmp_path: Path) -> None:

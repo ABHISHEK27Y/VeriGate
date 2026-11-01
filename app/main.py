@@ -988,7 +988,24 @@ async def chat_stream(  # noqa: PLR0915, PLR0912 - streaming state machine
                         "storage_outcome": "cache_hit",
                         "provider_invoked": False,
                         "provider_usage": None,
+                        "organization_id": None if principal.legacy else principal.organization_id,
+                        "subject_id": None if principal.legacy else principal.subject_id,
+                        "provider_profile": None
+                        if principal.legacy
+                        else principal.provider_profile,
                         "candidate_trace": result.candidate_trace,
+                        "cache_decision": result.status,
+                        "note": result.reason,
+                        "selected_rank": result.selected_rank,
+                        "explanation_rank": result.explanation_rank,
+                        "candidate_count": result.candidate_count,
+                        "threshold": result.threshold,
+                        "similarity": result.similarity,
+                        "top_retrieved_similarity": result.top_retrieved_similarity,
+                        "nli_score": result.nli_score,
+                        "verifier_invoked": result.verifier_invoked,
+                        "latency_ms": round((time.perf_counter() - started) * 1000, 3),
+                        "stage_latency_ms": result.stage_latency_ms,
                     }
                 )
                 + "\n\n"
@@ -1099,7 +1116,22 @@ async def chat_stream(  # noqa: PLR0915, PLR0912 - streaming state machine
                     "provider_model": completion.model,
                     "finish_reason": completion.finish_reason,
                     "provider_usage": completion.usage,
+                    "organization_id": None if principal.legacy else principal.organization_id,
+                    "subject_id": None if principal.legacy else principal.subject_id,
+                    "provider_profile": None if principal.legacy else principal.provider_profile,
                     "candidate_trace": result.candidate_trace,
+                    "cache_decision": result.status,
+                    "note": result.reason,
+                    "selected_rank": result.selected_rank,
+                    "explanation_rank": result.explanation_rank,
+                    "candidate_count": result.candidate_count,
+                    "threshold": result.threshold,
+                    "similarity": result.similarity,
+                    "top_retrieved_similarity": result.top_retrieved_similarity,
+                    "nli_score": result.nli_score,
+                    "verifier_invoked": result.verifier_invoked,
+                    "latency_ms": round((time.perf_counter() - started) * 1000, 3),
+                    "stage_latency_ms": result.stage_latency_ms,
                 }
             )
             + "\n\n"

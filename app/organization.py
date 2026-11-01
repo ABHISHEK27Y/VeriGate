@@ -297,6 +297,8 @@ class OrganizationDirectory:
             return ScopeDecision("private", "", "private_only", "legacy_private", version)
         if requested == "private":
             return ScopeDecision("private", "", "private_only", "explicit_private", version)
+        if requested == "workspace" and not workspace:
+            raise PermissionError("Explicit workspace scope requires a workspace identifier")
         selected = workspace if requested == "workspace" else principal.default_workspace
         if selected is None:
             return ScopeDecision("private", "", "private_only", "no_default_workspace", version)

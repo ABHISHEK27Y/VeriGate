@@ -41,9 +41,9 @@ The development fixture keys are `example-alice-key-12345`,
 credentials, never live secrets. Enter one in the dashboard. For a shared
 technical request, ask `Explain how Python decorators work.` as Carol after the explicit fixture
 seed. The saved HTTP run returned a HIT with the labelled Python answer. For a
-private request, click the **private isolation** example with Alice, then
-Carol. The example sends an explicit private override even when the development
-panel is collapsed; ordinary question entry remains automatic. Carol cannot
+private request, ask `Explain my Redis password` as Alice, then Carol.
+The server classifies that personal request as private-only; ordinary question
+entry sends no scope override. Carol cannot
 see Alice's private entry. Dave belongs to a different organization and cannot request
 `engineering`. The mock provider's text is a placeholder, not a factual answer.
 
@@ -85,6 +85,11 @@ outside the normal dashboard question flow. An actual credential in a request
 causes no-store. Personal context may be private-only. A private-only response
 is written only to the employee's private namespace. These are conservative
 heuristics, not comprehensive data-loss prevention.
+An explicit `cache_scope=workspace` requires a workspace identifier; omitting
+`cache_scope` still uses the authenticated application's server default.
+The dashboard labels JSON `latency_ms` as time after admission and streaming
+`latency_ms` as time after handler entry. Browser HTTP time is displayed
+separately and includes more of the request.
 
 When an otherwise shared request generates a private-only answer, the JSON
 response reports `lookup_scope=workspace`, `response_eligibility=private_only`,
@@ -93,7 +98,10 @@ private entry only for the same employee, application, workspace, route, and
 policy version. Another employee cannot read it. Streaming responses send
 the same final storage decision in an `event: meta` SSE frame before `[DONE]`;
 content frames retain their existing format. Coalesced followers report no
-individual provider invocation or provider usage. The browser regression is
+individual provider invocation or provider usage. The dashboard shows actual
+lookup and storage scopes inside **How this request was handled**. Manual
+scope overrides are visible only on `/ui?developer=1` in an explicit
+development demo; the backend still authorizes every request. The browser regression is
 opt-in: set `VERIGATE_BROWSER_TEST=1` and run
 `python -m pytest tests/test_dashboard_private_chip.py -q` with local Chromium.
 
