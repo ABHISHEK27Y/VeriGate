@@ -131,12 +131,14 @@ class OrganizationDirectory:
         for profile_id, profile in raw.get("provider_profiles", {}).items():
             self._identifier(profile_id)
             provider = profile["provider"]
-            if provider not in {"mock", "openai", "gemini"}:
+            if provider not in {"mock", "controlled-eval", "openai", "gemini"}:
                 raise ValueError("Unsupported organization provider profile")
-            if provider == "mock" and self.config.environment != "development":
-                raise ValueError("Mock organization provider requires development mode")
+            if provider in {"mock", "controlled-eval"} and (
+                self.config.environment != "development"
+            ):
+                raise ValueError("Mock/controlled organization provider requires development mode")
             secret_env = profile.get("secret_env", "")
-            if provider != "mock" and (
+            if provider not in {"mock", "controlled-eval"} and (
                 not secret_env or not re.fullmatch(r"[A-Z][A-Z0-9_]*", secret_env)
             ):
                 raise ValueError("Real provider profile requires an environment secret reference")
@@ -242,7 +244,7 @@ class OrganizationDirectory:
 
     def profile_secret(self, profile_id: str) -> str:
         profile = self.profiles[profile_id]
-        if profile.provider == "mock":
+        if profile.provider in {"mock", "controlled-eval"}:
             return ""
         secret = os.environ.get(profile.secret_env, "")
         if not secret:

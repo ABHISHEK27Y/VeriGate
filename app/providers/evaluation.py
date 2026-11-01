@@ -16,7 +16,7 @@ class ControlledEvaluationProvider(Provider):
     name = "controlled-eval"
     implicit_completion_is_safe = True
 
-    def __init__(self, path: str) -> None:
+    def __init__(self, path: str, name_override: str | None = None) -> None:
         payload = json.loads(Path(path).read_text(encoding="utf-8"))
         if not isinstance(payload, dict) or not payload:
             raise ValueError("Controlled answer map must be a nonempty object")
@@ -25,6 +25,8 @@ class ControlledEvaluationProvider(Provider):
         ):
             raise ValueError("Controlled answer map has invalid entries")
         self._answers: dict[str, str] = payload
+        if name_override:
+            self.name = name_override
 
     async def stream(self, prompt: str) -> AsyncIterator[str]:
         try:
