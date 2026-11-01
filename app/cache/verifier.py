@@ -21,6 +21,7 @@ These checks can reject valid paraphrases and accept incompatible cached answers
 from __future__ import annotations
 
 import functools
+import hashlib
 import logging
 import re
 import threading
@@ -38,8 +39,57 @@ from ..embeddings import tokenize
 from ..metrics import STAGE_LATENCY
 
 _MAX_NLI_PAIRS = 8192
+_MAX_TOO_LONG_MEMO = 8192
 _MAX_PLAUSIBLE_MODEL_WINDOW = 100_000
+_FAILURE_COOLDOWN_SEC = 30.0
 verifier_scope: ContextVar[str] = ContextVar("verifier_scope", default="standalone")
+
+
+def pair_digest(first: str, second: str) -> str:
+    """Bounded key for a (premise, hypothesis) pair; never retains the raw text."""
+    return hashlib.sha256(f"{first}\x00{second}".encode()).hexdigest()
+
+
+class ModelHealth:
+    """Transient-failure cooldown and permanent-incompatibility state for a lazy model.
+
+    The owning verifier holds its own lock while calling these methods. A model or
+    config contract violation (ValueError/TypeError) is permanent and never retried;
+    any other error (import, download, OOM) is transient and recoverable once a
+    bounded cooldown elapses, so one flaky load does not disable reuse forever.
+    """
+
+    def __init__(self, cooldown_sec: float = _FAILURE_COOLDOWN_SEC) -> None:
+        self._cooldown_sec = cooldown_sec
+        self.permanent = False
+        self.cooldown_until = 0.0
+        self.transient_failures = 0
+        self.last_failure_category: str | None = None
+
+    @property
+    def unavailable(self) -> bool:
+        return self.permanent or time.monotonic() < self.cooldown_until
+
+    def record_success(self) -> None:
+        self.cooldown_until = 0.0
+        self.transient_failures = 0
+        self.last_failure_category = None
+
+    def record_failure(self, exc: BaseException) -> None:
+        self.last_failure_category = type(exc).__name__
+        if isinstance(exc, ValueError | TypeError):
+            self.permanent = True
+        else:
+            self.transient_failures += 1
+            self.cooldown_until = time.monotonic() + self._cooldown_sec
+
+    def force_unavailable(self, value: bool) -> None:
+        """Back-compat: callers that set `.unavailable` force a permanent state."""
+        self.permanent = bool(value)
+        if not value:
+            self.cooldown_until = 0.0
+            self.transient_failures = 0
+
 
 log = logging.getLogger("verigate.verifier")
 
@@ -289,11 +339,29 @@ class NliVerifier:
 
     def __init__(self):
         self.model = None
-        self.unavailable = False
         self.prewarmed = False
-        self.last_failure_category: str | None = None
+        self._health = ModelHealth()
         self.lock = threading.Lock()
         self.cache: OrderedDict[tuple[str, str, str], NliAssessment] = OrderedDict()
+        # Deterministic over-window outcomes, keyed by a hash so no oversized raw
+        # premise/hypothesis text is ever retained (audit F6).
+        self._too_long: OrderedDict[tuple[str, str], int] = OrderedDict()
+
+    @property
+    def unavailable(self) -> bool:
+        return self._health.unavailable
+
+    @unavailable.setter
+    def unavailable(self, value: bool) -> None:
+        self._health.force_unavailable(value)
+
+    @property
+    def last_failure_category(self) -> str | None:
+        return self._health.last_failure_category
+
+    @last_failure_category.setter
+    def last_failure_category(self, value: str | None) -> None:
+        self._health.last_failure_category = value
 
     def prewarm(self) -> None:
         """Load and run the pinned model before readiness when configured."""
@@ -308,15 +376,23 @@ class NliVerifier:
             for key in tuple(self.cache):
                 if key[0] == scope:
                     del self.cache[key]
+            for key in tuple(self._too_long):
+                if key[0] == scope:
+                    del self._too_long[key]
 
     def assess(self, premise: str, hypothesis: str) -> NliAssessment:
         """Score only when the complete paired input fits the model window."""
-        key = (verifier_scope.get(), premise, hypothesis)
+        scope = verifier_scope.get()
+        key = (scope, premise, hypothesis)
+        too_long_key = (scope, pair_digest(premise, hypothesis))
         with self.lock:
             if key in self.cache:
                 self.cache.move_to_end(key)
                 return self.cache[key]
-            if self.unavailable:
+            if too_long_key in self._too_long:
+                self._too_long.move_to_end(too_long_key)
+                return NliAssessment(None, "too_long", self._too_long[too_long_key])
+            if self._health.unavailable:
                 return NliAssessment(None, "unavailable", None)
             try:
                 if self.model is None:
@@ -352,6 +428,13 @@ class NliVerifier:
                 if not valid_limits:
                     raise ValueError("NLI model has no finite input length")  # noqa: TRY301
                 if count > min(valid_limits):
+                    # A determinate, deterministic outcome: the model loaded and
+                    # tokenized fine, so clear any transient failure and memoize
+                    # the token count under the hashed key (no raw text retained).
+                    self._health.record_success()
+                    self._too_long[too_long_key] = count
+                    if len(self._too_long) > _MAX_TOO_LONG_MEMO:
+                        self._too_long.popitem(last=False)
                     return NliAssessment(None, "too_long", count)
                 started = time.perf_counter()
                 logits = np.asarray(self.model.predict([(premise, hypothesis)])).reshape(-1)
@@ -364,10 +447,10 @@ class NliVerifier:
                     raise ValueError("NLI model must identify its entailment label")  # noqa: TRY301
                 probs = np.exp(logits - logits.max())
                 result = NliAssessment(float(probs[entail] / probs.sum()), "ok", count)
+                self._health.record_success()
             except Exception as exc:
                 log.exception("NLI unavailable; rejecting semantic reuse")
-                self.unavailable = True
-                self.last_failure_category = type(exc).__name__
+                self._health.record_failure(exc)
                 return NliAssessment(None, "unavailable", None)
             self.cache[key] = result
             if len(self.cache) > _MAX_NLI_PAIRS:

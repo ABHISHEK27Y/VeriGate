@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from ..config import get_settings
-from .verifier import verifier_scope
+from .verifier import ModelHealth, pair_digest, verifier_scope
 
 log = logging.getLogger("verigate.reuse_verifier")
 FORMAT_VERSION = "reuse-three-field-v1"
@@ -77,11 +77,28 @@ class TaskReuseVerifier:
         self.accept_at = threshold
         self.model: Any = None
         self.tokenizer: Any = None
-        self.unavailable = False
         self.prewarmed = False
-        self.last_failure_category: str | None = None
+        self._health = ModelHealth()
         self.lock = threading.Lock()
         self.cache: OrderedDict[tuple[str, str, str, str, str], ReuseAssessment] = OrderedDict()
+        # Over-window outcomes keyed by a hash so no oversized raw text is retained.
+        self._too_long: OrderedDict[tuple[str, str], int] = OrderedDict()
+
+    @property
+    def unavailable(self) -> bool:
+        return self._health.unavailable
+
+    @unavailable.setter
+    def unavailable(self, value: bool) -> None:
+        self._health.force_unavailable(value)
+
+    @property
+    def last_failure_category(self) -> str | None:
+        return self._health.last_failure_category
+
+    @last_failure_category.setter
+    def last_failure_category(self, value: str | None) -> None:
+        self._health.last_failure_category = value
 
     def prewarm(self) -> None:
         if self.assess_reuse("Test question", "Test answer", "Test question").status != "ok":
@@ -93,14 +110,22 @@ class TaskReuseVerifier:
             for key in tuple(self.cache):
                 if key[1] == scope:
                     del self.cache[key]
+            for key in tuple(self._too_long):
+                if key[0] == scope:
+                    del self._too_long[key]
 
     def assess_reuse(self, stored: str, answer: str, incoming: str) -> ReuseAssessment:
-        key = (self.identity, verifier_scope.get(), stored, answer, incoming)
+        scope = verifier_scope.get()
+        key = (self.identity, scope, stored, answer, incoming)
+        too_long_key = (scope, pair_digest(f"{self.identity}\x00{stored}\x00{answer}", incoming))
         with self.lock:
             if key in self.cache:
                 self.cache.move_to_end(key)
                 return self.cache[key]
-            if self.unavailable:
+            if too_long_key in self._too_long:
+                self._too_long.move_to_end(too_long_key)
+                return ReuseAssessment(None, "too_long", self._too_long[too_long_key])
+            if self._health.unavailable:
                 return ReuseAssessment(None, "unavailable", None)
             try:
                 if self.model is None:
@@ -133,17 +158,22 @@ class TaskReuseVerifier:
                 if not finite:
                     raise ValueError("No finite reuse verifier context window")  # noqa: TRY301
                 if count > min(finite):
-                    result = ReuseAssessment(None, "too_long", count)
-                else:
-                    with torch.inference_mode():
-                        logit = self.model(**encoded).logits.reshape(-1)
-                    if logit.numel() != 1 or not torch.isfinite(logit).all():
-                        raise ValueError("Malformed reuse verifier output")  # noqa: TRY301
-                    result = ReuseAssessment(float(torch.sigmoid(logit[0])), "ok", count)
+                    # Determinate outcome: memoize the count under a hashed key
+                    # (no raw oversized text) and clear any transient failure.
+                    self._health.record_success()
+                    self._too_long[too_long_key] = count
+                    if len(self._too_long) > MAX_MEMO:
+                        self._too_long.popitem(last=False)
+                    return ReuseAssessment(None, "too_long", count)
+                with torch.inference_mode():
+                    logit = self.model(**encoded).logits.reshape(-1)
+                if logit.numel() != 1 or not torch.isfinite(logit).all():
+                    raise ValueError("Malformed reuse verifier output")  # noqa: TRY301
+                result = ReuseAssessment(float(torch.sigmoid(logit[0])), "ok", count)
+                self._health.record_success()
             except Exception as exc:
                 log.exception("Task reuse verifier unavailable; abstaining")
-                self.unavailable = True
-                self.last_failure_category = type(exc).__name__
+                self._health.record_failure(exc)
                 return ReuseAssessment(None, "unavailable", None)
             self.cache[key] = result
             if len(self.cache) > MAX_MEMO:
