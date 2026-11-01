@@ -1,0 +1,9 @@
+{
+  "input": "evaluation\\runs\\technical_applicability_live_20261101_v1\\workload.json",
+  "input_sha256": "2e171d3a9efbe428612bc8493ea1965905f2deb2d2c28a34757abcae2c12aaf9",
+  "output_sha256": "88edac4e8cd0f9c1fd0451da752a0af1781a4b40bfa28c2445859f34060efdf5",
+  "rows": 75,
+  "families": 5,
+  "label_provenance": "authored_suitability_development",
+  "warning": "Inspected authored examples; development only, not independent test truth"
+}

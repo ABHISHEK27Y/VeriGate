@@ -1,5 +1,59 @@
 # VeriGate software progress — 31 October 2026
 
+## Technical reuse checkpoint — 1 November 2026
+
+The fresh, five-family/25-probe technical challenge was committed before its
+first live run as `1a10023`. Both variants used the same frozen candidates,
+MiniLM, RedisSearch top-k, pinned NLI policy and controlled provider, with
+separate clean cache states. Baseline reused 6/15 valid answers, accepted 0/5
+invalid answers, and approved 1/5 ambiguous requests. The combined experimental
+technical/applicability guards reused 8/15 valid, accepted 0/5 invalid, and
+approved 0/5 ambiguous. Suitable candidates were retrieved for all valid
+probes. The same counts recurred with variant startup order reversed. These
+authored labels support this challenge only; zero observed invalid accepts is
+not a safety guarantee. The prespecified promotion gate required three more
+valid hits, so the combined guard remains off by default. Its two additional
+hits resulted from excluding incompatible competing answers before the final
+conflict check. One numeric paraphrase still abstained because the bounded
+extractor did not bind its reversed quantity phrasing.
+
+The reverse-order run measured warm HTTP medians of 410.687 ms baseline and
+180.123 ms combined; the source-matched forward-order run measured 340.254 ms
+and 154.414 ms. An earlier forward run with a different evaluator source is
+preserved as diagnostic evidence and excluded from the paired timing comparison.
+These are small, controlled-provider observations, not paid-provider savings.
+Startup was 31.8–42.8 s per variant, reported separately. The Redis shortlist
+read microbenchmark alternated 80 rounds of five sequential/pipelined hash
+reads and measured 3.357/0.896 ms medians; it does not measure full HTTP
+speedup. Row-level traces, stage timings, readiness, manifests and raw
+benchmarks are under `evaluation/runs/technical_combined_fresh_20261101_v1/`.
+One fresh-process NLI prewarm measurement took 30.599 s and increased process
+RSS by 680.9 MB from the pre-model-load baseline; this includes Python/Torch/model
+runtime allocations and is not an isolated model-weight size. The alternative
+task classifier was not trained, so its memory and latency are unmeasured.
+
+Case-sensitive technical identifiers, context-sensitive actions, explicit
+quantity bindings, and scoped negation now operate only in the opt-in guard.
+Candidate MISS explanations identify their own rank and similarity instead of
+combining rank-one metadata with a later candidate's decision. RediSearch
+shortlist hashes are read in a pipeline and retain tenant/identity validation.
+Cheap structural checks run before the bounded NLI execution gate. The pinned
+NLI logits/entailment mapping and single-softmax contract was checked; no
+scoring change was justified. Historical applicability validation now checks
+the original guard bytes at the frozen commit, preserving the saved run while
+allowing current code to evolve.
+
+An opt-in three-field task-reuse verifier adapter, data exporter, grouped
+training/calibration pipeline, artifact integrity checks and shared live/replay
+decision integration are present but **not enabled**. The available authored
+technical challenge exports only 75 development pairs. The pipeline requires
+600–4,000 independently reviewed technical pairs from at least three disjoint
+sources, plus an untouched test source passing its acceptance gate. No trained
+artifact or model quality claim exists. The deployment default remains exact
+matching; the answer-aware NLI policy remains the semantic baseline. Full local
+tests passed 302/7 skipped and Redis Stack tests 308/1 skipped on this working
+tree; exact-commit CI status is recorded only after push.
+
 ## Live applicability evaluation — 1 November 2026
 
 The applicability guard remains opt-in and off by default. A disjoint,

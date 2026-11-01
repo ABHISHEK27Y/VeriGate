@@ -34,8 +34,8 @@ class AlwaysEntails:
             "How do I plan a Terraform change for workspace alpha?",
             "Run a Terraform plan for workspace alpha.",
             "How do I change Terraform workspace alpha?",
-            "VERIFY",
-            "applicability_action_missing",
+            "REJECT",
+            "applicability_action_conflict",
         ),
         (
             "How do I run a Pytest test marked slow?",

@@ -11,37 +11,10 @@ import re
 from dataclasses import dataclass
 from typing import Literal
 
+from .action_features import extract_actions
+
 Action = Literal["REJECT", "VERIFY"]
 
-_ACTIONS = {
-    "plan": "plan",
-    "preview": "plan",
-    "apply": "apply",
-    "backup": "backup",
-    "backups": "backup",
-    "restore": "restore",
-    "recover": "restore",
-    "rollback": "rollback",
-    "revert": "rollback",
-    "grant": "grant",
-    "give": "grant",
-    "revoke": "revoke",
-    "remove": "revoke",
-    "enable": "enable",
-    "activate": "enable",
-    "disable": "disable",
-    "deactivate": "disable",
-    "delete": "delete",
-    "drop": "delete",
-    "create": "create",
-    "add": "create",
-    "deploy": "deploy",
-    "release": "deploy",
-    "restart": "restart",
-    "reboot": "restart",
-    "run": "run",
-    "execute": "run",
-}
 _ENVIRONMENTS = {
     "production": "production",
     "prod": "production",
@@ -78,16 +51,14 @@ class Applicability:
 
 def _facets(text: str) -> dict[str, frozenset[str]]:
     words = [word.casefold() for word in _WORDS.findall(text)]
-    actions = {_ACTIONS[word] for word in words if word in _ACTIONS}
-    if len(actions) > 1:
-        actions.discard("run")  # auxiliary command wording does not replace a named operation
+    actions = extract_actions(text).values
     environments = {_ENVIRONMENTS[word] for word in words if word in _ENVIRONMENTS}
     named: dict[str, set[str]] = {}
     for facet, value in _NAMED.findall(text):
         if value.casefold() not in _STOP_VALUES:
             named.setdefault(facet.casefold(), set()).add(value.casefold())
     result = {
-        "action": frozenset(actions),
+        "action": actions,
         "environment": frozenset(environments),
         "http_method": frozenset(value.casefold() for value in _METHOD.findall(text)),
         "version": frozenset(_VERSION.findall(text)),

@@ -18,6 +18,8 @@ ARTIFACT = Path(__file__).resolve().parents[1] / "app/cache/artifacts/answer_pol
 TENANT = tenant_id("demo-key-123")
 SECOND_CANDIDATE = 2
 UNCERTAIN_SCORE = 0.5
+TOP_SIMILARITY = 0.95
+SECOND_SIMILARITY = 0.90
 
 
 class AlwaysEntails:
@@ -258,15 +260,22 @@ def test_later_uncertain_candidate_controls_final_miss_reason(client) -> None:
             (
                 "How do I restart the worker in production?",
                 "Restart the production worker.",
-                0.95,
+                TOP_SIMILARITY,
             ),
             (
                 "How do I restart the worker in staging?",
                 "Restart the staging worker.",
-                0.90,
+                SECOND_SIMILARITY,
             ),
         ],
     )
+    replayed = client.portal.call(
+        replay_rows,
+        cache,
+        TENANT,
+        [ReplayRow("What steps restart the worker in staging?")],
+        client.app.state.config,
+    )[0]
     response = client.post(
         "/v1/chat",
         json={"prompt": "What steps restart the worker in staging?"},
@@ -275,10 +284,19 @@ def test_later_uncertain_candidate_controls_final_miss_reason(client) -> None:
     assert response["cache"] == "MISS"
     assert response["note"] == "answer_verify:uncertain_answer"
     assert response["nli_score"] == UNCERTAIN_SCORE
+    assert response["selected_rank"] is None
+    assert response["selected_cached_query"] is None
+    assert response["explanation_rank"] == SECOND_CANDIDATE
+    assert response["explanation_cached_query"] is None  # mock profile keeps candidate text private
+    assert response["similarity"] == SECOND_SIMILARITY
+    assert response["top_retrieved_similarity"] == TOP_SIMILARITY
     assert [(item["rank"], item["action"]) for item in response["candidate_trace"]] == [
         (1, "REJECT"),
         (2, "VERIFY"),
     ]
+    assert replayed.explanation_rank == SECOND_CANDIDATE
+    assert replayed.cached_query == "How do I restart the worker in staging?"
+    assert replayed.similarity == response["similarity"]
 
 
 test_later_uncertain_candidate_controls_final_miss_reason.config_overrides = {
@@ -320,6 +338,35 @@ def test_experimental_applicability_guard_through_http(client) -> None:
 
 
 test_experimental_applicability_guard_through_http.config_overrides = {
+    "cache_match_mode": "semantic",
+    "answer_policy_artifact": str(ARTIFACT),
+    "answer_policy_applicability_guard": True,
+}
+
+
+def test_structural_conflict_does_not_wait_for_verifier_gate(client) -> None:
+    cache = client.app.state.semantic_cache
+    cache._test_config = client.app.state.config
+    client.portal.call(
+        set_candidates,
+        cache,
+        [("How do I plan a Terraform change for workspace alpha?", "Run a plan.", 0.95)],
+    )
+    client.portal.call(cache._verifier_gate.acquire)
+    try:
+        response = client.post(
+            "/v1/chat",
+            json={"prompt": "How do I apply a Terraform change for workspace alpha?"},
+            headers={"x-api-key": "demo-key-123"},
+        ).json()
+    finally:
+        client.portal.call(cache._verifier_gate.release)
+    assert response["cache"] == "MISS"
+    assert response["note"] == "answer_reject:applicability_action_conflict"
+    assert response["verifier_invoked"] is False
+
+
+test_structural_conflict_does_not_wait_for_verifier_gate.config_overrides = {
     "cache_match_mode": "semantic",
     "answer_policy_artifact": str(ARTIFACT),
     "answer_policy_applicability_guard": True,

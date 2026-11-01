@@ -1,0 +1,58 @@
+{
+  "baseline": {
+    "valid_reuse": 6,
+    "valid_total": 15,
+    "invalid_accepts": 0,
+    "invalid_total": 5,
+    "ambiguous_approvals": 1,
+    "ambiguous_total": 5,
+    "retrieval_failures": 0,
+    "reject_only_misses": 7,
+    "verify_abstentions": 11,
+    "budget_or_limit_abstentions": 0,
+    "other_provider_fallbacks": 0,
+    "total_provider_fallbacks": 18,
+    "provider_calls": 18,
+    "first_http_ms": 325.007,
+    "warm_http_p50_ms": 410.687,
+    "warm_http_p95_ms": 597.544,
+    "startup_ms": 33316.859,
+    "warm_stage_p50_ms": {
+      "retrieval": 3.754,
+      "structural_check": 0.317,
+      "embedding_queue": 0.004,
+      "embedding_execution": 21.674,
+      "verifier_queue": 0.01,
+      "verifier_execution": 337.651,
+      "provider": 8.852
+    }
+  },
+  "combined": {
+    "valid_reuse": 8,
+    "valid_total": 15,
+    "invalid_accepts": 0,
+    "invalid_total": 5,
+    "ambiguous_approvals": 0,
+    "ambiguous_total": 5,
+    "retrieval_failures": 0,
+    "reject_only_misses": 8,
+    "verify_abstentions": 9,
+    "budget_or_limit_abstentions": 0,
+    "other_provider_fallbacks": 0,
+    "total_provider_fallbacks": 17,
+    "provider_calls": 17,
+    "first_http_ms": 297.627,
+    "warm_http_p50_ms": 180.123,
+    "warm_http_p95_ms": 307.189,
+    "startup_ms": 31784.068,
+    "warm_stage_p50_ms": {
+      "retrieval": 3.494,
+      "structural_check": 1.376,
+      "embedding_queue": 0.004,
+      "embedding_execution": 18.356,
+      "verifier_queue": 0.004,
+      "verifier_execution": 135.471,
+      "provider": 7.43
+    }
+  }
+}

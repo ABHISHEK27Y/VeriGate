@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     cache_enabled: bool = True
     cache_match_mode: Literal["exact", "semantic"] = "exact"
     answer_policy_artifact: str = ""  # explicit opt-in; empty keeps historical semantic policy
+    reuse_verifier_artifact: str = ""  # experimental calibrated local model; empty uses NLI
     answer_policy_prewarm: bool = False  # fail startup if the enabled NLI policy cannot initialize
     organization_config_path: str = ""  # optional hashed-key organization directory
     cache_epoch: str = "1"
@@ -155,6 +156,7 @@ class Settings(BaseSettings):
 class RuntimeSettings(Settings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore", frozen=True)
     _answer_policy_sha256: str | None = PrivateAttr(default=None)
+    _reuse_verifier_sha256: str | None = PrivateAttr(default=None)
     _namespace_snapshot: str | None = PrivateAttr(default=None)
 
 

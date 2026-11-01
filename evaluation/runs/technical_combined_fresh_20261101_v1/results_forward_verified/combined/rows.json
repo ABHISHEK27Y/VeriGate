@@ -1,0 +1,1606 @@
+[
+  {
+    "variant": "combined",
+    "family": "rabbitmq_policy",
+    "query": "What steps give publishing permission for RabbitMQ exchange ledger in stage?",
+    "label": "valid",
+    "suitable_queries": [
+      "How do I grant publish permission on RabbitMQ exchange ledger in staging?"
+    ],
+    "retrieved_suitable_ranks": [
+      1
+    ],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": null,
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_verify:uncertain_answer",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.9229,
+        "action": "VERIFY",
+        "reason": "uncertain_answer",
+        "verifier_status": "scored",
+        "nli_score": 0.77027827501297,
+        "elapsed_ms": 96.037
+      },
+      {
+        "rank": 2,
+        "similarity": 0.852,
+        "action": "REJECT",
+        "reason": "applicability_action_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.669
+      },
+      {
+        "rank": 3,
+        "similarity": 0.8405,
+        "action": "REJECT",
+        "reason": "answer_contradiction_or_irrelevance",
+        "verifier_status": "scored",
+        "nli_score": 0.06908828020095825,
+        "elapsed_ms": 86.09
+      }
+    ],
+    "similarity": 0.9228770136833,
+    "stage_latency_ms": {
+      "exact_lookup": 1.028,
+      "embedding_queue": 0.009,
+      "embedding_execution": 19.753,
+      "embedding": 19.85,
+      "retrieval": 3.387,
+      "structural_check": 2.008,
+      "verifier_queue": 0.011,
+      "verifier_execution": 180.549,
+      "policy_decision": 182.826,
+      "cache_lookup": 207.507,
+      "admission": 0.074,
+      "provider": 7.865,
+      "cache_write": 24.647
+    },
+    "gateway_latency_ms": 240.67,
+    "http_latency_ms": 249.712
+  },
+  {
+    "variant": "combined",
+    "family": "rabbitmq_policy",
+    "query": "How can I grant publish permission on RabbitMQ exchange ledger in staging?",
+    "label": "valid",
+    "suitable_queries": [
+      "How do I grant publish permission on RabbitMQ exchange ledger in staging?"
+    ],
+    "retrieved_suitable_ranks": [
+      1
+    ],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "HIT",
+    "selected_cached_query": "How do I grant publish permission on RabbitMQ exchange ledger in staging?",
+    "valid_reuse": true,
+    "incorrect_accept": false,
+    "provider_invoked": false,
+    "provider": "cache",
+    "reason": "answer_accept:answer_entailment",
+    "candidate_count": 3,
+    "selected_rank": 1,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.9988,
+        "action": "ACCEPT",
+        "reason": "answer_entailment",
+        "verifier_status": "scored",
+        "nli_score": 0.9317054152488708,
+        "elapsed_ms": 98.959
+      },
+      {
+        "rank": 2,
+        "similarity": 0.9277,
+        "action": "REJECT",
+        "reason": "answer_contradiction_or_irrelevance",
+        "verifier_status": "scored",
+        "nli_score": 0.009278833866119385,
+        "elapsed_ms": 89.676
+      },
+      {
+        "rank": 3,
+        "similarity": 0.9105,
+        "action": "REJECT",
+        "reason": "applicability_action_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.64
+      }
+    ],
+    "similarity": 0.99880909919739,
+    "stage_latency_ms": {
+      "exact_lookup": 0.943,
+      "embedding_queue": 0.004,
+      "embedding_execution": 19.189,
+      "embedding": 19.233,
+      "retrieval": 3.392,
+      "structural_check": 1.874,
+      "verifier_queue": 0.006,
+      "verifier_execution": 187.227,
+      "policy_decision": 189.311,
+      "candidate_identity": 3.062,
+      "cache_lookup": 218.107
+    },
+    "gateway_latency_ms": 218.68,
+    "http_latency_ms": 223.958
+  },
+  {
+    "variant": "combined",
+    "family": "rabbitmq_policy",
+    "query": "How do I remove publish permission on RabbitMQ exchange ledger in staging?",
+    "label": "valid",
+    "suitable_queries": [
+      "How do I revoke publish permission on RabbitMQ exchange ledger in staging?"
+    ],
+    "retrieved_suitable_ranks": [
+      1
+    ],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "HIT",
+    "selected_cached_query": "How do I revoke publish permission on RabbitMQ exchange ledger in staging?",
+    "valid_reuse": true,
+    "incorrect_accept": false,
+    "provider_invoked": false,
+    "provider": "cache",
+    "reason": "answer_accept:answer_entailment",
+    "candidate_count": 3,
+    "selected_rank": 1,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.9752,
+        "action": "ACCEPT",
+        "reason": "answer_entailment",
+        "verifier_status": "scored",
+        "nli_score": 0.9893969297409058,
+        "elapsed_ms": 101.373
+      },
+      {
+        "rank": 2,
+        "similarity": 0.9523,
+        "action": "REJECT",
+        "reason": "applicability_action_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.646
+      },
+      {
+        "rank": 3,
+        "similarity": 0.8753,
+        "action": "REJECT",
+        "reason": "applicability_action_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.546
+      }
+    ],
+    "similarity": 0.9751998782158,
+    "stage_latency_ms": {
+      "exact_lookup": 1.067,
+      "embedding_queue": 0.003,
+      "embedding_execution": 18.581,
+      "embedding": 18.625,
+      "retrieval": 3.386,
+      "structural_check": 1.879,
+      "verifier_queue": 0.003,
+      "verifier_execution": 100.583,
+      "policy_decision": 102.588,
+      "candidate_identity": 2.122,
+      "cache_lookup": 129.471
+    },
+    "gateway_latency_ms": 129.95,
+    "http_latency_ms": 135.028
+  },
+  {
+    "variant": "combined",
+    "family": "rabbitmq_policy",
+    "query": "How do I grant publish permission on RabbitMQ exchange audit in staging?",
+    "label": "invalid",
+    "suitable_queries": [],
+    "retrieved_suitable_ranks": [],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": null,
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_reject:answer_contradiction_or_irrelevance",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.8957,
+        "action": "REJECT",
+        "reason": "answer_contradiction_or_irrelevance",
+        "verifier_status": "scored",
+        "nli_score": 0.003898180089890957,
+        "elapsed_ms": 82.776
+      },
+      {
+        "rank": 2,
+        "similarity": 0.8945,
+        "action": "REJECT",
+        "reason": "answer_contradiction_or_irrelevance",
+        "verifier_status": "scored",
+        "nli_score": 0.051838815212249756,
+        "elapsed_ms": 91.376
+      },
+      {
+        "rank": 3,
+        "similarity": 0.8222,
+        "action": "REJECT",
+        "reason": "applicability_action_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.587
+      }
+    ],
+    "similarity": 0.895743787289,
+    "stage_latency_ms": {
+      "exact_lookup": 1.006,
+      "embedding_queue": 0.004,
+      "embedding_execution": 18.624,
+      "embedding": 18.668,
+      "retrieval": 3.409,
+      "structural_check": 2.174,
+      "verifier_queue": 0.006,
+      "verifier_execution": 172.381,
+      "policy_decision": 174.762,
+      "cache_lookup": 198.004,
+      "admission": 0.104,
+      "provider": 7.902,
+      "cache_write": 26.949
+    },
+    "gateway_latency_ms": 233.58,
+    "http_latency_ms": 238.017
+  },
+  {
+    "variant": "combined",
+    "family": "rabbitmq_policy",
+    "query": "How do I grant publish permission on RabbitMQ exchange ledger?",
+    "label": "ambiguous",
+    "suitable_queries": [],
+    "retrieved_suitable_ranks": [],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": null,
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_verify:applicability_environment_missing",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.9496,
+        "action": "VERIFY",
+        "reason": "applicability_environment_missing",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.652
+      },
+      {
+        "rank": 2,
+        "similarity": 0.8743,
+        "action": "VERIFY",
+        "reason": "applicability_environment_missing",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.557
+      },
+      {
+        "rank": 3,
+        "similarity": 0.8702,
+        "action": "VERIFY",
+        "reason": "applicability_environment_missing",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.539
+      }
+    ],
+    "similarity": 0.9496297836304,
+    "stage_latency_ms": {
+      "exact_lookup": 0.937,
+      "embedding_queue": 0.004,
+      "embedding_execution": 18.063,
+      "embedding": 18.107,
+      "retrieval": 5.283,
+      "structural_check": 1.721,
+      "policy_decision": 1.776,
+      "cache_lookup": 26.304,
+      "admission": 0.088,
+      "provider": 8.346,
+      "cache_write": 39.352
+    },
+    "gateway_latency_ms": 74.67,
+    "http_latency_ms": 79.634
+  },
+  {
+    "variant": "combined",
+    "family": "mysql_replica",
+    "query": "What is the procedure to reboot MySQL replica east in prod?",
+    "label": "valid",
+    "suitable_queries": [
+      "How do I restart MySQL replica east in production?"
+    ],
+    "retrieved_suitable_ranks": [
+      1
+    ],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": null,
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_verify:uncertain_answer",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.8903,
+        "action": "VERIFY",
+        "reason": "uncertain_answer",
+        "verifier_status": "scored",
+        "nli_score": 0.2562517523765564,
+        "elapsed_ms": 103.864
+      },
+      {
+        "rank": 2,
+        "similarity": 0.8388,
+        "action": "REJECT",
+        "reason": "answer_contradiction_or_irrelevance",
+        "verifier_status": "scored",
+        "nli_score": 0.0014455917989835143,
+        "elapsed_ms": 87.884
+      },
+      {
+        "rank": 3,
+        "similarity": 0.7333,
+        "action": "REJECT",
+        "reason": "technical_action_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.241
+      }
+    ],
+    "similarity": 0.890297532082,
+    "stage_latency_ms": {
+      "exact_lookup": 0.9,
+      "embedding_queue": 0.004,
+      "embedding_execution": 19.174,
+      "embedding": 19.216,
+      "retrieval": 3.807,
+      "structural_check": 1.502,
+      "verifier_queue": 0.007,
+      "verifier_execution": 190.315,
+      "policy_decision": 192.011,
+      "cache_lookup": 216.09,
+      "admission": 0.061,
+      "provider": 7.654,
+      "cache_write": 27.151
+    },
+    "gateway_latency_ms": 251.4,
+    "http_latency_ms": 255.924
+  },
+  {
+    "variant": "combined",
+    "family": "mysql_replica",
+    "query": "How can I restart MySQL replica east in production?",
+    "label": "valid",
+    "suitable_queries": [
+      "How do I restart MySQL replica east in production?"
+    ],
+    "retrieved_suitable_ranks": [
+      1
+    ],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "HIT",
+    "selected_cached_query": "How do I restart MySQL replica east in production?",
+    "valid_reuse": true,
+    "incorrect_accept": false,
+    "provider_invoked": false,
+    "provider": "cache",
+    "reason": "answer_accept:answer_entailment",
+    "candidate_count": 3,
+    "selected_rank": 1,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.9976,
+        "action": "ACCEPT",
+        "reason": "answer_entailment",
+        "verifier_status": "scored",
+        "nli_score": 0.9248065948486328,
+        "elapsed_ms": 96.771
+      },
+      {
+        "rank": 2,
+        "similarity": 0.9408,
+        "action": "REJECT",
+        "reason": "answer_contradiction_or_irrelevance",
+        "verifier_status": "scored",
+        "nli_score": 0.001444371067918837,
+        "elapsed_ms": 80.412
+      },
+      {
+        "rank": 3,
+        "similarity": 0.8319,
+        "action": "REJECT",
+        "reason": "technical_action_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.283
+      }
+    ],
+    "similarity": 0.99758929014206,
+    "stage_latency_ms": {
+      "exact_lookup": 0.958,
+      "embedding_queue": 0.004,
+      "embedding_execution": 30.035,
+      "embedding": 30.08,
+      "retrieval": 5.761,
+      "structural_check": 1.365,
+      "verifier_queue": 0.007,
+      "verifier_execution": 175.827,
+      "policy_decision": 177.49,
+      "candidate_identity": 2.168,
+      "cache_lookup": 218.016
+    },
+    "gateway_latency_ms": 218.5,
+    "http_latency_ms": 223.984
+  },
+  {
+    "variant": "combined",
+    "family": "mysql_replica",
+    "query": "How do I stop MySQL replica east in production safely?",
+    "label": "valid",
+    "suitable_queries": [
+      "How do I stop MySQL replica east in production?"
+    ],
+    "retrieved_suitable_ranks": [
+      1
+    ],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": null,
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_reject:answer_contradiction_or_irrelevance",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.96,
+        "action": "REJECT",
+        "reason": "answer_contradiction_or_irrelevance",
+        "verifier_status": "scored",
+        "nli_score": 0.007406676188111305,
+        "elapsed_ms": 93.082
+      },
+      {
+        "rank": 2,
+        "similarity": 0.7561,
+        "action": "REJECT",
+        "reason": "technical_action_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.303
+      },
+      {
+        "rank": 3,
+        "similarity": 0.7024,
+        "action": "REJECT",
+        "reason": "technical_action_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.21
+      }
+    ],
+    "similarity": 0.9599501490593,
+    "stage_latency_ms": {
+      "exact_lookup": 1.101,
+      "embedding_queue": 0.004,
+      "embedding_execution": 20.757,
+      "embedding": 20.81,
+      "retrieval": 3.928,
+      "structural_check": 1.131,
+      "verifier_queue": 0.003,
+      "verifier_execution": 92.358,
+      "policy_decision": 93.616,
+      "cache_lookup": 119.633,
+      "admission": 0.069,
+      "provider": 8.81,
+      "cache_write": 29.193
+    },
+    "gateway_latency_ms": 158.22,
+    "http_latency_ms": 163.853
+  },
+  {
+    "variant": "combined",
+    "family": "mysql_replica",
+    "query": "How do I restart MySQL replica north in production?",
+    "label": "invalid",
+    "suitable_queries": [],
+    "retrieved_suitable_ranks": [],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": null,
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_reject:answer_contradiction_or_irrelevance",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.9177,
+        "action": "REJECT",
+        "reason": "answer_contradiction_or_irrelevance",
+        "verifier_status": "scored",
+        "nli_score": 0.0010016729356721044,
+        "elapsed_ms": 172.841
+      },
+      {
+        "rank": 2,
+        "similarity": 0.9145,
+        "action": "REJECT",
+        "reason": "answer_contradiction_or_irrelevance",
+        "verifier_status": "scored",
+        "nli_score": 0.001591040170751512,
+        "elapsed_ms": 90.517
+      },
+      {
+        "rank": 3,
+        "similarity": 0.7173,
+        "action": "REJECT",
+        "reason": "technical_action_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.346
+      }
+    ],
+    "similarity": 0.9177225828171,
+    "stage_latency_ms": {
+      "exact_lookup": 0.93,
+      "embedding_queue": 0.004,
+      "embedding_execution": 22.823,
+      "embedding": 22.869,
+      "retrieval": 4.435,
+      "structural_check": 1.415,
+      "verifier_queue": 0.007,
+      "verifier_execution": 262.088,
+      "policy_decision": 263.729,
+      "cache_lookup": 292.135,
+      "admission": 0.08,
+      "provider": 8.905,
+      "cache_write": 29.814
+    },
+    "gateway_latency_ms": 331.45,
+    "http_latency_ms": 336.695
+  },
+  {
+    "variant": "combined",
+    "family": "mysql_replica",
+    "query": "How do I restart a MySQL replica in production?",
+    "label": "ambiguous",
+    "suitable_queries": [],
+    "retrieved_suitable_ranks": [],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": null,
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "conflicting_accepted_answers",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.8965,
+        "action": "ACCEPT",
+        "reason": "answer_entailment",
+        "verifier_status": "scored",
+        "nli_score": 0.9029766321182251,
+        "elapsed_ms": 88.158
+      },
+      {
+        "rank": 2,
+        "similarity": 0.8944,
+        "action": "ACCEPT",
+        "reason": "answer_entailment",
+        "verifier_status": "scored",
+        "nli_score": 0.910040557384491,
+        "elapsed_ms": 111.967
+      },
+      {
+        "rank": 3,
+        "similarity": 0.6732,
+        "action": "REJECT",
+        "reason": "technical_action_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.248
+      }
+    ],
+    "similarity": null,
+    "stage_latency_ms": {
+      "exact_lookup": 1.252,
+      "embedding_queue": 0.003,
+      "embedding_execution": 16.758,
+      "embedding": 16.802,
+      "retrieval": 3.355,
+      "structural_check": 1.734,
+      "verifier_queue": 0.007,
+      "verifier_execution": 198.413,
+      "policy_decision": 200.396,
+      "cache_lookup": 221.96,
+      "admission": 0.1,
+      "provider": 13.993,
+      "cache_write": 27.47
+    },
+    "gateway_latency_ms": 264.06,
+    "http_latency_ms": 268.771
+  },
+  {
+    "variant": "combined",
+    "family": "npm_token",
+    "query": "What steps rotate the staging NPM token `BuildToken`?",
+    "label": "valid",
+    "suitable_queries": [
+      "How do I rotate NPM token `BuildToken` in staging?"
+    ],
+    "retrieved_suitable_ranks": [
+      1
+    ],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "HIT",
+    "selected_cached_query": "How do I rotate NPM token `BuildToken` in staging?",
+    "valid_reuse": true,
+    "incorrect_accept": false,
+    "provider_invoked": false,
+    "provider": "cache",
+    "reason": "answer_accept:answer_entailment",
+    "candidate_count": 3,
+    "selected_rank": 1,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.9409,
+        "action": "ACCEPT",
+        "reason": "answer_entailment",
+        "verifier_status": "scored",
+        "nli_score": 0.9627355933189392,
+        "elapsed_ms": 137.821
+      },
+      {
+        "rank": 2,
+        "similarity": 0.9409,
+        "action": "REJECT",
+        "reason": "technical_identifier_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.291
+      },
+      {
+        "rank": 3,
+        "similarity": 0.7338,
+        "action": "VERIFY",
+        "reason": "applicability_action_missing",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.558
+      }
+    ],
+    "similarity": 0.9409494996071,
+    "stage_latency_ms": {
+      "exact_lookup": 1.602,
+      "embedding_queue": 0.004,
+      "embedding_execution": 23.297,
+      "embedding": 23.343,
+      "retrieval": 4.066,
+      "structural_check": 1.469,
+      "verifier_queue": 0.003,
+      "verifier_execution": 137.081,
+      "policy_decision": 138.694,
+      "candidate_identity": 1.624,
+      "cache_lookup": 172.242
+    },
+    "gateway_latency_ms": 172.71,
+    "http_latency_ms": 177.747
+  },
+  {
+    "variant": "combined",
+    "family": "npm_token",
+    "query": "How can I rotate NPM token `BuildToken` in stage?",
+    "label": "valid",
+    "suitable_queries": [
+      "How do I rotate NPM token `BuildToken` in staging?"
+    ],
+    "retrieved_suitable_ranks": [
+      1
+    ],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "HIT",
+    "selected_cached_query": "How do I rotate NPM token `BuildToken` in staging?",
+    "valid_reuse": true,
+    "incorrect_accept": false,
+    "provider_invoked": false,
+    "provider": "cache",
+    "reason": "answer_accept:answer_entailment",
+    "candidate_count": 3,
+    "selected_rank": 1,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.9181,
+        "action": "ACCEPT",
+        "reason": "answer_entailment",
+        "verifier_status": "scored",
+        "nli_score": 0.9941961765289307,
+        "elapsed_ms": 111.482
+      },
+      {
+        "rank": 2,
+        "similarity": 0.9181,
+        "action": "REJECT",
+        "reason": "technical_identifier_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.262
+      },
+      {
+        "rank": 3,
+        "similarity": 0.6518,
+        "action": "VERIFY",
+        "reason": "applicability_action_missing",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.507
+      }
+    ],
+    "similarity": 0.9180532097816,
+    "stage_latency_ms": {
+      "exact_lookup": 1.179,
+      "embedding_queue": 0.005,
+      "embedding_execution": 18.94,
+      "embedding": 18.99,
+      "retrieval": 3.224,
+      "structural_check": 1.317,
+      "verifier_queue": 0.003,
+      "verifier_execution": 110.836,
+      "policy_decision": 112.272,
+      "candidate_identity": 1.667,
+      "cache_lookup": 138.958
+    },
+    "gateway_latency_ms": 139.42,
+    "http_latency_ms": 144.975
+  },
+  {
+    "variant": "combined",
+    "family": "npm_token",
+    "query": "How do I revoke NPM token `BuildToken` in staging?",
+    "label": "valid",
+    "suitable_queries": [
+      "How do I revoke NPM token `BuildToken` in staging?"
+    ],
+    "retrieved_suitable_ranks": [
+      1
+    ],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "HIT",
+    "selected_cached_query": "How do I revoke NPM token `BuildToken` in staging?",
+    "valid_reuse": true,
+    "incorrect_accept": false,
+    "provider_invoked": false,
+    "provider": "cache",
+    "reason": "exact_match",
+    "candidate_count": 1,
+    "selected_rank": 1,
+    "candidate_trace": [],
+    "similarity": 1.0,
+    "stage_latency_ms": {
+      "exact_lookup": 4.306,
+      "cache_lookup": 4.413
+    },
+    "gateway_latency_ms": 4.86,
+    "http_latency_ms": 9.558
+  },
+  {
+    "variant": "combined",
+    "family": "npm_token",
+    "query": "How do I rotate NPM token `BUILDTOKEN` in staging?",
+    "label": "invalid",
+    "suitable_queries": [],
+    "retrieved_suitable_ranks": [],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": null,
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_reject:technical_identifier_conflict",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 1.0,
+        "action": "REJECT",
+        "reason": "technical_identifier_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.333
+      },
+      {
+        "rank": 2,
+        "similarity": 1.0,
+        "action": "REJECT",
+        "reason": "technical_identifier_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.25
+      },
+      {
+        "rank": 3,
+        "similarity": 0.7644,
+        "action": "REJECT",
+        "reason": "technical_identifier_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.232
+      }
+    ],
+    "similarity": 1.0000001192092896,
+    "stage_latency_ms": {
+      "exact_lookup": 2.122,
+      "embedding_queue": 0.005,
+      "embedding_execution": 29.428,
+      "embedding": 29.491,
+      "retrieval": 10.646,
+      "structural_check": 0.789,
+      "policy_decision": 0.836,
+      "cache_lookup": 43.324,
+      "admission": 0.072,
+      "provider": 20.193,
+      "cache_write": 55.73
+    },
+    "gateway_latency_ms": 119.89,
+    "http_latency_ms": 127.429
+  },
+  {
+    "variant": "combined",
+    "family": "npm_token",
+    "query": "How do I rotate the NPM token in staging?",
+    "label": "ambiguous",
+    "suitable_queries": [],
+    "retrieved_suitable_ranks": [],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": null,
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_verify:technical_identity_uncertain",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.8988,
+        "action": "VERIFY",
+        "reason": "technical_identity_uncertain",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.301
+      },
+      {
+        "rank": 2,
+        "similarity": 0.8988,
+        "action": "VERIFY",
+        "reason": "technical_identity_uncertain",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.215
+      },
+      {
+        "rank": 3,
+        "similarity": 0.614,
+        "action": "VERIFY",
+        "reason": "technical_identity_uncertain",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.22
+      }
+    ],
+    "similarity": 0.898768007755,
+    "stage_latency_ms": {
+      "exact_lookup": 0.978,
+      "embedding_queue": 0.004,
+      "embedding_execution": 16.907,
+      "embedding": 16.951,
+      "retrieval": 3.234,
+      "structural_check": 0.716,
+      "policy_decision": 0.754,
+      "cache_lookup": 22.079,
+      "admission": 0.068,
+      "provider": 7.482,
+      "cache_write": 34.068
+    },
+    "gateway_latency_ms": 64.17,
+    "http_latency_ms": 69.287
+  },
+  {
+    "variant": "combined",
+    "family": "http_retry",
+    "query": "What is the way to configure 3 retries with a 5 second timeout for HTTP POST /orders?",
+    "label": "valid",
+    "suitable_queries": [
+      "How do I set retry 3 times and timeout 5 seconds for HTTP POST /orders?"
+    ],
+    "retrieved_suitable_ranks": [
+      1
+    ],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": null,
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_verify:technical_quantity_binding_uncertain",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.896,
+        "action": "VERIFY",
+        "reason": "technical_quantity_binding_uncertain",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.649
+      },
+      {
+        "rank": 2,
+        "similarity": 0.8958,
+        "action": "REJECT",
+        "reason": "technical_quantity_binding_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.167
+      },
+      {
+        "rank": 3,
+        "similarity": 0.8417,
+        "action": "VERIFY",
+        "reason": "technical_quantity_binding_uncertain",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.17
+      }
+    ],
+    "similarity": 0.895950913429,
+    "stage_latency_ms": {
+      "exact_lookup": 1.095,
+      "embedding_queue": 0.004,
+      "embedding_execution": 39.794,
+      "embedding": 39.848,
+      "retrieval": 4.621,
+      "structural_check": 0.964,
+      "policy_decision": 1.004,
+      "cache_lookup": 46.821,
+      "admission": 0.104,
+      "provider": 11.256,
+      "cache_write": 58.184
+    },
+    "gateway_latency_ms": 116.9,
+    "http_latency_ms": 121.805
+  },
+  {
+    "variant": "combined",
+    "family": "http_retry",
+    "query": "How can I set retry 3 times and timeout 5 seconds for HTTP POST /orders?",
+    "label": "valid",
+    "suitable_queries": [
+      "How do I set retry 3 times and timeout 5 seconds for HTTP POST /orders?"
+    ],
+    "retrieved_suitable_ranks": [
+      1
+    ],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "HIT",
+    "selected_cached_query": "How do I set retry 3 times and timeout 5 seconds for HTTP POST /orders?",
+    "valid_reuse": true,
+    "incorrect_accept": false,
+    "provider_invoked": false,
+    "provider": "cache",
+    "reason": "answer_accept:answer_entailment",
+    "candidate_count": 3,
+    "selected_rank": 1,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.9985,
+        "action": "ACCEPT",
+        "reason": "answer_entailment",
+        "verifier_status": "scored",
+        "nli_score": 0.9932332634925842,
+        "elapsed_ms": 154.647
+      },
+      {
+        "rank": 2,
+        "similarity": 0.9931,
+        "action": "REJECT",
+        "reason": "technical_quantity_binding_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.216
+      },
+      {
+        "rank": 3,
+        "similarity": 0.9278,
+        "action": "REJECT",
+        "reason": "applicability_http_method_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.595
+      }
+    ],
+    "similarity": 0.99846392869949,
+    "stage_latency_ms": {
+      "exact_lookup": 1.041,
+      "embedding_queue": 0.004,
+      "embedding_execution": 23.749,
+      "embedding": 23.797,
+      "retrieval": 31.332,
+      "structural_check": 1.86,
+      "verifier_queue": 0.003,
+      "verifier_execution": 153.424,
+      "policy_decision": 155.48,
+      "candidate_identity": 1.731,
+      "cache_lookup": 214.766
+    },
+    "gateway_latency_ms": 215.29,
+    "http_latency_ms": 220.125
+  },
+  {
+    "variant": "combined",
+    "family": "http_retry",
+    "query": "How do I set retry 3 times and timeout 5 seconds for HTTP GET /orders?",
+    "label": "valid",
+    "suitable_queries": [
+      "How do I set retry 3 times and timeout 5 seconds for HTTP GET /orders?"
+    ],
+    "retrieved_suitable_ranks": [
+      1
+    ],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "HIT",
+    "selected_cached_query": "How do I set retry 3 times and timeout 5 seconds for HTTP GET /orders?",
+    "valid_reuse": true,
+    "incorrect_accept": false,
+    "provider_invoked": false,
+    "provider": "cache",
+    "reason": "exact_match",
+    "candidate_count": 1,
+    "selected_rank": 1,
+    "candidate_trace": [],
+    "similarity": 1.0,
+    "stage_latency_ms": {
+      "exact_lookup": 3.319,
+      "cache_lookup": 3.436
+    },
+    "gateway_latency_ms": 3.79,
+    "http_latency_ms": 8.453
+  },
+  {
+    "variant": "combined",
+    "family": "http_retry",
+    "query": "How do I set retry 5 times and timeout 5 seconds for HTTP POST /orders?",
+    "label": "invalid",
+    "suitable_queries": [],
+    "retrieved_suitable_ranks": [],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": null,
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_reject:number_mismatch",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.984,
+        "action": "REJECT",
+        "reason": "number_mismatch",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.052
+      },
+      {
+        "rank": 2,
+        "similarity": 0.9695,
+        "action": "REJECT",
+        "reason": "number_mismatch",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.028
+      },
+      {
+        "rank": 3,
+        "similarity": 0.9031,
+        "action": "REJECT",
+        "reason": "number_mismatch",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.021
+      }
+    ],
+    "similarity": 0.9840307831764,
+    "stage_latency_ms": {
+      "exact_lookup": 1.075,
+      "embedding_queue": 0.004,
+      "embedding_execution": 35.049,
+      "embedding": 35.115,
+      "retrieval": 4.392,
+      "structural_check": 0.087,
+      "policy_decision": 0.117,
+      "cache_lookup": 40.9,
+      "admission": 0.074,
+      "provider": 10.734,
+      "cache_write": 79.324
+    },
+    "gateway_latency_ms": 131.53,
+    "http_latency_ms": 136.197
+  },
+  {
+    "variant": "combined",
+    "family": "http_retry",
+    "query": "How do I configure retries for HTTP POST /orders?",
+    "label": "ambiguous",
+    "suitable_queries": [],
+    "retrieved_suitable_ranks": [],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": null,
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_reject:number_mismatch",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.6081,
+        "action": "REJECT",
+        "reason": "number_mismatch",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.05
+      },
+      {
+        "rank": 2,
+        "similarity": 0.6021,
+        "action": "REJECT",
+        "reason": "number_mismatch",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.024
+      },
+      {
+        "rank": 3,
+        "similarity": 0.5418,
+        "action": "REJECT",
+        "reason": "number_mismatch",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.019
+      }
+    ],
+    "similarity": 0.608100175858,
+    "stage_latency_ms": {
+      "exact_lookup": 0.935,
+      "embedding_queue": 0.004,
+      "embedding_execution": 29.021,
+      "embedding": 29.067,
+      "retrieval": 4.395,
+      "structural_check": 0.08,
+      "policy_decision": 0.11,
+      "cache_lookup": 34.668,
+      "admission": 0.072,
+      "provider": 9.978,
+      "cache_write": 32.012
+    },
+    "gateway_latency_ms": 77.24,
+    "http_latency_ms": 82.073
+  },
+  {
+    "variant": "combined",
+    "family": "helm_namespace",
+    "query": "How can I plan the Helm release atlas for namespace red?",
+    "label": "valid",
+    "suitable_queries": [
+      "How do I preview Helm release atlas in namespace red?"
+    ],
+    "retrieved_suitable_ranks": [
+      2
+    ],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": null,
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_reject:answer_contradiction_or_irrelevance",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.8683,
+        "action": "REJECT",
+        "reason": "answer_contradiction_or_irrelevance",
+        "verifier_status": "scored",
+        "nli_score": 0.1342545449733734,
+        "elapsed_ms": 120.554
+      },
+      {
+        "rank": 2,
+        "similarity": 0.8272,
+        "action": "REJECT",
+        "reason": "answer_contradiction_or_irrelevance",
+        "verifier_status": "scored",
+        "nli_score": 0.14789140224456787,
+        "elapsed_ms": 96.713
+      },
+      {
+        "rank": 3,
+        "similarity": 0.7487,
+        "action": "REJECT",
+        "reason": "applicability_named_namespace_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.514
+      }
+    ],
+    "similarity": 0.86833268404,
+    "stage_latency_ms": {
+      "exact_lookup": 1.085,
+      "embedding_queue": 0.004,
+      "embedding_execution": 18.384,
+      "embedding": 18.435,
+      "retrieval": 3.421,
+      "structural_check": 1.885,
+      "verifier_queue": 0.006,
+      "verifier_execution": 215.703,
+      "policy_decision": 217.8,
+      "cache_lookup": 240.906,
+      "admission": 0.061,
+      "provider": 10.317,
+      "cache_write": 29.156
+    },
+    "gateway_latency_ms": 280.93,
+    "http_latency_ms": 285.906
+  },
+  {
+    "variant": "combined",
+    "family": "helm_namespace",
+    "query": "What is the way to preview Helm release atlas in namespace red?",
+    "label": "valid",
+    "suitable_queries": [
+      "How do I preview Helm release atlas in namespace red?"
+    ],
+    "retrieved_suitable_ranks": [
+      1
+    ],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": null,
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_verify:uncertain_answer",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.9926,
+        "action": "VERIFY",
+        "reason": "uncertain_answer",
+        "verifier_status": "scored",
+        "nli_score": 0.8241917490959167,
+        "elapsed_ms": 118.027
+      },
+      {
+        "rank": 2,
+        "similarity": 0.9246,
+        "action": "REJECT",
+        "reason": "applicability_named_namespace_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.615
+      },
+      {
+        "rank": 3,
+        "similarity": 0.8569,
+        "action": "REJECT",
+        "reason": "answer_contradiction_or_irrelevance",
+        "verifier_status": "scored",
+        "nli_score": 0.02811644971370697,
+        "elapsed_ms": 150.225
+      }
+    ],
+    "similarity": 0.99258941411972,
+    "stage_latency_ms": {
+      "exact_lookup": 1.023,
+      "embedding_queue": 0.006,
+      "embedding_execution": 17.149,
+      "embedding": 17.209,
+      "retrieval": 3.609,
+      "structural_check": 1.906,
+      "verifier_queue": 0.006,
+      "verifier_execution": 266.765,
+      "policy_decision": 268.891,
+      "cache_lookup": 290.904,
+      "admission": 0.074,
+      "provider": 27.926,
+      "cache_write": 42.893
+    },
+    "gateway_latency_ms": 362.36,
+    "http_latency_ms": 367.472
+  },
+  {
+    "variant": "combined",
+    "family": "helm_namespace",
+    "query": "How can I release Helm atlas to namespace red?",
+    "label": "valid",
+    "suitable_queries": [
+      "How do I deploy Helm release atlas in namespace red?"
+    ],
+    "retrieved_suitable_ranks": [
+      1
+    ],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": null,
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "conflicting_accepted_answers",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.916,
+        "action": "ACCEPT",
+        "reason": "answer_entailment",
+        "verifier_status": "scored",
+        "nli_score": 0.9575140476226807,
+        "elapsed_ms": 96.738
+      },
+      {
+        "rank": 2,
+        "similarity": 0.8595,
+        "action": "ACCEPT",
+        "reason": "answer_entailment",
+        "verifier_status": "scored",
+        "nli_score": 0.9094990491867065,
+        "elapsed_ms": 112.008
+      },
+      {
+        "rank": 3,
+        "similarity": 0.7794,
+        "action": "REJECT",
+        "reason": "applicability_named_namespace_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.583
+      }
+    ],
+    "similarity": null,
+    "stage_latency_ms": {
+      "exact_lookup": 1.024,
+      "embedding_queue": 0.004,
+      "embedding_execution": 17.767,
+      "embedding": 17.815,
+      "retrieval": 3.27,
+      "structural_check": 1.786,
+      "verifier_queue": 0.007,
+      "verifier_execution": 207.358,
+      "policy_decision": 209.354,
+      "cache_lookup": 231.632,
+      "admission": 0.077,
+      "provider": 9.802,
+      "cache_write": 31.037
+    },
+    "gateway_latency_ms": 273.11,
+    "http_latency_ms": 278.131
+  },
+  {
+    "variant": "combined",
+    "family": "helm_namespace",
+    "query": "How do I preview Helm release atlas in namespace green?",
+    "label": "invalid",
+    "suitable_queries": [],
+    "retrieved_suitable_ranks": [],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": null,
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_reject:applicability_named_namespace_conflict",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.9183,
+        "action": "REJECT",
+        "reason": "applicability_named_namespace_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.618
+      },
+      {
+        "rank": 2,
+        "similarity": 0.9157,
+        "action": "REJECT",
+        "reason": "applicability_named_namespace_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.608
+      },
+      {
+        "rank": 3,
+        "similarity": 0.7868,
+        "action": "REJECT",
+        "reason": "applicability_named_namespace_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.715
+      }
+    ],
+    "similarity": 0.9183492064476,
+    "stage_latency_ms": {
+      "exact_lookup": 1.122,
+      "embedding_queue": 0.004,
+      "embedding_execution": 17.326,
+      "embedding": 17.374,
+      "retrieval": 3.398,
+      "structural_check": 1.918,
+      "policy_decision": 1.96,
+      "cache_lookup": 24.025,
+      "admission": 0.068,
+      "provider": 7.491,
+      "cache_write": 27.404
+    },
+    "gateway_latency_ms": 59.48,
+    "http_latency_ms": 65.146
+  },
+  {
+    "variant": "combined",
+    "family": "helm_namespace",
+    "query": "How do I preview Helm release atlas?",
+    "label": "ambiguous",
+    "suitable_queries": [],
+    "retrieved_suitable_ranks": [],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": null,
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_verify:applicability_named_namespace_missing",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.8809,
+        "action": "VERIFY",
+        "reason": "applicability_named_namespace_missing",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.554
+      },
+      {
+        "rank": 2,
+        "similarity": 0.8786,
+        "action": "VERIFY",
+        "reason": "applicability_named_namespace_missing",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.518
+      },
+      {
+        "rank": 3,
+        "similarity": 0.6962,
+        "action": "VERIFY",
+        "reason": "applicability_named_namespace_missing",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.428
+      }
+    ],
+    "similarity": 0.880907773972,
+    "stage_latency_ms": {
+      "exact_lookup": 1.171,
+      "embedding_queue": 0.005,
+      "embedding_execution": 18.74,
+      "embedding": 18.8,
+      "retrieval": 4.211,
+      "structural_check": 1.464,
+      "policy_decision": 1.519,
+      "cache_lookup": 25.878,
+      "admission": 0.07,
+      "provider": 8.536,
+      "cache_write": 30.824
+    },
+    "gateway_latency_ms": 65.8,
+    "http_latency_ms": 70.952
+  }
+]

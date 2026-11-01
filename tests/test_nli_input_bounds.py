@@ -3,6 +3,7 @@
 from types import SimpleNamespace
 
 import numpy as np
+import pytest
 
 from app.cache.verifier import NliVerifier, verifier_scope
 
@@ -49,6 +50,7 @@ def test_combined_pair_at_boundary_is_scored_without_truncation() -> None:
     assert result.status == "ok"
     assert result.input_tokens == WINDOW
     assert result.score is not None and result.score > HIGH_ENTAILMENT
+    assert result.score == pytest.approx(float(np.exp(4) / (1 + np.exp(4))))
     assert verifier.model.predict_calls == 1
 
 

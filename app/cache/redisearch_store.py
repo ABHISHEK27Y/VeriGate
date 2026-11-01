@@ -174,14 +174,18 @@ async def knn(vec: np.ndarray, tenant: str, k: int = 1, *, include_key: bool = F
             "DIALECT",
             2,
         )
+        keys = res[1::2]
+        async with r.pipeline(transaction=False) as pipe:
+            for key in keys:
+                pipe.hgetall(key)
+            rows = await pipe.execute()
         out = []
-        for i in range(1, len(res), 2):
+        for i, row in enumerate(rows):
             # Confirm existence after search; a concurrent TTL/clear cannot revive stale answers.
-            key = res[i]
-            row = await r.hgetall(key)
+            key = keys[i]
             if not row:
                 continue
-            fields = res[i + 1]
+            fields = res[2 * i + 2]
             values = dict(zip(fields[::2], fields[1::2], strict=True))
             # A hash can change after FT.SEARCH computed its score. Do not pair
             # that score with a different question or answer from the hash.

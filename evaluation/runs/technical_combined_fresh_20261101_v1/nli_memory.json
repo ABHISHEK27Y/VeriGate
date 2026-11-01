@@ -1,0 +1,10 @@
+{
+  "schema": "nli-prewarm-rss-v1",
+  "model": "cross-encoder/nli-deberta-v3-xsmall",
+  "revision": "a150876415327c80daeff35ca6f68f5ed8cf5c24",
+  "rss_after_import_bytes": 53776384,
+  "rss_after_prewarm_bytes": 734654464,
+  "delta_bytes": 680878080,
+  "prewarm_ms": 30598.879599943757,
+  "scope": "one process RSS delta; task classifier untrained and unmeasured"
+}

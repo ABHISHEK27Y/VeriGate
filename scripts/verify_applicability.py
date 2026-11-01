@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,12 +28,24 @@ def verify() -> None:  # noqa: PLR0912 - explicit artifact checks
         raise ValueError("Answer-policy artifact changed")
     if manifest["workload_sha256"] != freeze["workload_sha256"]:
         raise ValueError("Results do not match frozen input")
-    for path, key in (
-        (ROOT / "scripts/evaluate_applicability.py", "evaluation_source_sha256"),
-        (ROOT / "app/cache/applicability.py", "experimental_guard_sha256"),
-    ):
-        if digest(path) != manifest[key]:
-            raise ValueError(f"Source changed: {path.name}")
+    evaluator = ROOT / "scripts/evaluate_applicability.py"
+    if digest(evaluator) != manifest["evaluation_source_sha256"]:
+        raise ValueError("Historical evaluator changed")
+    # The guard is under active development. Validate the original saved run
+    # against the guard bytes at its frozen commit, never against today's code.
+    old_guard = subprocess.run(  # noqa: S603 - fixed git executable and path
+        [
+            "git",
+            "-C",
+            str(ROOT),
+            "show",
+            f"{manifest['frozen_input_commit']}:app/cache/applicability.py",
+        ],
+        check=True,
+        capture_output=True,
+    ).stdout
+    if hashlib.sha256(old_guard).hexdigest() != manifest["experimental_guard_sha256"]:
+        raise ValueError("Frozen historical guard source changed")
     for name, expected in manifest["outputs"].items():
         if Path(name).name != name or digest(RUN / "results" / name) != expected:
             raise ValueError(f"Saved result changed: {name}")

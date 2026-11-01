@@ -15,6 +15,7 @@ from typing import Literal
 
 from ..embeddings import tokenize
 from .applicability import assess as assess_applicability
+from .reuse_verifier import TaskReuseVerifier
 from .subject_identity import conflicting_named_work
 from .technical_identity import compare as compare_technical_identity
 from .technical_identity import normalized_for_numbers
@@ -85,17 +86,16 @@ class AnswerPolicy:
         terms = tuple(str(term).casefold() for term in raw["ambiguity_terms"])
         return cls(raw["model"], raw["revision"], accept, reject, minimum, version, terms)
 
-    def decide(  # noqa: PLR0911, PLR0912, PLR0913, PLR0917 - shared live/replay decision
+    def precheck(  # noqa: PLR0911, PLR0912, PLR0913, PLR0917 - bounded structural checks
         self,
         incoming: str,
         stored: str,
         answer: str,
         similarity: float,
-        verifier: NliVerifier,
         subject_guard: bool = True,
         technical_guard: bool = False,
         applicability_guard: bool = False,
-    ) -> AnswerDecision:
+    ) -> AnswerDecision | None:
         if (
             not answer.strip()
             or not math.isfinite(similarity)
@@ -149,6 +149,41 @@ class AnswerPolicy:
         text = f"{incoming} {stored}".casefold()
         if any(term in text for term in self.ambiguity_terms):
             return AnswerDecision("VERIFY", "ambiguous_context", None)
+        return None
+
+    def decide(  # noqa: PLR0911, PLR0913, PLR0917 - fail-closed decisions
+        self,
+        incoming: str,
+        stored: str,
+        answer: str,
+        similarity: float,
+        verifier: NliVerifier | TaskReuseVerifier,
+        subject_guard: bool = True,
+        technical_guard: bool = False,
+        applicability_guard: bool = False,
+        prechecked: bool = False,
+    ) -> AnswerDecision:
+        if not prechecked and (
+            decision := self.precheck(
+                incoming,
+                stored,
+                answer,
+                similarity,
+                subject_guard,
+                technical_guard,
+                applicability_guard,
+            )
+        ):
+            return decision
+        if isinstance(verifier, TaskReuseVerifier):
+            assessment = verifier.assess_reuse(stored, answer, incoming)
+            if assessment.status == "too_long":
+                return AnswerDecision("VERIFY", "context_too_long", None)
+            if assessment.status != "ok" or assessment.score is None:
+                return AnswerDecision("VERIFY", "verifier_unavailable", None)
+            if assessment.score >= verifier.accept_at:
+                return AnswerDecision("ACCEPT", "task_reuse_classifier", assessment.score)
+            return AnswerDecision("VERIFY", "task_reuse_abstention", assessment.score)
         premise = f"The answer to {stored} is {answer}."
         hypothesis = f"The answer to {incoming} is {answer}."
         assess = getattr(verifier, "assess", None)

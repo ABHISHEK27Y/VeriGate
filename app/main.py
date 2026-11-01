@@ -86,7 +86,7 @@ async def lifespan(app: FastAPI):  # noqa: PLR0915
         app.state.semantic_cache = SemanticCache(app.state.redis, app.state.model)
         app.state.cache = app.state.semantic_cache
         app.state.index = app.state.cache._index
-        app.state.verifier = app.state.cache._policy.verifier
+        app.state.verifier = app.state.cache.answer_verifier
         app.state.organization_directory = OrganizationDirectory(get_settings())
         app.state.provider_registry = (
             ProviderRegistry.from_settings(app.state.redis) if get_settings().api_key_set else None
@@ -117,7 +117,7 @@ async def lifespan(app: FastAPI):  # noqa: PLR0915
             and get_settings().answer_policy_artifact
             and get_settings().answer_policy_prewarm
         ):
-            await asyncio.to_thread(app.state.semantic_cache._policy.verifier.prewarm)
+            await asyncio.to_thread(app.state.semantic_cache.answer_verifier.prewarm)
         if (
             get_settings().vector_backend == "redisearch"
             and get_settings().cache_match_mode == "semantic"
@@ -618,7 +618,7 @@ async def _health_details(request: Request) -> dict:
     )
     if missing_profiles:
         raise HTTPException(status_code=503, detail="provider profile unavailable")
-    answer_verifier = request.app.state.semantic_cache._policy.verifier
+    answer_verifier = request.app.state.semantic_cache.answer_verifier
     if request.app.state.semantic_cache._answer_policy and (
         answer_verifier.unavailable
         or (get_settings().answer_policy_prewarm and not answer_verifier.prewarmed)
@@ -640,6 +640,9 @@ async def _health_details(request: Request) -> dict:
             else None
         ),
         "answer_policy_prewarm": answer_verifier.prewarmed,
+        "answer_verifier_kind": (
+            "task_reuse_experimental" if get_settings().reuse_verifier_artifact else "pinned_nli"
+        ),
         "answer_policy_applicability_guard": (
             bool(request.app.state.semantic_cache._answer_policy)
             and get_settings().cache_match_mode == "semantic"
@@ -758,6 +761,8 @@ async def chat(  # noqa: PLR0915 - main gateway request path
             if get_settings().llm_provider == "controlled-eval"
             else None,
             nli_score=result.nli_score,
+            explanation_rank=result.explanation_rank,
+            top_retrieved_similarity=result.top_retrieved_similarity,
             verifier_invoked=result.verifier_invoked,
             stage_latency_ms={**result.stage_latency_ms, **stage_ms},
             organization_id=None if principal.legacy else principal.organization_id,
@@ -876,9 +881,11 @@ async def chat(  # noqa: PLR0915 - main gateway request path
         threshold=result.threshold,
         similarity=result.similarity,
         note=f"coalesced:{result.reason}" if joined else result.reason,
-        selected_cached_query=result.cached_query
+        explanation_cached_query=result.cached_query
         if get_settings().llm_provider == "controlled-eval"
         else None,
+        explanation_rank=result.explanation_rank,
+        top_retrieved_similarity=result.top_retrieved_similarity,
         nli_score=result.nli_score,
         verifier_invoked=result.verifier_invoked,
         stage_latency_ms={**result.stage_latency_ms, **stage_ms},

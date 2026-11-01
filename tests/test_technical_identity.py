@@ -75,5 +75,35 @@ def test_extraction_uncertainty_abstains_and_unrelated_questions_pass() -> None:
     )
     assert compare("Who founded Eastmere?", "Who established Eastmere?") is None
     assert extract("How do I update `CACHE_MATCH_MODE=exact` in Redis?").identifiers == frozenset(
-        {"cache_match_mode=exact"}
+        {"CACHE_MATCH_MODE=exact"}
     )
+
+
+@pytest.mark.parametrize(
+    ("stored", "incoming", "reason"),
+    [
+        ("How do I use `ConfigID`?", "How can I use `configID`?", "technical_identifier_conflict"),
+        (
+            "How do I read /etc/App/config?",
+            "How can I read /etc/app/config?",
+            "technical_identifier_conflict",
+        ),
+        ("How do I pass --NoCache?", "How can I pass --nocache?", "technical_identifier_conflict"),
+        (
+            "How do I set `alpha beta`?",
+            "How can I set `alphabeta`?",
+            "technical_identity_uncertain",
+        ),
+        (
+            'How do I set "alpha beta"?',
+            'How can I set "alphabeta"?',
+            "technical_identity_uncertain",
+        ),
+    ],
+)
+def test_code_and_literal_identity_preserves_case_and_spaces(stored, incoming, reason):
+    assert compare(incoming, stored) == reason
+
+
+def test_unchanged_case_sensitive_identifier_survives_paraphrase() -> None:
+    assert compare("How can I use `ConfigID`?", "How do I use `ConfigID`?") is None

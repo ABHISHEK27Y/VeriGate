@@ -35,6 +35,7 @@ from . import storage
 from .answer_policy import AnswerPolicy
 from .namespace import namespace
 from .policy import CachePolicy
+from .reuse_verifier import TaskReuseVerifier
 from .verifier import NliVerifier, verifier_scope
 from .volatility import is_volatile
 
@@ -54,6 +55,8 @@ class LookupResult:
     verifier_invoked: bool = False
     candidate_count: int = 0
     selected_rank: int | None = None
+    explanation_rank: int | None = None
+    top_retrieved_similarity: float | None = None
     stage_latency_ms: dict[str, float] = field(default_factory=dict)
     candidate_trace: tuple[dict[str, object], ...] = ()
 
@@ -78,6 +81,7 @@ class SemanticCache:
             use_nli=get_settings().verifier_nli,
             verifier=NliVerifier(),
         )
+        self._task_verifier: TaskReuseVerifier | None = None
         artifact = get_settings().answer_policy_artifact
         policy_bytes = Path(artifact).read_bytes() if artifact else None
         self._answer_policy = AnswerPolicy.load_bytes(policy_bytes) if policy_bytes else None
@@ -89,6 +93,21 @@ class SemanticCache:
             or self._answer_policy.revision != get_settings().nli_revision
         ):
             raise ValueError("Answer policy artifact and runtime NLI model differ")
+        reuse_artifact = get_settings().reuse_verifier_artifact
+        if reuse_artifact:
+            if (
+                self._answer_policy is None
+                or get_settings().cache_match_mode != "semantic"
+                or not get_settings().answer_policy_prewarm
+            ):
+                raise ValueError("Task reuse verifier requires semantic policy and prewarming")
+            self._task_verifier = TaskReuseVerifier(Path(reuse_artifact))
+            if isinstance(runtime, RuntimeSettings):
+                runtime._reuse_verifier_sha256 = self._task_verifier.identity
+
+    @property
+    def answer_verifier(self) -> NliVerifier | TaskReuseVerifier:
+        return self._task_verifier or self._policy.verifier
 
     # ------------------------------------------------------------------ #
     # Internal helpers
@@ -436,6 +455,8 @@ class SemanticCache:
                 cached_query=query,
                 candidate_count=1,
                 selected_rank=1,
+                explanation_rank=1,
+                top_retrieved_similarity=1.0,
                 stage_latency_ms=stage_ms,
             )
         if semantic_row and semantic_row.get("query") == query:
@@ -469,6 +490,7 @@ class SemanticCache:
                 status="MISS", similarity=None, reason="empty_cache", stage_latency_ms=stage_ms
             )
         count = len(candidates)
+        top_similarity = candidates[0][1]
         exact = [
             (rank, candidate, sim)
             for rank, (candidate, sim) in enumerate(candidates, 1)
@@ -480,6 +502,7 @@ class SemanticCache:
                     status="MISS",
                     reason="conflicting_exact_entries",
                     candidate_count=count,
+                    top_retrieved_similarity=top_similarity,
                     stage_latency_ms=stage_ms,
                 )
             rank, best, sim = exact[0]
@@ -504,21 +527,40 @@ class SemanticCache:
                     break
                 decision_started = time.perf_counter()
                 try:
-                    decision = await asyncio.wait_for(
-                        self._infer(
-                            self._answer_policy.decide,
-                            query,
-                            candidate["query"],
-                            candidate["answer"],
-                            score,
-                            self._policy.verifier,
-                            get_settings().answer_policy_subject_guard,
-                            get_settings().answer_policy_technical_guard,
-                            get_settings().answer_policy_applicability_guard,
-                            stage_ms=stage_ms,
-                        ),
-                        timeout=remaining,
+                    structural_started = time.perf_counter()
+                    decision = self._answer_policy.precheck(
+                        query,
+                        candidate["query"],
+                        candidate["answer"],
+                        score,
+                        get_settings().answer_policy_subject_guard,
+                        get_settings().answer_policy_technical_guard,
+                        get_settings().answer_policy_applicability_guard,
                     )
+                    structural_ms = (time.perf_counter() - structural_started) * 1000
+                    stage_ms["structural_check"] = round(
+                        stage_ms.get("structural_check", 0) + structural_ms, 3
+                    )
+                    if decision is None:
+                        remaining = deadline - time.perf_counter()
+                        if remaining <= 0:
+                            raise TimeoutError  # noqa: TRY301 - shared budget-exhaustion path
+                        decision = await asyncio.wait_for(
+                            self._infer(
+                                self._answer_policy.decide,
+                                query,
+                                candidate["query"],
+                                candidate["answer"],
+                                score,
+                                self.answer_verifier,
+                                get_settings().answer_policy_subject_guard,
+                                get_settings().answer_policy_technical_guard,
+                                get_settings().answer_policy_applicability_guard,
+                                True,
+                                stage_ms=stage_ms,
+                            ),
+                            timeout=remaining,
+                        )
                 except TimeoutError:
                     reason = "verification_budget_exhausted"
                     candidate_trace.append(
@@ -533,6 +575,7 @@ class SemanticCache:
                         }
                     )
                     break
+                assert decision is not None  # precheck or verifier produced one fail-closed action
                 decision_reason = f"answer_{decision.action.lower()}:{decision.reason}"
                 candidate_trace.append(
                     {
@@ -560,6 +603,7 @@ class SemanticCache:
                     # the trace still records the rank-one rejection.
                     reason = decision_reason
                     nli_score = decision.score
+                    rank, best, sim = candidate_rank, candidate, score
                 verifier_invoked |= decision.score is not None or decision.reason in {
                     "verifier_unavailable",
                     "context_too_long",
@@ -585,15 +629,22 @@ class SemanticCache:
         STAGE_LATENCY.labels(stage="policy_decision").observe(elapsed)
         stage_ms["policy_decision"] = round(elapsed * 1000, 3)
         if not hit:
+            global_reason = reason in {
+                "verification_budget_exhausted",
+                "verification_limit_exhausted",
+                "conflicting_accepted_answers",
+            }
             return LookupResult(
                 status="MISS",
                 threshold=threshold,
-                similarity=sim,
+                similarity=None if global_reason else sim,
                 reason=reason,
-                cached_query=best["query"],
-                nli_score=nli_score,
+                cached_query=None if global_reason else best["query"],
+                nli_score=None if global_reason else nli_score,
                 verifier_invoked=verifier_invoked,
                 candidate_count=count,
+                explanation_rank=None if global_reason else rank,
+                top_retrieved_similarity=top_similarity,
                 stage_latency_ms=stage_ms,
                 candidate_trace=tuple(candidate_trace),
             )
@@ -639,6 +690,8 @@ class SemanticCache:
             verifier_invoked=verifier_invoked,
             candidate_count=count,
             selected_rank=rank,
+            explanation_rank=rank,
+            top_retrieved_similarity=top_similarity,
             stage_latency_ms=stage_ms,
             candidate_trace=tuple(candidate_trace),
         )
@@ -717,7 +770,7 @@ class SemanticCache:
             return
         async with self._locks[hash(tenant) % len(self._locks)]:
             await self._clear(tenant)
-        await asyncio.to_thread(self._policy.verifier.purge_scope, tenant)
+        await asyncio.to_thread(self.answer_verifier.purge_scope, tenant)
 
     async def _clear(self, tenant: str | None = None) -> None:
         """Clear one tenant's cache, or ALL tenants when tenant is None."""

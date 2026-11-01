@@ -55,6 +55,9 @@ class ChatResponse(BaseModel):
     similarity: float | None = None
     note: str | None = None
     selected_cached_query: str | None = None
+    explanation_cached_query: str | None = None
+    explanation_rank: int | None = None
+    top_retrieved_similarity: float | None = None
     nli_score: float | None = None
     verifier_invoked: bool | None = None
     stage_latency_ms: dict[str, float] | None = None

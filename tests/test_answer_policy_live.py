@@ -372,6 +372,16 @@ async def test_redisearch_discards_hash_changed_after_search(monkeypatch) -> Non
     key = f"{rs._namespace()}:entry:{tenant}:one"
 
     class ChangingRedis:
+        def pipeline(self, *, transaction):
+            assert transaction is False
+            return self
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *_args):
+            return None
+
         async def execute_command(self, *_args):
             return [
                 1,
@@ -379,8 +389,11 @@ async def test_redisearch_discards_hash_changed_after_search(monkeypatch) -> Non
                 [b"query", b"Which city?", b"answer", b"Paris", b"score", b"0.1"],
             ]
 
-        async def hgetall(self, _key):
-            return {b"tenant": tenant.encode(), b"query": b"Which city?", b"answer": b"Berlin"}
+        def hgetall(self, _key):
+            return self
+
+        async def execute(self):
+            return [{b"tenant": tenant.encode(), b"query": b"Which city?", b"answer": b"Berlin"}]
 
         async def zadd(self, *_args, **_kwargs):
             raise AssertionError("changed candidate must not be touched")

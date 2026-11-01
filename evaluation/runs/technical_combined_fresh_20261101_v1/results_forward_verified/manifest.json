@@ -1,0 +1,66 @@
+{
+  "schema": "live-technical-combined-results-v1",
+  "workload_sha256": "54fa89246316b51345608aa27d9542757649d6877b35513a75eee046c904a492",
+  "policy_sha256": "f9d2365021192fe7a78c54a0d250e1c384f416ad3c1818b084c5b89cd276b6a2",
+  "source_sha256": "26d587641d277795cc207f6b238fe2ea07d68d2c3de5f100dbf5de1ce773bfc8",
+  "python": "3.13.2",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "redis_url": "redis://127.0.0.1:6380/0",
+  "provider": "controlled-eval; no paid calls",
+  "startup": {
+    "baseline": {
+      "startup_ms": 32804.486,
+      "readiness": {
+        "status": "ok",
+        "version": "0.1.0",
+        "redis": "real-redis",
+        "embedding_backend": "minilm",
+        "vector_backend": "redisearch",
+        "cache_enabled": true,
+        "cache_match_mode": "semantic",
+        "cache_ttl_sec": 3600,
+        "cache_policy_version": "token-diff-v2",
+        "answer_policy_version": "4e3733ec95ca",
+        "answer_policy_prewarm": true,
+        "answer_verifier_kind": "pinned_nli",
+        "answer_policy_applicability_guard": false,
+        "answer_verifier_state": "loaded",
+        "answer_verifier_failure": null,
+        "demo_restore_available": false,
+        "organization_demo_available": false,
+        "verifier_nli_enabled": false,
+        "provider_health": "configured_not_called",
+        "providers": [
+          "controlled-eval"
+        ]
+      }
+    },
+    "combined": {
+      "startup_ms": 32764.648,
+      "readiness": {
+        "status": "ok",
+        "version": "0.1.0",
+        "redis": "real-redis",
+        "embedding_backend": "minilm",
+        "vector_backend": "redisearch",
+        "cache_enabled": true,
+        "cache_match_mode": "semantic",
+        "cache_ttl_sec": 3600,
+        "cache_policy_version": "token-diff-v2",
+        "answer_policy_version": "4e3733ec95ca",
+        "answer_policy_prewarm": true,
+        "answer_verifier_kind": "pinned_nli",
+        "answer_policy_applicability_guard": true,
+        "answer_verifier_state": "loaded",
+        "answer_verifier_failure": null,
+        "demo_restore_available": false,
+        "organization_demo_available": false,
+        "verifier_nli_enabled": false,
+        "provider_health": "configured_not_called",
+        "providers": [
+          "controlled-eval"
+        ]
+      }
+    }
+  }
+}

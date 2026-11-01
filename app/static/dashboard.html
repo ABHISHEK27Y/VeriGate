@@ -290,12 +290,13 @@ footer{border-top:1px solid var(--line);padding:34px 0 60px;color:var(--faint);f
           <div><span>fallback used</span><b id="rfallback">—</b></div>
           <div><span>gateway time</span><b id="rlat">—</b></div>
           <div><span>browser HTTP time</span><b id="rhttp">—</b></div>
-          <div><span>similarity</span><b id="rsim">—</b></div>
+          <div><span>top retrieved similarity</span><b id="rtopsim">—</b></div>
+          <div><span>explained candidate similarity</span><b id="rsim">—</b></div>
           <div><span>threshold</span><b id="rthr">—</b></div>
           <div><span>authenticated identity</span><b id="ridentity">—</b></div>
           <div><span>effective scope</span><b id="rscope">—</b></div>
           <div><span>provider profile</span><b id="rprofile">—</b></div>
-          <div><span>candidates / selected rank</span><b id="rcandidates">—</b></div>
+          <div><span>candidates / selected rank / explanation rank</span><b id="rcandidates">—</b></div>
           <div><span>candidate decisions</span><b id="rstructure">—</b></div>
           <div><span>NLI model evidence</span><b id="rnli">—</b></div>
           <div><span>storage outcome</span><b id="rstorage">—</b></div>
@@ -392,9 +393,9 @@ async function health(){try{const r=await fetch("/health");if(!r.ok)throw new Er
   $("org-demo-note").hidden=!h.organization_demo_available;
   $("mode-banner").classList.toggle("semantic",answerAware);
   $("mode-label").textContent=answerAware?"Answer-aware semantic cache":h.cache_match_mode==="semantic"?"Semantic cache":"Exact cache";
-  $("mode-detail").textContent=answerAware?h.embedding_backend+" embeddings + NLI · applicability "+(h.answer_policy_applicability_guard?"experimental ON":"off")+" · "+(h.answer_policy_prewarm?"prewarmed":"lazy NLI")+" · "+(h.organization_demo_available?"mock organization profiles":"provider: "+(h.providers||[]).join(", ")):"Provider: "+(h.providers||[]).join(", ");
+  $("mode-detail").textContent=answerAware?h.embedding_backend+" embeddings + "+(h.answer_verifier_kind==="task_reuse_experimental"?"experimental task reuse verifier":"NLI")+" · applicability "+(h.answer_policy_applicability_guard?"experimental ON":"off")+" · "+(h.answer_policy_prewarm?"prewarmed":"lazy verifier")+" · "+(h.organization_demo_available?"mock organization profiles":"provider: "+(h.providers||[]).join(", ")):"Provider: "+(h.providers||[]).join(", ");
   $("cfg").innerHTML=[["matching",h.cache_match_mode],["policy",h.answer_policy_version||h.cache_policy_version],
-    ["answer-aware NLI",answerAware?"enabled":"off"],["applicability guard",h.answer_policy_applicability_guard?"experimental ON":"off"],["NLI prewarm",h.answer_policy_prewarm?"ready":"off"],["redis",h.redis],["vector index",h.vector_backend],["embeddings",h.embedding_backend],
+    ["answer verifier",answerAware?h.answer_verifier_kind:"off"],["applicability guard",h.answer_policy_applicability_guard?"experimental ON":"off"],["verifier prewarm",h.answer_policy_prewarm?"ready":"off"],["redis",h.redis],["vector index",h.vector_backend],["embeddings",h.embedding_backend],
     ["provider",(h.providers||[]).join(", ")]].map(([k,v])=>`<div class="c"><div class="k">${k}</div><div class="v">${v}</div></div>`).join("");
   $("stat").textContent=h.cache_match_mode+" · "+(h.providers||[]).join(",");
 }catch(e){$("stat").textContent="offline";$("mode-label").textContent="Gateway offline";}}
@@ -417,10 +418,11 @@ async function ask(exampleOptions={}){const q=$("query").value.trim();if(!q)retu
     $("rsource").textContent=d.provider==="cache"?(DEMO_ANSWERS.has(d.answer)?"matches seeded fixture":"cached answer"):(d.provider.startsWith("mock")?"mock placeholder":"generated answer");
     $("rupstream").textContent=d.provider==="cache"?"no":d.provider_invoked?"yes":"shared call";
     $("rintended").textContent=d.intended_provider||"—";$("rfallback").textContent=d.fallback_used?"yes":"no";$("rlat").textContent=(d.latency_ms??0)+" ms";$("rhttp").textContent=browserMs+" ms";
+    $("rtopsim").textContent=d.top_retrieved_similarity!=null?d.top_retrieved_similarity.toFixed(3):"—";
     $("rsim").textContent=d.similarity!=null?d.similarity.toFixed(3):"—";$("rthr").textContent=d.threshold!=null?d.threshold.toFixed(3):"—";
     $("ridentity").textContent=d.organization_id&&d.subject_id?d.organization_id+" / "+d.subject_id:"legacy private key";
     $("rscope").textContent=d.cache_scope||"—";$("rprofile").textContent=d.provider_profile||d.intended_provider||"—";
-    $("rcandidates").textContent=(d.candidate_count??"—")+" / "+(d.selected_rank??"—");
+    $("rcandidates").textContent=(d.candidate_count??"—")+" / "+(d.selected_rank??"—")+" / "+(d.explanation_rank??"—");
     $("rstructure").textContent=trace.map(c=>`#${c.rank} ${c.action} (${c.reason}; ${c.verifier_status}; ${c.elapsed_ms} ms)`).join(" · ")||"—";
     $("rnli").textContent=d.nli_score!=null?d.nli_score.toFixed(3)+" (model evidence)":d.verifier_invoked?"invoked; score unavailable":"not invoked";
     $("rstorage").textContent=d.storage_outcome||"—";$("rttl").textContent=configuredTtl!=null?configuredTtl+" s configured (not remaining TTL)":"—";

@@ -7,7 +7,7 @@ from pathlib import Path
 from ..config import RuntimeSettings, get_settings
 
 POLICY_VERSION = "token-diff-v2"
-ANSWER_POLICY_RUNTIME_VERSION = "9"
+ANSWER_POLICY_RUNTIME_VERSION = "10"
 
 
 def namespace() -> str:
@@ -33,6 +33,7 @@ def namespace() -> str:
         "cascade_threshold",
         "cache_match_mode",
         "answer_policy_artifact",
+        "reuse_verifier_artifact",
         "cache_similarity_base",
         "verifier_nli",
         "nli_model",
@@ -54,6 +55,14 @@ def namespace() -> str:
         selected["answer_policy_subject_guard"] = config["answer_policy_subject_guard"]
         selected["answer_policy_technical_guard"] = config["answer_policy_technical_guard"]
         selected["answer_policy_applicability_guard"] = config["answer_policy_applicability_guard"]
+        if config["reuse_verifier_artifact"]:
+            from .reuse_verifier import sha256_file  # noqa: PLC0415 - standalone fallback
+
+            selected["reuse_verifier_sha256"] = (
+                runtime._reuse_verifier_sha256
+                if isinstance(runtime, RuntimeSettings) and runtime._reuse_verifier_sha256
+                else sha256_file(Path(config["reuse_verifier_artifact"]))
+            )
     payload = json.dumps(selected, sort_keys=True)
     digest = hashlib.sha256(("schema-v3:" + POLICY_VERSION + ":" + payload).encode()).hexdigest()[
         :24

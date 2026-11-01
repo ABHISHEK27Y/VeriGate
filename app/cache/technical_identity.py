@@ -10,6 +10,8 @@ import re
 from dataclasses import dataclass
 
 from ..embeddings import tokenize
+from .action_features import ActionEvidence, extract_actions
+from .technical_constraints import compare_constraints
 
 _PRODUCT_ALIASES = {
     "postgres": "postgresql",
@@ -27,37 +29,6 @@ _PRODUCT_ALIASES = {
     "s3": "s3",
     "git": "git",
     "linux": "linux",
-}
-_ACTIONS = {
-    "create": "create",
-    "add": "create",
-    "delete": "delete",
-    "remove": "delete",
-    "drop": "delete",
-    "update": "update",
-    "change": "update",
-    "modify": "update",
-    "read": "read",
-    "get": "read",
-    "fetch": "read",
-    "enable": "enable",
-    "activate": "enable",
-    "disable": "disable",
-    "deactivate": "disable",
-    "install": "install",
-    "setup": "install",
-    "deploy": "deploy",
-    "release": "deploy",
-    "rollback": "rollback",
-    "revert": "rollback",
-    "backup": "backup",
-    "backups": "backup",
-    "restore": "restore",
-    "recover": "restore",
-    "restart": "restart",
-    "reboot": "restart",
-    "start": "start",
-    "stop": "stop",
 }
 _ENVIRONMENTS = {
     "production": "production",
@@ -78,7 +49,10 @@ _CONSTRAINTS = {
     "before": "before",
     "after": "after",
 }
-_CODE_ID = re.compile(r"`([^`]{1,80})`|\b[A-Z][A-Z0-9]*_[A-Z0-9_]+\b|--[a-z][\w-]+")
+_CODE_ID = re.compile(
+    r"`([^`]{1,80})`|\b[A-Z][A-Z0-9]*_[A-Z0-9_]+\b|--[A-Za-z][\w-]+|"
+    r"(?<!\w)(?:[A-Za-z]:\\|/)[^\s`'\"?]+|\"([^\"\n]{1,80})\"|'([^'\n]{1,80})'"
+)
 
 
 def normalized_for_numbers(question: str) -> str:
@@ -93,10 +67,13 @@ class TechnicalIdentity:
     environments: frozenset[str]
     constraints: frozenset[str]
     identifiers: frozenset[str]
+    opaque_identifiers: frozenset[str] = frozenset()
+    action_unknown: bool = False
+    action_evidence: tuple[ActionEvidence, ...] = ()
 
     @property
     def relevant(self) -> bool:
-        return bool(self.products or self.identifiers)
+        return bool(self.products or self.identifiers or self.opaque_identifiers)
 
 
 def extract(question: str) -> TechnicalIdentity:
@@ -108,32 +85,44 @@ def extract(question: str) -> TechnicalIdentity:
         for word in words
         if word in _PRODUCT_ALIASES and (word != "node" or "node.js" in question.casefold())
     )
-    identifiers = frozenset(
-        re.sub(r"\s+", "", match.group(0).strip("` ")).casefold()
-        for match in _CODE_ID.finditer(question)
-    )
-    actions = frozenset(_ACTIONS[word] for word in words if word in _ACTIONS)
-    # "Make a backup" and "make a branch" are generic auxiliaries; the
-    # explicit operation supplies the relation when one is present.
-    if "make" in words and not actions:
-        actions = frozenset({"create"})
+    identifiers: set[str] = set()
+    opaque: set[str] = set()
+    for match in _CODE_ID.finditer(question):
+        token = match.group(0)
+        if token.startswith("`"):
+            content = token[1:-1]
+            (opaque if any(char.isspace() for char in content) else identifiers).add(content)
+        elif token.startswith(('"', "'")):
+            opaque.add(token[1:-1])
+        else:
+            identifiers.add(token)
+    actions = extract_actions(question)
     return TechnicalIdentity(
         products,
-        actions,
+        actions.values,
         frozenset(_ENVIRONMENTS[word] for word in words if word in _ENVIRONMENTS),
         frozenset(_CONSTRAINTS[word] for word in words if word in _CONSTRAINTS),
-        identifiers,
+        frozenset(identifiers),
+        frozenset(opaque),
+        actions.unknown,
+        actions.evidence,
     )
 
 
-def compare(incoming: str, stored: str) -> str | None:
+def compare(incoming: str, stored: str) -> str | None:  # noqa: PLR0911
     """Return conflict/uncertainty reason, or None when NLI may assess reuse."""
+    if constraint_reason := compare_constraints(incoming, stored):
+        return constraint_reason
     left, right = extract(incoming), extract(stored)
     if not left.relevant and not right.relevant:
         return None
     if not left.relevant or not right.relevant:
         return "technical_identity_uncertain"
     if len(left.products) > 1 or len(right.products) > 1:
+        return "technical_identity_uncertain"
+    if left.action_unknown or right.action_unknown:
+        return "technical_identity_uncertain"
+    if left.opaque_identifiers != right.opaque_identifiers:
         return "technical_identity_uncertain"
     for name, a, b in (
         ("product", left.products, right.products),
