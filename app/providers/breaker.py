@@ -112,3 +112,28 @@ async def record_success(name: str, r, ticket: Ticket | None = None) -> None:
         except WatchError:
             continue
     raise RuntimeError("Breaker update contention")
+
+
+async def release_probe(name: str, r, ticket: Ticket | None = None) -> None:
+    """Release a half-open probe lease without recording success or failure.
+
+    Used when a half-open probe stream is abandoned (e.g. the client disconnects
+    mid-stream): the provider neither demonstrably succeeded nor failed, so the
+    probe is freed to let a later request probe again, instead of blocking until
+    the lease TTL expires. Only the lease owner may release it.
+    """
+    if ticket is None or not ticket.probe:
+        return
+    _opened, _fails, probe, _generation = _keys(name)
+    for _ in range(100):
+        try:
+            async with r.pipeline(transaction=True) as pipe:
+                await pipe.watch(probe)
+                if await pipe.get(probe) != ticket.probe:
+                    return
+                pipe.multi()
+                pipe.delete(probe)
+                await pipe.execute()
+                return
+        except WatchError:
+            continue

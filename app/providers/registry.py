@@ -199,6 +199,7 @@ class ProviderRegistry:
                     first = await agen.__anext__()
 
                 async def _wrapped(first_chunk=first, gen=agen, provider_name=p.name, lease=ticket):
+                    settled = False
                     try:
                         yield first_chunk
                         while True:
@@ -211,12 +212,19 @@ class ProviderRegistry:
                                 break
                             yield chunk
                     except Exception as error:
+                        settled = True
                         if breaker.transient(error):
                             await breaker.record_failure(provider_name, self.redis, lease)
                         raise
                     else:
+                        settled = True
                         await breaker.record_success(provider_name, self.redis, lease)
                     finally:
+                        # An abandoned stream (e.g. client disconnect -> GeneratorExit)
+                        # records neither success nor failure; free any half-open probe
+                        # lease so it does not block other requests until its TTL.
+                        if not settled:
+                            await breaker.release_probe(provider_name, self.redis, lease)
                         await gen.aclose()
 
                 return p.name, _wrapped()
