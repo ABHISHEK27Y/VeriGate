@@ -7,7 +7,7 @@
 \node[fcstart] (start) at (0,0) {JSON request};
 \node[fcstep,text width=4cm] (auth) at (0,-1.5) {Validate body; authenticate; resolve principal; rate check};
 \node[fcdecision] (ok) at (0,-3.7) {request admitted?};
-\node[fcstart,text width=2.6cm] (err) at (5,-3.7) {Return validation / access / rate error};
+\node[fcerror,text width=2.6cm] (err) at (5,-3.7) {Return validation / access / rate error};
 \node[fcstep,text width=4cm] (scope) at (0,-6) {Resolve authorized scope, provider profile and cache eligibility};
 \node[fcdecision] (bypass) at (0,-8.3) {cache eligible?};
 \node[fcstart,text width=2.6cm] (b1) at (5,-8.3) {B: BYPASS generation};
@@ -17,20 +17,20 @@
 \node[fcstart,text width=2.6cm] (b2) at (5,-15) {B: MISS generation};
 \node[fcstep,text width=4cm] (final) at (0,-17.3) {Complete HIT checks; touch recency; recheck principal};
 \node[fcdecision] (allowed) at (0,-19.6) {still authorized?};
-\node[fcstart,text width=2.6cm] (revoked) at (5,-19.6) {401: credential changed};
-\node[fcstart] (answer) at (0,-21.9) {HIT answer + trace};
+\node[fcerror,text width=2.6cm] (revoked) at (5,-19.6) {401: credential changed};
+\node[fcgo] (answer) at (0,-21.9) {HIT answer + trace};
 \draw[fcarrow] (start)--(auth); \draw[fcarrow] (auth)--(ok);
-\draw[fcarrow] (ok.east)--node[fclabel,above]{no}(err);
-\draw[fcarrow] (ok)--node[fclabel,left]{yes}(scope);
+\draw[fcarrow] (ok.east)--node[fcno,above]{no}(err);
+\draw[fcarrow] (ok)--node[fcyes,left]{yes}(scope);
 \draw[fcarrow] (scope)--(bypass);
-\draw[fcarrow] (bypass.east)--node[fclabel,above]{no}(b1);
-\draw[fcarrow] (bypass)--node[fclabel,left]{yes}(lookup);
+\draw[fcarrow] (bypass.east)--node[fcno,above]{no}(b1);
+\draw[fcarrow] (bypass)--node[fcyes,left]{yes}(lookup);
 \draw[fcarrow] (lookup)--node[fclabel,right,align=left]{selection obeys conflict,\\time and verification limits}(hit);
-\draw[fcarrow] (hit.east)--node[fclabel,above]{no}(b2);
-\draw[fcarrow] (hit)--node[fclabel,left]{yes}(final);
+\draw[fcarrow] (hit.east)--node[fcno,above]{no}(b2);
+\draw[fcarrow] (hit)--node[fcyes,left]{yes}(final);
 \draw[fcarrow] (final)--(allowed);
-\draw[fcarrow] (allowed.east)--node[fclabel,above]{no}(revoked);
-\draw[fcarrow] (allowed)--node[fclabel,left]{yes}(answer);
+\draw[fcarrow] (allowed.east)--node[fcno,above]{no}(revoked);
+\draw[fcarrow] (allowed)--node[fcyes,left]{yes}(answer);
 
 \end{tikzpicture}
 \end{document}

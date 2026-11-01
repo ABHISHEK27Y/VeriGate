@@ -1,52 +1,75 @@
-\documentclass[tikz,border=6pt]{standalone}
+\documentclass[tikz,border=8pt]{standalone}
 \input{diagram_styles}
 \begin{document}
-\begin{tikzpicture}
+\begin{tikzpicture}[x=1cm,y=1cm]
 
-\tikzset{bubble/.style={dfdprocess,text width=1.65cm,minimum size=2.3cm,font=\normalsize},ext/.style={dfdentity,text width=2cm,font=\normalsize},store/.style={dfdstore,text width=2.4cm,font=\normalsize},lab/.style={font=\small,fill=white,align=center,inner sep=1pt}}
-\node[ext] (client) at (0,0) {Integrated client};
-\node[bubble] (p1) at (0,-3) {1.0\\Auth};
-\node[bubble] (p2) at (6,-3) {2.0\\Scope};
-\node[store] (d1) at (6,0) {D1 Credentials / profiles};
-\node[bubble] (p3) at (0,-7) {3.0\\Retrieve};
-\node[bubble] (p4) at (6,-7) {4.0\\Assess};
-\node[store] (d2) at (-4,-7) {D2 Cache / index};
-\node[store] (d4) at (10,-7) {D4 Policy / models};
-\node[bubble] (p5) at (6,-11) {5.0\\Generate};
-\node[ext] (provider) at (10,-11) {External provider};
-\node[store] (d3) at (6,-15) {D3 Admission / quotas};
-\node[bubble] (p6) at (0,-11) {6.0\\Classify};
-\node[store] (d2w) at (-4,-11) {D2 Cache (same store)};
-\node[bubble] (p7) at (0,-15) {7.0\\Respond};
-\node[ext] (client2) at (0,-18) {Integrated client (same entity)};
-\node[ext] (admin) at (0,-21.5) {Operator / admin};
-\node[bubble] (p8) at (6,-21.5) {8.0\\Operations};
-\node[store] (d1a) at (6,-18) {D1 Credentials (same store)};
-\node[store] (d2a) at (10,-21.5) {D2 Cache (same store)};
-\draw[dfdflow] (client)--node[lab,left]{credential + task}(p1);
-\draw[dfdflow] (d1.west) to[out=180,in=90] node[lab,above]{keys}(p1.north);
-\draw[dfdflow] (d1)--node[lab,right]{profiles}(p2);
-\draw[dfdflow] (p1)--node[lab,above]{principal + task}(p2);
-\draw[dfdflow] (p2.south west)--node[lab,above,sloped]{scoped task}(p3.north east);
-\draw[dfdflow] (p3.west) to[out=160,in=20] node[lab,above]{query}(d2.east);
-\draw[dfdflow] (d2.east) to[out=340,in=200] node[lab,below]{rows}(p3.west);
-\draw[dfdflow] (p3)--node[lab,above]{task + candidates}(p4);
-\draw[dfdflow] (d4)--node[lab,above]{policy}(p4);
-\draw[dfdflow] (p4)--node[lab,right]{task + route}(p5);
-\draw[dfdflow] (p4.south west)--(3,-8.5)--(3,-14.8)--node[lab,above]{cached answer}(p7.east);
-\draw[dfdflow] (p5.east) to[out=20,in=160] node[lab,above]{prompt}(provider.west);
-\draw[dfdflow] (provider.west) to[out=200,in=340] node[lab,below]{result}(p5.east);
-\draw[dfdflow] (p5)--node[lab,above]{events + scope}(p6);
-\draw[dfdflow] (p5.south west) to[out=250,in=110] node[lab,left]{count}(d3.north west);
-\draw[dfdflow] (d3.north east) to[out=70,in=290] node[lab,right]{admission state}(p5.south east);
-\draw[dfdflow] (p6)--node[lab,above]{eligible record}(d2w);
-\draw[dfdflow] (p6)--node[lab,left]{answer}(p7);
-\draw[dfdflow] (p7)--node[lab,left]{answer / error}(client2);
-\draw[dfdflow] (admin.east) to[out=20,in=160] node[lab,above]{admin request}(p8.west);
-\draw[dfdflow] (p8.west) to[out=200,in=340] node[lab,below]{status}(admin.east);
-\draw[dfdflow] (d1a)--node[lab,right]{operator identity}(p8);
-\draw[dfdflow] (p8.east) to[out=20,in=160] node[lab,above]{action}(d2a.west);
-\draw[dfdflow] (d2a.west) to[out=200,in=340] node[lab,below]{result}(p8.east);
+% Local sizing that keeps the shared bold/shadow look but is compact enough for
+% eight processes. Labels use the shared pill style (dfdlabel), never a plain box.
+\tikzset{
+  p/.style={dfdprocess,text width=1.85cm,minimum size=2.45cm,font=\normalsize\bfseries},
+  ent/.style={dfdentity,text width=2.2cm,font=\normalsize},
+  st/.style={dfdstore,text width=2.5cm,font=\footnotesize},
+  lab/.style={dfdlabel,font=\footnotesize}
+}
+
+% ---- main processing flow: a clean left/right snake, no crossing arrows ----
+\node[p]  (p1) at (0,0)    {1.0\\Auth};
+\node[p]  (p2) at (5,0)    {2.0\\Scope};
+\node[p]  (p3) at (5,-4)   {3.0\\Retrieve};
+\node[p]  (p4) at (0,-4)   {4.0\\Assess};
+\node[p]  (p5) at (0,-8)   {5.0\\Generate};
+\node[p]  (p6) at (5,-8)   {6.0\\Classify};
+\node[p]  (p7) at (5,-12)  {7.0\\Respond};
+
+% ---- external entities and data stores around the flow ----
+\node[ent] (client)  at (-4.6,0)   {Integrated client};
+\node[st]  (d1)      at (2.5,3.1)   {D1 Credentials / profiles};
+\node[st]  (d2)      at (9.7,-4)    {D2 Cache / index};
+\node[st]  (d4)      at (-4.6,-4)   {D4 Policy / models};
+\node[ent] (prov)    at (-4.6,-8)   {External provider};
+\node[st]  (d3)      at (0,-11.4)   {D3 Admission / quotas};
+\node[st]  (d2w)     at (9.7,-8)    {D2 Cache (same store)};
+\node[ent] (client2) at (9.7,-12)   {Integrated client (same)};
+
+% ---- operations sub-system (separate from the request flow) ----
+\node[st]  (d1a)   at (5,-14.2) {D1 Credentials (same store)};
+\node[p]   (p8)    at (5,-17)   {8.0\\Operations};
+\node[ent] (admin) at (0,-17)   {Operator / admin};
+\node[st]  (d2a)   at (9.7,-17) {D2 Cache (same store)};
+
+% ---- request-flow data flows ----
+\draw[dfdflow] (client) -- node[lab,above]{credential + task} (p1.west);
+\draw[dfdflow] (d1.west) to[out=180,in=90] node[lab,above left,inner sep=1pt]{keys} (p1.north);
+\draw[dfdflow] (d1.east) to[out=0,in=90] node[lab,above right,inner sep=1pt]{profiles} (p2.north);
+\draw[dfdflow] (p1) -- node[lab,above]{principal + task} (p2);
+\draw[dfdflow] (p2) -- node[lab,right]{scoped task} (p3);
+\draw[dfdflow] (p3) -- node[lab,above]{task + candidates} (p4);
+\draw[dfdflow] (p3.north east) to[out=70,in=110] node[lab,above]{query} (d2.north west);
+\draw[dfdflow] (d2.south west) to[out=250,in=290] node[lab,below]{rows} (p3.south east);
+\draw[dfdflow] (d4) -- node[lab,above]{policy} (p4);
+\draw[dfdflow] (p4) -- node[lab,right]{task + route} (p5);
+\draw[dfdflow] (p5.west) to[out=160,in=20] node[lab,above]{prompt} (prov.east);
+\draw[dfdflow] (prov.east) to[out=-20,in=200] node[lab,below]{result} (p5.south west);
+\draw[dfdflow] (p5) -- node[lab,above]{events + scope} (p6);
+\draw[dfdflow] (p5) -- node[lab,right]{count} (d3);
+\draw[dfdflow] (d3.east) to[out=0,in=250] node[lab,below right,inner sep=1pt]{admission state} (p5.south east);
+\draw[dfdflow] (p6) -- node[lab,above]{eligible record} (d2w);
+\draw[dfdflow] (p6) -- node[lab,right]{answer} (p7);
+\draw[dfdflow] (p7) -- node[lab,above]{answer / error} (client2);
+
+% ---- HIT shortcut: Assess returns a cached answer straight to Respond,
+%      routed orthogonally on the far-left margin so it crosses nothing ----
+\draw[dfdflow,draw=vgTeal,line width=1.3pt,rounded corners=5pt]
+  (p4.south west) -- (-7,-5.2)
+  -- node[lab,text=vgTeal!55!black,fill=vgTeal!10,draw=vgTeal!45]{cached\\answer\\(HIT)} (-7,-13.2)
+  -- (5,-13.2) -- (p7.south);
+
+% ---- operations data flows ----
+\draw[dfdflow] (admin.east) to[out=20,in=160] node[lab,above]{admin request} (p8.west);
+\draw[dfdflow] (p8.west) to[out=200,in=340] node[lab,below]{status} (admin.east);
+\draw[dfdflow] (d1a) -- node[lab,right]{operator identity} (p8);
+\draw[dfdflow] (p8.east) to[out=20,in=160] node[lab,above]{action} (d2a.west);
+\draw[dfdflow] (d2a.west) to[out=200,in=340] node[lab,below]{result} (p8.east);
 
 \end{tikzpicture}
 \end{document}

@@ -6,6 +6,14 @@
 \usepackage{graphics}
 \usepackage{float}
 \usepackage[table,xcdraw]{xcolor}
+% Shared report palette (matches the figure design system).
+\definecolor{vgNavy}{HTML}{1F4E79}
+\definecolor{vgTeal}{HTML}{0E7C86}
+\definecolor{vgAmber}{HTML}{C8841B}
+\definecolor{vgGreen}{HTML}{2E8B57}
+\definecolor{vgViolet}{HTML}{6A4C93}
+\definecolor{vgRed}{HTML}{C0453B}
+\definecolor{vgSlate}{HTML}{4C5A68}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{fouriernc}
@@ -39,7 +47,7 @@
 \usepackage{longtable}
 \usepackage[nottoc]{tocbibind}
 \usepackage{url}
-\usepackage[colorlinks=true,linkcolor=blue!45!black,citecolor=teal!55!black,urlcolor=blue!60!black,breaklinks=true]{hyperref}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=black,urlcolor=black,breaklinks=true]{hyperref}
 \hypersetup{pdftitle={VeriGate: Organization-Aware Answer Reuse Gateway},pdfauthor={Abhishek Yadav},bookmarksnumbered=true}
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -47,9 +55,11 @@
 \usepackage{pdflscape} % For landscape pages if a chart is wide
 \usepackage{booktabs} % For better tables
 \usepackage{multirow}
+\usepackage{wrapfig}
 \usepackage[boxed]{algorithm}
 \usepackage{algpseudocode}
 \usepackage{listings}
+\usepackage[protrusion=true,expansion=true]{microtype}
 
 \lstset{
   basicstyle=\ttfamily\footnotesize,
@@ -61,7 +71,14 @@
 }
 
 \begin{document}
-    \sloppy
+    % Tighter, cleaner justification: avoid widows/orphans and lone last-line
+    % words without resorting to global \sloppy (which produces loose lines).
+    \widowpenalty=10000
+    \clubpenalty=10000
+    \brokenpenalty=10000
+    \linepenalty=600
+    \finalhyphendemerits=10000
+    \emergencystretch=2.5em
     \setlength{\parindent}{0em}
     \setlength{\parskip}{0.5em}
 

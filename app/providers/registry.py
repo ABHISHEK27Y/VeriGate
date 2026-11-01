@@ -123,6 +123,15 @@ class ProviderRegistry:
         provider: Provider
         if profile.provider == "mock":
             provider = MockProvider(name_override=label)
+        elif profile.provider == "controlled-eval":
+            # Development-only labelled-answer provider for honest HTTP demonstrations.
+            # The answer map lives outside retrieval/acceptance; it never reaches them.
+            config = get_settings()
+            if config.environment != "development" or not config.evaluation_answers_path:
+                raise ValueError("Controlled evaluation requires development and an answer file")
+            provider = ControlledEvaluationProvider(
+                config.evaluation_answers_path, name_override=label
+            )
         else:
             config = get_settings()
             base = profile.base_url or (

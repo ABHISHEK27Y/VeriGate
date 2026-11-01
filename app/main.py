@@ -108,7 +108,8 @@ async def lifespan(app: FastAPI):  # noqa: PLR0915, PLR0912
                 profile, app.state.organization_directory, app.state.redis
             )
             for name, profile in app.state.organization_directory.profiles.items()
-            if profile.provider == "mock" or bool(os.environ.get(profile.secret_env))
+            if profile.provider in {"mock", "controlled-eval"}
+            or bool(os.environ.get(profile.secret_env))
         }
         app.state.singleflight = SingleFlight()
         app.state.providers = app.state.provider_registry
