@@ -917,6 +917,10 @@ async def chat_stream(  # noqa: PLR0915, PLR0912 - streaming state machine
 ):
     """Streaming endpoint (Server-Sent Events). Cache hits stream instantly."""
     started = time.perf_counter()
+    # Miss-path stage timings, merged with the lookup stages from the result so the
+    # SSE meta frame carries the same stage breakdown as the JSON endpoint. These
+    # are nested spans and need not sum to latency_ms (see docs/ARCHITECTURE.md).
+    stage_ms: dict[str, float] = {}
     overall_deadline = asyncio.get_running_loop().time() + get_settings().request_deadline_sec
     api_key = _auth(x_api_key, request)
     principal = _principal(request, api_key)
@@ -949,7 +953,9 @@ async def chat_stream(  # noqa: PLR0915, PLR0912 - streaming state machine
     if result.status != "HIT":
         if _principal(request, api_key) != principal:
             raise HTTPException(status_code=401, detail="credential changed during request")
+        admission_started = time.perf_counter()
         await _check_budget(admission_identity, request)  # charge before streaming starts
+        stage_ms["admission"] = round((time.perf_counter() - admission_started) * 1000, 3)
         deadline = min(
             overall_deadline,
             asyncio.get_running_loop().time() + get_settings().provider_timeout,
@@ -960,9 +966,9 @@ async def chat_stream(  # noqa: PLR0915, PLR0912 - streaming state machine
             async with asyncio.timeout_at(deadline):
                 route_started = time.perf_counter()
                 provider_name, source = await registry.route_events(prompt)
-                STAGE_LATENCY.labels(stage="provider_first_token").observe(
-                    time.perf_counter() - route_started
-                )
+                first_token_sec = time.perf_counter() - route_started
+                stage_ms["provider_first_token"] = round(first_token_sec * 1000, 3)
+                STAGE_LATENCY.labels(stage="provider_first_token").observe(first_token_sec)
         except TimeoutError as exc:
             raise HTTPException(status_code=504, detail="upstream timeout") from exc
         except Exception as exc:
@@ -1007,7 +1013,7 @@ async def chat_stream(  # noqa: PLR0915, PLR0912 - streaming state machine
                         "nli_score": result.nli_score,
                         "verifier_invoked": result.verifier_invoked,
                         "latency_ms": round((time.perf_counter() - started) * 1000, 3),
-                        "stage_latency_ms": result.stage_latency_ms,
+                        "stage_latency_ms": {**result.stage_latency_ms, **stage_ms},
                     }
                 )
                 + "\n\n"
@@ -1048,9 +1054,9 @@ async def chat_stream(  # noqa: PLR0915, PLR0912 - streaming state machine
             yield f"event: error\ndata: {json.dumps({'error': code})}\n\n"
             return
         finally:
-            STAGE_LATENCY.labels(stage="full_generation").observe(
-                time.perf_counter() - generation_started
-            )
+            generation_sec = time.perf_counter() - generation_started
+            stage_ms["provider"] = round(generation_sec * 1000, 3)
+            STAGE_LATENCY.labels(stage="full_generation").observe(generation_sec)
             if hasattr(source, "aclose"):
                 await source.aclose()
         answer = "".join(buf).strip()
@@ -1081,6 +1087,7 @@ async def chat_stream(  # noqa: PLR0915, PLR0912 - streaming state machine
                     storage_reason = "response_private_only"
                     if effective_scope == "workspace":
                         metadata = _downgrade_metadata(principal, scope_decision)
+                write_started = time.perf_counter()
                 storage_outcome = await _cache_store(
                     request,
                     prompt,
@@ -1090,6 +1097,7 @@ async def chat_stream(  # noqa: PLR0915, PLR0912 - streaming state machine
                     deadline=overall_deadline,
                     vec=result.query_vector,
                 )
+                stage_ms["cache_write"] = round((time.perf_counter() - write_started) * 1000, 3)
                 if storage_outcome == "stored":
                     storage_scope = intended_storage_scope
             elif response_eligibility == "no_store":
@@ -1134,7 +1142,7 @@ async def chat_stream(  # noqa: PLR0915, PLR0912 - streaming state machine
                     "nli_score": result.nli_score,
                     "verifier_invoked": result.verifier_invoked,
                     "latency_ms": round((time.perf_counter() - started) * 1000, 3),
-                    "stage_latency_ms": result.stage_latency_ms,
+                    "stage_latency_ms": {**result.stage_latency_ms, **stage_ms},
                 }
             )
             + "\n\n"

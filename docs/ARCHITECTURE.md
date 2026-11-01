@@ -155,3 +155,28 @@ provider-agnostic and only depend on this interface + the health state in Redis.
 - Prompts/responses logging is configurable and can be disabled for privacy.
 - The gateway never stores end-user credentials; it only holds *its own* API keys and the
   upstream provider keys (as server-side secrets/environment variables).
+
+---
+
+## 9. Response timing fields (JSON and streaming)
+
+Both `/v1/chat` and `/v1/chat/stream` report `latency_ms` and a `stage_latency_ms`
+breakdown (the SSE endpoint carries them in its `event: meta` frame). Their spans
+are deliberately distinct and are labelled as such in the dashboard:
+
+- **JSON `latency_ms`** is measured from **after admission** (authentication and
+  rate limiting have already run). The dashboard labels it "gateway time (after
+  admission)".
+- **Streaming `latency_ms`** is measured from **handler entry**, so it includes
+  admission. The dashboard labels it "stream gateway time (after handler entry)".
+
+Neither includes earlier ASGI middleware or network transfer; the browser-observed
+HTTP duration is reported separately. The two spans are not interchangeable — do
+not compare one endpoint's `latency_ms` directly against the other's.
+
+`stage_latency_ms` carries nested spans (e.g. `cache_lookup`, `embedding`,
+`retrieval`, `structural_check`, `verifier_queue`/`verifier_execution`,
+`admission`, `provider`/`provider_first_token`, `cache_write`). The streaming
+endpoint now reports the same miss-path stages (`admission`, `provider`,
+`cache_write`) as the JSON endpoint. Stage spans overlap and need not sum to
+`latency_ms`.

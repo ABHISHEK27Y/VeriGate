@@ -254,3 +254,29 @@ def test_partial_startup_closes_first_redis_connection(monkeypatch) -> None:
     ):
         pass
     assert first.closed
+
+
+def _stream_meta(text: str) -> dict:
+    import json
+
+    for frame in text.split("\n\n"):
+        if frame.startswith("event: meta"):
+            return json.loads(frame.split("data: ", 1)[1])
+    raise AssertionError("no meta frame in stream")
+
+
+def test_stream_meta_reports_provider_and_cache_write_stages(client) -> None:
+    """A streaming miss must report the same stage breakdown as the JSON path (F19)."""
+    response = client.post(
+        "/v1/chat/stream", json={"prompt": "unique stream stage breakdown"}, headers=HEADERS
+    )
+    assert response.status_code == 200  # noqa: PLR2004
+    meta = _stream_meta(response.text)
+    assert meta["cache_decision"] in {"MISS", "BYPASS"}
+    stages = meta["stage_latency_ms"]
+    # The streaming path previously carried only lookup stages; it must now also
+    # report admission, provider generation and the cache write.
+    assert "provider" in stages
+    assert "admission" in stages
+    assert "cache_write" in stages
+    assert all(isinstance(value, int | float) and value >= 0 for value in stages.values())
