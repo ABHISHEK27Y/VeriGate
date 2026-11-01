@@ -43,6 +43,11 @@ from .volatility import is_volatile
 _SIMILARITY_DENSITY_WINDOW = 0.1  # similarity window for density calculation
 
 
+def _usable_query_vector(vec: np.ndarray | None) -> bool:
+    """A supplied lookup vector is reusable only if it is a 1-D non-empty array."""
+    return isinstance(vec, np.ndarray) and vec.ndim == 1 and vec.size > 0
+
+
 @dataclass(slots=True, frozen=True)
 class LookupResult:
     status: str  # HIT | MISS | BYPASS
@@ -59,6 +64,10 @@ class LookupResult:
     top_retrieved_similarity: float | None = None
     stage_latency_ms: dict[str, float] = field(default_factory=dict)
     candidate_trace: tuple[dict[str, object], ...] = ()
+    # The request's query embedding, carried so a following store on a miss can
+    # reuse it instead of embedding the same prompt twice. Excluded from equality
+    # and repr; never serialized to the client.
+    query_vector: np.ndarray | None = field(default=None, compare=False, repr=False)
 
 
 class SemanticCache:
@@ -487,7 +496,11 @@ class SemanticCache:
         stage_ms["retrieval"] = round(elapsed * 1000, 3)
         if not candidates:
             return LookupResult(
-                status="MISS", similarity=None, reason="empty_cache", stage_latency_ms=stage_ms
+                status="MISS",
+                similarity=None,
+                reason="empty_cache",
+                stage_latency_ms=stage_ms,
+                query_vector=qvec,
             )
         count = len(candidates)
         top_similarity = candidates[0][1]
@@ -656,6 +669,7 @@ class SemanticCache:
                 top_retrieved_similarity=top_similarity,
                 stage_latency_ms=stage_ms,
                 candidate_trace=tuple(candidate_trace),
+                query_vector=qvec,
             )
         stage_started = time.perf_counter()
         if get_settings().vector_backend == "redisearch":
@@ -706,7 +720,13 @@ class SemanticCache:
         )
 
     async def store(
-        self, query: str, answer: str, tenant: str, *, metadata: dict[str, str] | None = None
+        self,
+        query: str,
+        answer: str,
+        tenant: str,
+        *,
+        metadata: dict[str, str] | None = None,
+        vec: np.ndarray | None = None,
     ) -> bool:
         if not answer.strip() or not get_settings().cache_enabled or is_volatile(query):
             return False
@@ -715,11 +735,14 @@ class SemanticCache:
             > get_settings().max_cache_entry_bytes
         ):
             return False
-        vec = (
-            await self._infer(self.embedder.embed, query, kind="embedding")
-            if get_settings().cache_match_mode == "semantic"
-            else None
-        )
+        if get_settings().cache_match_mode == "semantic":
+            # Reuse the request's lookup embedding when the caller supplies the
+            # matching one; otherwise embed now. The vector is tenant-independent,
+            # so a scope-downgraded write may reuse the same lookup vector.
+            if not _usable_query_vector(vec):
+                vec = await self._infer(self.embedder.embed, query, kind="embedding")
+        else:
+            vec = None
         async with self._locks[hash(tenant) % len(self._locks)]:
             return await self._store(query, answer, tenant, metadata=metadata, vec=vec)
 

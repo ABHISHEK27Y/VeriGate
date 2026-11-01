@@ -294,12 +294,13 @@ async def _cache_store(  # noqa: PLR0913 - explicit cache write context
     *,
     metadata: dict[str, str] | None = None,
     deadline: float | None = None,
+    vec=None,
 ) -> str:
     started = time.perf_counter()
     try:
         async with asyncio.timeout_at(deadline):
             stored = await request.app.state.semantic_cache.store(
-                prompt, answer, tenant, metadata=metadata
+                prompt, answer, tenant, metadata=metadata, vec=vec
             )
     except TimeoutError:
         CACHE_FAILURES.labels(stage="write_timeout").inc()
@@ -827,6 +828,7 @@ async def chat(  # noqa: PLR0915 - main gateway request path
                 write_tenant,
                 metadata=metadata,
                 deadline=overall_deadline,
+                vec=result.query_vector,
             )
             if storage_outcome != "stored":
                 storage_scope = None
@@ -1086,6 +1088,7 @@ async def chat_stream(  # noqa: PLR0915, PLR0912 - streaming state machine
                     write_tenant,
                     metadata=metadata,
                     deadline=overall_deadline,
+                    vec=result.query_vector,
                 )
                 if storage_outcome == "stored":
                     storage_scope = intended_storage_scope
