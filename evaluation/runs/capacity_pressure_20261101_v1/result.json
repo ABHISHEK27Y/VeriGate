@@ -1,0 +1,14 @@
+{
+  "schema": "capacity-pressure-v1",
+  "backend": "real-redis",
+  "entry_limit": 20,
+  "distinct_entries_attempted": 50,
+  "initial_entries": 0,
+  "successful_puts": 50,
+  "final_entries": 20,
+  "evictions_counted": 30,
+  "oldest_entry_present": false,
+  "newest_entry_present": true,
+  "cap_bound": true,
+  "note": "Distinct eligible entries exceed the per-scope cap, so eviction is forced. Entries are capped, the oldest is evicted, the newest retained, and the eviction counter is nonzero."
+}
