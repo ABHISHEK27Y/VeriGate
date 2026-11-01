@@ -60,7 +60,7 @@ log = get_logger("verigate.main")
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):  # noqa: PLR0915
+async def lifespan(app: FastAPI):  # noqa: PLR0915, PLR0912
     """Application lifespan handler - startup and shutdown."""
     # Startup
     log.info("Starting VeriGate gateway", version=__version__)
@@ -87,6 +87,18 @@ async def lifespan(app: FastAPI):  # noqa: PLR0915
         app.state.cache = app.state.semantic_cache
         app.state.index = app.state.cache._index
         app.state.verifier = app.state.cache.answer_verifier
+        if (
+            get_settings().cache_match_mode == "semantic"
+            and not get_settings().answer_policy_artifact
+        ):
+            log.warning(
+                "semantic_mode_without_answer_policy",
+                detail=(
+                    "CACHE_MATCH_MODE=semantic without ANSWER_POLICY_ARTIFACT uses the "
+                    "historical Tier-1 structural policy, which rejects most paraphrases. "
+                    "Set ANSWER_POLICY_ARTIFACT for answer-aware reuse."
+                ),
+            )
         app.state.organization_directory = OrganizationDirectory(get_settings())
         app.state.provider_registry = (
             ProviderRegistry.from_settings(app.state.redis) if get_settings().api_key_set else None
@@ -635,6 +647,13 @@ async def _health_details(request: Request) -> dict:
         "cache_match_mode": get_settings().cache_match_mode,
         "cache_ttl_sec": get_settings().cache_ttl_sec,
         "cache_policy_version": POLICY_VERSION,
+        "active_semantic_policy": (
+            "exact_only"
+            if get_settings().cache_match_mode != "semantic"
+            else "answer_aware"
+            if request.app.state.semantic_cache._answer_policy
+            else "tier1_structural"
+        ),
         "answer_policy_version": (
             request.app.state.semantic_cache._answer_policy.version[:12]
             if request.app.state.semantic_cache._answer_policy

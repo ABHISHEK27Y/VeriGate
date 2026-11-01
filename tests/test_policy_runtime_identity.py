@@ -77,3 +77,23 @@ def test_readiness_and_dashboard_expose_actual_applicability_flag() -> None:
         )
     ) as client:
         assert client.get("/ready").json()["answer_policy_applicability_guard"] is False
+
+
+def test_readiness_reports_active_semantic_policy() -> None:
+    # Semantic mode without an artifact uses the historical Tier-1 structural policy.
+    tier1 = Settings(_env_file=None, cache_match_mode="semantic", embedding_backend="hash")
+    with TestClient(create_app(tier1)) as client:
+        assert client.get("/ready").json()["active_semantic_policy"] == "tier1_structural"
+    # With the artifact it is answer-aware.
+    aware = Settings(
+        _env_file=None,
+        cache_match_mode="semantic",
+        embedding_backend="hash",
+        answer_policy_artifact=str(ARTIFACT),
+    )
+    with TestClient(create_app(aware)) as client:
+        assert client.get("/ready").json()["active_semantic_policy"] == "answer_aware"
+    # Exact mode is exact-only regardless of an artifact.
+    exact = Settings(_env_file=None, cache_match_mode="exact", answer_policy_artifact=str(ARTIFACT))
+    with TestClient(create_app(exact)) as client:
+        assert client.get("/ready").json()["active_semantic_policy"] == "exact_only"
