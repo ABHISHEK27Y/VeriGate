@@ -241,6 +241,45 @@ test_later_valid_candidate_wins.config_overrides = {
 }
 
 
+def test_experimental_applicability_guard_through_http(client) -> None:
+    cache = client.app.state.semantic_cache
+    cache._test_config = client.app.state.config
+    cache._policy.verifier = AlwaysEntails()
+    client.portal.call(
+        set_candidates,
+        cache,
+        [
+            (
+                "How do I plan a Terraform change for workspace alpha?",
+                "Run a Terraform plan for workspace alpha.",
+                0.95,
+            )
+        ],
+    )
+    bad = client.post(
+        "/v1/chat",
+        json={"prompt": "How do I apply a Terraform change for workspace alpha?"},
+        headers={"x-api-key": "demo-key-123"},
+    ).json()
+    assert bad["cache"] == "MISS"
+    assert bad["note"] == "answer_reject:applicability_action_conflict"
+    assert bad["candidate_trace"][0]["reason"] == "applicability_action_conflict"
+    good = client.post(
+        "/v1/chat",
+        json={"prompt": "How can I preview a Terraform change for workspace alpha?"},
+        headers={"x-api-key": "demo-key-123"},
+    ).json()
+    assert good["cache"] == "HIT"
+    assert good["answer"] == "Run a Terraform plan for workspace alpha."
+
+
+test_experimental_applicability_guard_through_http.config_overrides = {
+    "cache_match_mode": "semantic",
+    "answer_policy_artifact": str(ARTIFACT),
+    "answer_policy_applicability_guard": True,
+}
+
+
 def test_conflicting_accepted_answers_abstain(client) -> None:
     cache = client.app.state.semantic_cache
     cache._test_config = client.app.state.config

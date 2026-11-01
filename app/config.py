@@ -52,6 +52,7 @@ class Settings(BaseSettings):
     cache_policy_static: bool = False  # evaluation baseline; default stays adaptive
     answer_policy_subject_guard: bool = True  # opt-in policy's named-work identity check
     answer_policy_technical_guard: bool = False  # unvalidated technical guard is opt-in
+    answer_policy_applicability_guard: bool = False  # evidence-bound experimental guard
 
     # Embeddings
     #   "minilm" -> real semantic embeddings via sentence-transformers (default)

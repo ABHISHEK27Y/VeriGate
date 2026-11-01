@@ -1,0 +1,14 @@
+{
+  "schema_version": "technical-applicability-results-v1",
+  "frozen_input_commit": "4e08cab08cb2439c5c5df699ac73771b1b5e1f9e",
+  "workload_sha256": "4b36aee65d99d541a9689127064c0bb72628fcd8e095d3998ee497a9b47b6506",
+  "policy_artifact_sha256": "f9d2365021192fe7a78c54a0d250e1c384f416ad3c1818b084c5b89cd276b6a2",
+  "evaluation_source_sha256": "f5205f370e30a066ba2ed7a62ea6c231f7982591bcdb350e09f3ed0a093d2f86",
+  "experimental_guard_sha256": "7392f86f9b9979c658f802401b333a2a4c2406d2821a48d8d7852eaca3a15e7b",
+  "command": "EMBEDDING_BACKEND=minilm HF_HUB_OFFLINE=1 python -m scripts.evaluate_applicability evaluation/runs/technical_applicability_lockbox_20261101_v1/results",
+  "outputs": {
+    "decisions.csv": "d1e9c28d5d3e4cbabddef8eecf82a3fc4a750d1fd940c6903279760d1da964ee",
+    "summary.json": "f9bc74e19dc8b8b439513d6066f063f7e02b9a6c3ebcba184da2085b9205a3b6"
+  },
+  "limitations": "Fixed single candidates and controlled authored labels; not live top-k prevalence or factual verification."
+}

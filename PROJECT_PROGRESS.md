@@ -218,6 +218,17 @@ academic results report or a production-safety claim.
 
 ## 1 November 2026 gateway follow-up
 
+The next bounded applicability experiment is recorded in
+`evaluation/runs/technical_applicability_lockbox_20261101_v1/FINDINGS.md`.
+It addresses changed actions and answer-anchored missing requirements without
+using NLI to prove factual truth. On 32 frozen controlled cases, valid reuse
+remained 9/16, invalid accepts fell 1/8 to 0/8, and ambiguous approvals fell
+5/8 to 0/8. The check is available only with
+`ANSWER_POLICY_APPLICABILITY_GUARD=true`; it is off by default. The evidence is
+small and fixed-candidate, not a production correctness estimate. Cache-clear
+fencing, cross-worker memo purge, full HTTP replay, and real-provider validation
+remain pending.
+
 The later technical answer-quality lockbox is documented in
 `evaluation/runs/technical_bidirectional_lockbox_20261101_v1/FINDINGS.md`.
 Its frozen 10-family, 30-case comparison found 4/10 valid reuse, 0/10 invalid

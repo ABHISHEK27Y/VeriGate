@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Literal
 
 from ..embeddings import tokenize
+from .applicability import assess as assess_applicability
 from .subject_identity import conflicting_named_work
 from .technical_identity import compare as compare_technical_identity
 from .technical_identity import normalized_for_numbers
@@ -93,6 +94,7 @@ class AnswerPolicy:
         verifier: NliVerifier,
         subject_guard: bool = True,
         technical_guard: bool = False,
+        applicability_guard: bool = False,
     ) -> AnswerDecision:
         if (
             not answer.strip()
@@ -114,6 +116,10 @@ class AnswerPolicy:
             if technical_reason.endswith("uncertain"):
                 return AnswerDecision("VERIFY", technical_reason, None)
             return AnswerDecision("REJECT", technical_reason, None)
+        if applicability_guard and (
+            applicability := assess_applicability(incoming, stored, answer)
+        ):
+            return AnswerDecision(applicability.action, applicability.reason, None)
         incoming_tokens, stored_tokens = tokenize(incoming), tokenize(stored)
         answer_tokens = tokenize(answer)
         # A proposed answer repeated in the new question may play a different

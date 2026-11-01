@@ -7,7 +7,7 @@ from pathlib import Path
 from ..config import RuntimeSettings, get_settings
 
 POLICY_VERSION = "token-diff-v2"
-ANSWER_POLICY_RUNTIME_VERSION = "8"
+ANSWER_POLICY_RUNTIME_VERSION = "9"
 
 
 def namespace() -> str:
@@ -53,6 +53,7 @@ def namespace() -> str:
         selected["answer_policy_runtime_version"] = ANSWER_POLICY_RUNTIME_VERSION
         selected["answer_policy_subject_guard"] = config["answer_policy_subject_guard"]
         selected["answer_policy_technical_guard"] = config["answer_policy_technical_guard"]
+        selected["answer_policy_applicability_guard"] = config["answer_policy_applicability_guard"]
     payload = json.dumps(selected, sort_keys=True)
     digest = hashlib.sha256(("schema-v3:" + POLICY_VERSION + ":" + payload).encode()).hexdigest()[
         :24

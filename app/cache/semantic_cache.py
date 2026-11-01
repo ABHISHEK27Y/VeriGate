@@ -514,6 +514,7 @@ class SemanticCache:
                             self._policy.verifier,
                             get_settings().answer_policy_subject_guard,
                             get_settings().answer_policy_technical_guard,
+                            get_settings().answer_policy_applicability_guard,
                             stage_ms=stage_ms,
                         ),
                         timeout=remaining,

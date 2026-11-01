@@ -2,9 +2,22 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
+from app.cache.answer_policy import AnswerPolicy
 from app.cache.applicability import assess
+
+ARTIFACT = Path(__file__).resolve().parents[1] / "app/cache/artifacts/answer_policy_v1.json"
+
+
+class AlwaysEntails:
+    calls = 0
+
+    def entail_prob(self, _premise: str, _hypothesis: str) -> float:
+        self.calls += 1
+        return 0.99
 
 
 @pytest.mark.parametrize(
@@ -97,3 +110,30 @@ def test_supported_conflict_or_missing_requirement(stored, answer, incoming, act
 )
 def test_valid_paraphrase_or_benign_omission_is_not_blocked(stored, answer, incoming):
     assert assess(incoming, stored, answer) is None
+
+
+def test_experimental_flag_checks_applicability_before_nli() -> None:
+    policy = AnswerPolicy.load(ARTIFACT)
+    verifier = AlwaysEntails()
+    stored = "How do I plan a Terraform change for workspace alpha?"
+    answer = "Run a Terraform plan for workspace alpha."
+    bad = policy.decide(
+        "How do I apply a Terraform change for workspace alpha?",
+        stored,
+        answer,
+        0.95,
+        verifier,
+        applicability_guard=True,
+    )
+    assert (bad.action, bad.reason) == ("REJECT", "applicability_action_conflict")
+    assert verifier.calls == 0
+    good = policy.decide(
+        "How can I preview a Terraform change for workspace alpha?",
+        stored,
+        answer,
+        0.95,
+        verifier,
+        applicability_guard=True,
+    )
+    assert good.action == "ACCEPT"
+    assert verifier.calls == 1
