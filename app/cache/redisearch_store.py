@@ -61,7 +61,7 @@ async def redisearch_available() -> bool:
         return True
 
 
-async def ensure_index(dim: int) -> None:
+async def _create_index(dim: int) -> None:
     async with _client() as r:
         try:
             await r.execute_command(
@@ -93,7 +93,18 @@ async def ensure_index(dim: int) -> None:
         except ResponseError as exc:
             if "index already exists" not in str(exc).lower():
                 raise
-    await validate_index(dim)
+
+
+async def ensure_index(dim: int) -> None:
+    # Validate first so steady-state writes pay a single FT.INFO rather than a
+    # doomed FT.CREATE followed by FT.INFO. The index is (re)created only when it
+    # is genuinely absent, so a dropped index after a Redis restart is recovered;
+    # an incompatible schema still fails closed via validate_index's RuntimeError.
+    try:
+        await validate_index(dim)
+    except ResponseError:
+        await _create_index(dim)
+        await validate_index(dim)
 
 
 async def validate_index(dim: int) -> None:

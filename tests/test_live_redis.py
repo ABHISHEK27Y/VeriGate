@@ -113,6 +113,27 @@ async def test_existing_vector_schema_mismatch_fails_closed():
 
 
 @pytest.mark.asyncio
+async def test_ensure_index_recreates_after_drop_and_fails_closed_on_mismatch():
+    from redis.exceptions import ResponseError  # noqa: PLC0415
+
+    from app.cache import redisearch_store as rs  # noqa: PLC0415
+
+    dim = settings.embedding_dim
+    await rs.ensure_index(dim)
+    await rs.validate_index(dim)
+    # A dropped index (e.g. after a Redis restart) is recreated by ensure_index.
+    async with rs._client() as client:
+        await client.execute_command("FT.DROPINDEX", rs._index())
+    with pytest.raises(ResponseError):
+        await rs.validate_index(dim)
+    await rs.ensure_index(dim)
+    await rs.validate_index(dim)
+    # An incompatible dimension still fails closed rather than silently recreating.
+    with pytest.raises(RuntimeError, match="Incompatible"):
+        await rs.ensure_index(dim + 1)
+
+
+@pytest.mark.asyncio
 async def test_redisearch_tenant_isolation_even_when_unauthorized_ranks_higher():
     """A shared vector index must never surface another tenant's entry, even when
     that entry is a closer vector match than the authorized tenant's own (F24)."""
