@@ -28,7 +28,7 @@ import numpy as np
 
 from ..config import RuntimeSettings, get_settings
 from ..embeddings import Embedder
-from ..metrics import STAGE_LATENCY
+from ..metrics import STAGE_LATENCY, VERIFIER_INPUT_TOKENS, VERIFIER_STATUS
 from ..redis_client import create_redis, hash_fields, set_members
 from . import redisearch_store as rs
 from . import storage
@@ -563,6 +563,7 @@ class SemanticCache:
                         )
                 except TimeoutError:
                     reason = "verification_budget_exhausted"
+                    VERIFIER_STATUS.labels(status="timed_out").inc()
                     candidate_trace.append(
                         {
                             "rank": candidate_rank,
@@ -571,26 +572,34 @@ class SemanticCache:
                             "reason": reason,
                             "verifier_status": "timed_out",
                             "nli_score": None,
+                            "input_tokens": None,
                             "elapsed_ms": round((time.perf_counter() - decision_started) * 1000, 3),
                         }
                     )
                     break
                 assert decision is not None  # precheck or verifier produced one fail-closed action
                 decision_reason = f"answer_{decision.action.lower()}:{decision.reason}"
+                verifier_status = (
+                    "scored"
+                    if decision.score is not None
+                    else "too_long"
+                    if decision.reason == "context_too_long"
+                    else "unavailable"
+                    if decision.reason == "verifier_unavailable"
+                    else "not_called"
+                )
+                VERIFIER_STATUS.labels(status=verifier_status).inc()
+                if decision.input_tokens is not None:
+                    VERIFIER_INPUT_TOKENS.observe(decision.input_tokens)
                 candidate_trace.append(
                     {
                         "rank": candidate_rank,
                         "similarity": round(score, 4),
                         "action": decision.action,
                         "reason": decision.reason,
-                        "verifier_status": (
-                            "scored"
-                            if decision.score is not None
-                            else "unavailable"
-                            if decision.reason == "verifier_unavailable"
-                            else "not_called"
-                        ),
+                        "verifier_status": verifier_status,
                         "nli_score": decision.score,
+                        "input_tokens": decision.input_tokens,
                         "elapsed_ms": round((time.perf_counter() - decision_started) * 1000, 3),
                     }
                 )

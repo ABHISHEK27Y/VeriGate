@@ -52,6 +52,7 @@ class AnswerDecision:
     action: Action
     reason: str
     score: float | None
+    input_tokens: int | None = None
 
 
 @dataclass(frozen=True)
@@ -177,27 +178,30 @@ class AnswerPolicy:
             return decision
         if isinstance(verifier, TaskReuseVerifier):
             assessment = verifier.assess_reuse(stored, answer, incoming)
+            tokens = assessment.input_tokens
             if assessment.status == "too_long":
-                return AnswerDecision("VERIFY", "context_too_long", None)
+                return AnswerDecision("VERIFY", "context_too_long", None, tokens)
             if assessment.status != "ok" or assessment.score is None:
-                return AnswerDecision("VERIFY", "verifier_unavailable", None)
+                return AnswerDecision("VERIFY", "verifier_unavailable", None, tokens)
             if assessment.score >= verifier.accept_at:
-                return AnswerDecision("ACCEPT", "task_reuse_classifier", assessment.score)
-            return AnswerDecision("VERIFY", "task_reuse_abstention", assessment.score)
+                return AnswerDecision("ACCEPT", "task_reuse_classifier", assessment.score, tokens)
+            return AnswerDecision("VERIFY", "task_reuse_abstention", assessment.score, tokens)
         premise = f"The answer to {stored} is {answer}."
         hypothesis = f"The answer to {incoming} is {answer}."
         assess = getattr(verifier, "assess", None)
+        tokens = None
         if assess is not None:
             assessment = assess(premise, hypothesis)
+            tokens = assessment.input_tokens
             if assessment.status == "too_long":
-                return AnswerDecision("VERIFY", "context_too_long", None)
+                return AnswerDecision("VERIFY", "context_too_long", None, tokens)
             score = assessment.score
         else:
             score = verifier.entail_prob(premise, hypothesis)
         if score is None or not math.isfinite(score):
-            return AnswerDecision("VERIFY", "verifier_unavailable", None)
+            return AnswerDecision("VERIFY", "verifier_unavailable", None, tokens)
         if score >= self.accept_at:
-            return AnswerDecision("ACCEPT", "answer_entailment", score)
+            return AnswerDecision("ACCEPT", "answer_entailment", score, tokens)
         if score < self.reject_below:
-            return AnswerDecision("REJECT", "answer_contradiction_or_irrelevance", score)
-        return AnswerDecision("VERIFY", "uncertain_answer", score)
+            return AnswerDecision("REJECT", "answer_contradiction_or_irrelevance", score, tokens)
+        return AnswerDecision("VERIFY", "uncertain_answer", score, tokens)

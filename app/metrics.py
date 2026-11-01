@@ -21,6 +21,16 @@ CANDIDATE_DECISION = Counter(
     "Answer-aware candidate actions; no correctness judgment",
     ["action"],
 )
+VERIFIER_STATUS = Counter(
+    "verigate_verifier_status_total",
+    "Answer verifier status per candidate; bounded low-cardinality label",
+    ["status"],  # scored | too_long | unavailable | timed_out | not_called
+)
+VERIFIER_INPUT_TOKENS = Histogram(
+    "verigate_verifier_input_tokens",
+    "Paired verifier input token count (when the model tokenized the pair)",
+    buckets=(16, 32, 64, 128, 256, 384, 512, 768, 1024),
+)
 RATE_LIMITED = Counter("verigate_rate_limited_total", "Requests rejected by rate limiter")
 BUDGET_EXCEEDED = Counter("verigate_budget_exceeded_total", "Requests rejected by admission budget")
 SHADOW = Counter("verigate_shadow_total", "Shadow cache-hit audit samples", ["outcome"])

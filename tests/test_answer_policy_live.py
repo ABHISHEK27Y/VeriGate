@@ -21,6 +21,7 @@ ARTIFACT = (
 )
 EXPECTED_REUSES = 2
 REDISEARCH_NEIGHBORS = 5
+OVER_WINDOW_TOKENS = 513
 
 
 class ControlledVerifier:
@@ -91,7 +92,7 @@ def test_invalid_cosine_still_rejected(score: float) -> None:
 def test_long_context_abstains_before_nli() -> None:
     class NoModelVerifier:
         def assess(self, _premise: str, _hypothesis: str) -> NliAssessment:
-            return NliAssessment(None, "too_long", 513)
+            return NliAssessment(None, "too_long", OVER_WINDOW_TOKENS)
 
         def entail_prob(self, _premise: str, _hypothesis: str) -> float:
             raise AssertionError("NLI predict should not see truncated context")
@@ -100,6 +101,8 @@ def test_long_context_abstains_before_nli() -> None:
     result = AnswerPolicy.load(ARTIFACT).decide(query, query, "the archive", 0.9, NoModelVerifier())
     assert result.action == "VERIFY"
     assert result.reason == "context_too_long"
+    # The paired token count is carried into the decision for diagnostics (F2).
+    assert result.input_tokens == OVER_WINDOW_TOKENS
 
 
 def test_answer_mentioned_in_incoming_question_abstains_on_role_reversal() -> None:
