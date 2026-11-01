@@ -145,13 +145,50 @@ def _print_false_hits_by_group() -> None:
     print()
 
 
+def _freshness_contrast(path: Path) -> dict | None:
+    """Report stable false bypasses and volatile misses separately on a TSV set.
+
+    This is a labelled development/held-out contrast, not an in-sample accuracy
+    gate; the 4-control smoke number above stays for regression continuity.
+    """
+    import csv  # noqa: PLC0415
+
+    if not path.is_file():
+        return None
+    stable_total = stable_bypassed = volatile_total = volatile_missed = 0
+    with path.open(encoding="utf-8", newline="") as stream:
+        for row in csv.DictReader(stream, delimiter="\t"):
+            bypass = is_volatile(row["query"])
+            if row["volatile"] == "true":
+                volatile_total += 1
+                volatile_missed += not bypass
+            else:
+                stable_total += 1
+                stable_bypassed += bypass
+    return {
+        "set": path.name,
+        "stable_false_bypasses": f"{stable_bypassed}/{stable_total}",
+        "volatile_missed": f"{volatile_missed}/{volatile_total}",
+    }
+
+
 def _print_volatility_results() -> None:
     """Print volatility detector results."""
     v = evaluate_volatility()
     print(
         f"Staleness detector: recall {v['recall']} on volatile queries, "
-        f"false positives {v['false_positives']} on stable controls.\n"
+        f"false positives {v['false_positives']} on stable controls."
     )
+    dev = Path(__file__).parent / "dev"
+    for name in ("freshness_cases_v1.tsv", "freshness_technical_holdout_v1.tsv"):
+        contrast = _freshness_contrast(dev / name)
+        if contrast:
+            print(
+                f"  {contrast['set']}: stable false bypasses "
+                f"{contrast['stable_false_bypasses']}, volatile missed "
+                f"{contrast['volatile_missed']}"
+            )
+    print()
 
 
 def _write_metrics_csv(rows: list[dict]) -> None:
