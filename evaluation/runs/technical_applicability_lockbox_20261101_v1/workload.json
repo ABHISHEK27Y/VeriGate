@@ -1,0 +1,74 @@
+[
+  {
+    "family": "ansible_check_mode", "domain": "Ansible", "stored_query": "How do I preview an Ansible playbook run for host atlas?", "stored_answer": "Run `ansible-playbook site.yml --check --limit atlas` to preview the tasks for host atlas.",
+    "cases": [
+      {"incoming_query": "How can I plan the Ansible playbook tasks for host atlas?", "label": "valid", "contract": "preview and plan refer to the same dry run for atlas"},
+      {"incoming_query": "What is the way to preview an Ansible playbook run for host atlas?", "label": "valid", "contract": "same host and dry-run action"},
+      {"incoming_query": "How do I apply an Ansible playbook for host atlas?", "label": "invalid", "contract": "applying tasks differs from previewing them"},
+      {"incoming_query": "How do I change an Ansible playbook for host atlas?", "label": "abstain", "contract": "operation on the playbook is unspecified"}
+    ]
+  },
+  {
+    "family": "vault_read_grant", "domain": "Vault", "stored_query": "How do I grant read access to Vault path secret/team?", "stored_answer": "Grant read access to `secret/team` in the Vault policy and test a read against that path.",
+    "cases": [
+      {"incoming_query": "How can I give read permission for Vault path secret/team?", "label": "valid", "contract": "same path and read permission"},
+      {"incoming_query": "What policy gives Vault read access to secret/team?", "label": "valid", "contract": "same read access and target"},
+      {"incoming_query": "How do I grant write access to Vault path secret/team?", "label": "invalid", "contract": "write permission differs from read permission"},
+      {"incoming_query": "How do I grant access to Vault path secret/team?", "label": "abstain", "contract": "permission level is absent"}
+    ]
+  },
+  {
+    "family": "rabbitmq_billing_queue", "domain": "RabbitMQ", "stored_query": "How do I route receipt messages to RabbitMQ queue billing?", "stored_answer": "Publish receipt messages with routing configured for queue billing and verify that a billing consumer receives them.",
+    "cases": [
+      {"incoming_query": "How can I send receipt messages to RabbitMQ queue billing?", "label": "valid", "contract": "same messages and destination queue"},
+      {"incoming_query": "What routes receipts into RabbitMQ queue billing?", "label": "valid", "contract": "same destination and routing goal"},
+      {"incoming_query": "How do I route receipt messages to RabbitMQ queue refunds?", "label": "invalid", "contract": "refunds is a different destination"},
+      {"incoming_query": "How do I route receipt messages in RabbitMQ?", "label": "abstain", "contract": "destination queue is absent"}
+    ]
+  },
+  {
+    "family": "nginx_generic_restart", "domain": "Nginx", "stored_query": "How do I restart Nginx in staging?", "stored_answer": "Run `systemctl restart nginx` and inspect its status. This command is the same in every environment.",
+    "cases": [
+      {"incoming_query": "How can I reboot Nginx in stage?", "label": "valid", "contract": "same restart action and environment alias"},
+      {"incoming_query": "How do I restart Nginx?", "label": "valid", "contract": "the stipulated command applies in every environment; omission is harmless"},
+      {"incoming_query": "How do I stop Nginx in staging?", "label": "invalid", "contract": "stop differs from restart"},
+      {"incoming_query": "How do I manage Nginx in staging?", "label": "abstain", "contract": "requested operation is absent"}
+    ]
+  },
+  {
+    "family": "webhook_post_method", "domain": "Webhook transport", "stored_query": "How do I send an HTTP POST webhook to /alerts?", "stored_answer": "Send a POST request to `/alerts` with the event body and verify the receiver accepts it.",
+    "cases": [
+      {"incoming_query": "What is the way to POST an HTTP webhook to /alerts?", "label": "valid", "contract": "same HTTP method and route"},
+      {"incoming_query": "How can I send an HTTP POST request to the /alerts webhook?", "label": "valid", "contract": "same method, target and event"},
+      {"incoming_query": "How do I send an HTTP PUT webhook to /alerts?", "label": "invalid", "contract": "PUT differs from POST"},
+      {"incoming_query": "How do I send a webhook to /alerts?", "label": "abstain", "contract": "required HTTP method is absent"}
+    ]
+  },
+  {
+    "family": "systemd_named_server", "domain": "Systemd", "stored_query": "How do I restart the inventory daemon on server north?", "stored_answer": "On server north, run `systemctl restart inventory` and confirm the inventory daemon becomes active.",
+    "cases": [
+      {"incoming_query": "How can I reboot the inventory daemon on server north?", "label": "valid", "contract": "same server and restart action"},
+      {"incoming_query": "What command restarts inventory on server north?", "label": "valid", "contract": "same daemon and server"},
+      {"incoming_query": "How do I restart the inventory daemon on server south?", "label": "invalid", "contract": "south is a different server"},
+      {"incoming_query": "How do I restart the inventory daemon?", "label": "abstain", "contract": "server identity is absent"}
+    ]
+  },
+  {
+    "family": "playwright_smoke_marker", "domain": "Playwright", "stored_query": "How do I run Playwright tests marked smoke?", "stored_answer": "Run the Playwright test selection marked smoke and inspect the smoke-test results.",
+    "cases": [
+      {"incoming_query": "How can I execute the Playwright tests marked smoke?", "label": "valid", "contract": "same test marker"},
+      {"incoming_query": "What is the way to run Playwright tests marked smoke?", "label": "valid", "contract": "same marked test set"},
+      {"incoming_query": "How do I run Playwright tests marked regression?", "label": "invalid", "contract": "regression is a different marker"},
+      {"incoming_query": "How do I run Playwright tests?", "label": "abstain", "contract": "marker is absent"}
+    ]
+  },
+  {
+    "family": "nomad_generic_environment", "domain": "Nomad", "stored_query": "How do I inspect a Nomad job in the test environment?", "stored_answer": "Run `nomad job status` with the chosen job ID and inspect the allocation status. This read-only inspection procedure is identical in test and production.",
+    "cases": [
+      {"incoming_query": "How can I view a Nomad job status in test?", "label": "valid", "contract": "same read-only inspection in test"},
+      {"incoming_query": "How do I inspect a Nomad job?", "label": "valid", "contract": "the stipulated procedure is environment-independent"},
+      {"incoming_query": "How do I stop a Nomad job in test?", "label": "invalid", "contract": "stop differs from read-only inspection"},
+      {"incoming_query": "How do I change a Nomad job?", "label": "abstain", "contract": "requested operation is unspecified"}
+    ]
+  }
+]

@@ -1,0 +1,12 @@
+{
+  "schema_version": "technical-applicability-lockbox-v1",
+  "workload_sha256": "4b36aee65d99d541a9689127064c0bb72628fcd8e095d3998ee497a9b47b6506",
+  "policy_artifact_sha256": "f9d2365021192fe7a78c54a0d250e1c384f416ad3c1818b084c5b89cd276b6a2",
+  "families": 8,
+  "cases": 32,
+  "labels": {"valid": 16, "invalid": 8, "abstain": 8},
+  "variants": ["unchanged_answer_policy", "experimental_applicability"],
+  "candidate_setting": "one fixed stored candidate per family with the same pinned MiniLM similarity in both variants",
+  "threshold_setting": "unchanged answer-policy artifact; experimental check runs before the same answer-aware decision",
+  "acceptance_criteria": "Do not enable if valid reuse falls, if invalid or ambiguous acceptance rises, or if latency materially worsens without a safety gain. Results are controlled evidence, not production rates."
+}
