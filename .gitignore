@@ -56,3 +56,9 @@ report/chapters/*.aux
 # Locally provisioned credential digest directory; regenerate with the demo script.
 config/organizations-demo.json
 config/organizations-live.json
+
+# LaTeX standalone diagram build artifacts
+report/figures/*.aux
+report/figures/*.log
+report/figures/*.fls
+report/figures/*.fdb_latexmk

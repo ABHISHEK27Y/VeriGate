@@ -10,19 +10,11 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 FIGURES = (
-    "use_cases",
     "dfd_context",
     "dfd_level1",
     "request_flow",
-    "generation_flow",
     "candidate_decision",
-    "hit_sequence",
-    "fallback_sequence",
-    "organization_scope",
-    "storage_design",
     "deployment",
-    "startup_readiness",
-    "cache_lifecycle",
 )
 
 
