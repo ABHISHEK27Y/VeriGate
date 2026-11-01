@@ -1,0 +1,77 @@
+[
+  {
+    "family": "gitlab_release",
+    "candidates": [
+      {"question": "How do I deploy the GitLab pipeline to staging?", "answer": "Deploy the GitLab pipeline to staging using the staging deployment job."},
+      {"question": "How do I preview the GitLab pipeline for staging?", "answer": "Preview the GitLab pipeline for staging without deploying it."},
+      {"question": "How do I deploy the GitLab pipeline to production?", "answer": "Deploy the GitLab pipeline to production using the production deployment job."}
+    ],
+    "probes": [
+      {"question": "What is the way to deploy the GitLab pipeline to staging?", "label": "valid", "suitable": [0], "evidence": "same deployment action and staging target"},
+      {"question": "How can I release the GitLab pipeline to stage?", "label": "valid", "suitable": [0], "evidence": "release/deploy and stage/staging are aliases"},
+      {"question": "How do I preview the GitLab pipeline in staging?", "label": "valid", "suitable": [1], "evidence": "preview is a separate valid cached answer; top-k should select it"},
+      {"question": "How do I deploy the GitLab pipeline to QA?", "label": "invalid", "suitable": [], "evidence": "QA is a different deployment target"},
+      {"question": "How do I deploy the GitLab pipeline?", "label": "ambiguous", "suitable": [], "evidence": "deployment environment is necessary and absent"}
+    ]
+  },
+  {
+    "family": "postgresql_restore",
+    "candidates": [
+      {"question": "How do I restore the PostgreSQL database in staging?", "answer": "Restore the PostgreSQL database in staging from the approved staging backup."},
+      {"question": "How do I backup the PostgreSQL database in staging?", "answer": "Backup the PostgreSQL database in staging and verify the backup file."},
+      {"question": "How do I restore the PostgreSQL database in production?", "answer": "Restore the PostgreSQL database in production from the approved production backup."}
+    ],
+    "probes": [
+      {"question": "What is the process to restore the PostgreSQL database in stage?", "label": "valid", "suitable": [0], "evidence": "same restore action and environment"},
+      {"question": "How can I recover the PostgreSQL database in staging?", "label": "valid", "suitable": [0], "evidence": "recover/restore are aliases"},
+      {"question": "How do I backup the PostgreSQL database in staging safely?", "label": "valid", "suitable": [1], "evidence": "backup candidate is suitable; restore candidates are not"},
+      {"question": "How do I restore the PostgreSQL database in development?", "label": "invalid", "suitable": [], "evidence": "development differs from seeded environments"},
+      {"question": "How do I restore the PostgreSQL database?", "label": "ambiguous", "suitable": [], "evidence": "backup source and environment cannot be chosen"}
+    ]
+  },
+  {
+    "family": "kafka_topics",
+    "candidates": [
+      {"question": "How do I create Kafka topic invoices?", "answer": "Create Kafka topic invoices and verify that the invoices topic exists."},
+      {"question": "How do I delete Kafka topic invoices?", "answer": "Delete Kafka topic invoices after confirming that consumers have stopped."},
+      {"question": "How do I create Kafka topic payments?", "answer": "Create Kafka topic payments and verify that the payments topic exists."}
+    ],
+    "probes": [
+      {"question": "What is the way to create Kafka topic invoices?", "label": "valid", "suitable": [0], "evidence": "same topic and create action"},
+      {"question": "How can I add Kafka topic invoices?", "label": "valid", "suitable": [0], "evidence": "add/create are action aliases"},
+      {"question": "How do I delete Kafka topic invoices safely?", "label": "valid", "suitable": [1], "evidence": "delete candidate is suitable; create candidates are not"},
+      {"question": "How do I create Kafka topic refunds?", "label": "invalid", "suitable": [], "evidence": "refunds is a different topic"},
+      {"question": "How do I create a Kafka topic?", "label": "ambiguous", "suitable": [], "evidence": "topic identity is unspecified"}
+    ]
+  },
+  {
+    "family": "argo_namespace",
+    "candidates": [
+      {"question": "How do I deploy the Argo CD application to namespace amber?", "answer": "Deploy the Argo CD application to namespace amber and check its sync status."},
+      {"question": "How do I preview the Argo CD application in namespace amber?", "answer": "Preview the Argo CD application in namespace amber without changing it."},
+      {"question": "How do I deploy the Argo CD application to namespace violet?", "answer": "Deploy the Argo CD application to namespace violet and check its sync status."}
+    ],
+    "probes": [
+      {"question": "What steps deploy the Argo CD application to namespace amber?", "label": "valid", "suitable": [0], "evidence": "same action and namespace"},
+      {"question": "How can I release the Argo CD application to namespace amber?", "label": "valid", "suitable": [0], "evidence": "release/deploy alias, same namespace"},
+      {"question": "How do I preview the Argo CD application in namespace amber safely?", "label": "valid", "suitable": [1], "evidence": "preview candidate is suitable"},
+      {"question": "How do I deploy the Argo CD application to namespace crimson?", "label": "invalid", "suitable": [], "evidence": "crimson is a different namespace"},
+      {"question": "How do I deploy the Argo CD application?", "label": "ambiguous", "suitable": [], "evidence": "namespace is missing"}
+    ]
+  },
+  {
+    "family": "docker_generic_scan",
+    "candidates": [
+      {"question": "How do I scan a Docker image in staging?", "answer": "Run the same read-only Docker image scan in every environment and inspect its vulnerability report."},
+      {"question": "How do I deploy a Docker image in staging?", "answer": "Deploy the Docker image in staging and verify the staging service."},
+      {"question": "How do I deploy a Docker image in production?", "answer": "Deploy the Docker image in production and verify the production service."}
+    ],
+    "probes": [
+      {"question": "How can I scan a Docker image in stage?", "label": "valid", "suitable": [0], "evidence": "same scan task in staging"},
+      {"question": "How do I scan a Docker image?", "label": "valid", "suitable": [0], "evidence": "the cached scan procedure explicitly applies in every environment"},
+      {"question": "How do I release a Docker image to staging?", "label": "valid", "suitable": [1], "evidence": "release/deploy alias, same environment"},
+      {"question": "How do I deploy a Docker image to development?", "label": "invalid", "suitable": [], "evidence": "development is a different deployment target"},
+      {"question": "How do I deploy a Docker image?", "label": "ambiguous", "suitable": [], "evidence": "deployment environment is unspecified"}
+    ]
+  }
+]
