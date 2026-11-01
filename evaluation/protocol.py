@@ -100,6 +100,56 @@ def bootstrap_ci(
     return values[int(0.025 * (len(values) - 1))], values[int(0.975 * (len(values) - 1))]
 
 
+def paired_family_bootstrap(
+    families: list[str],
+    arm_a: dict[str, tuple[int, int]],
+    arm_b: dict[str, tuple[int, int]],
+    *,
+    seed: int = 42,
+    resamples: int = 2000,
+) -> dict[str, float | int | None]:
+    """Bootstrap the paired difference rate_a - rate_b over the SAME resampled families.
+
+    ``arm_a``/``arm_b`` map each family id to (numerator, denominator) for one arm.
+    Because both arms ran the identical frozen families, each resample draws one set
+    of families and applies it to both arms, so the between-family variance cancels.
+    Returns the point difference and a 95% percentile interval. Overlap or exclusion
+    of zero is reported, not interpreted; this does not establish significance on its
+    own and says nothing about authored-label error.
+    """
+    if not families:
+        raise ValueError("No families")
+    if set(families) - arm_a.keys() or set(families) - arm_b.keys():
+        raise ValueError("Both arms must cover every family")
+    if resamples < 1:
+        raise ValueError("At least one resample is required")
+
+    def rate(arm: dict[str, tuple[int, int]], chosen: list[str]) -> float | None:
+        numerator = sum(arm[f][0] for f in chosen)
+        denominator = sum(arm[f][1] for f in chosen)
+        return numerator / denominator if denominator else None
+
+    point_a, point_b = rate(arm_a, families), rate(arm_b, families)
+    point = point_a - point_b if point_a is not None and point_b is not None else None
+    rng = random.Random(seed)
+    diffs: list[float] = []
+    for _ in range(resamples):
+        chosen = [rng.choice(families) for _ in families]
+        a, b = rate(arm_a, chosen), rate(arm_b, chosen)
+        if a is not None and b is not None:
+            diffs.append(a - b)
+    if not diffs:
+        return {"difference": point, "ci_low": None, "ci_high": None, "families": len(families)}
+    diffs.sort()
+    return {
+        "difference": point,
+        "ci_low": diffs[int(0.025 * (len(diffs) - 1))],
+        "ci_high": diffs[int(0.975 * (len(diffs) - 1))],
+        "families": len(families),
+        "resamples": len(diffs),
+    }
+
+
 def risk_coverage(rows: list[Decision]) -> list[dict[str, float | None]]:
     """Sweep unique score cutoffs, including reject-all and accept-all endpoints."""
     if not rows:

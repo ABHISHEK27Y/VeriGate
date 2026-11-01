@@ -37,3 +37,22 @@ def test_invalid_similarity_fails_closed(score):
 def test_invalid_density_fails_closed(density):
     accepted, reason, _ = CachePolicy(use_verifier=False).decide("q", "q", 0.99, density)
     assert not accepted and reason == "invalid_density"
+
+
+def test_paired_family_bootstrap_detects_difference_and_matches():
+    from evaluation.protocol import paired_family_bootstrap
+
+    families = [f"f{i}" for i in range(30)]
+    arm_a = {f: (2 + i % 3, 5) for i, f in enumerate(families)}  # more errors
+    arm_b = {f: (i % 2, 5) for i, f in enumerate(families)}  # fewer errors
+    result = paired_family_bootstrap(families, arm_a, arm_b, resamples=1000)
+    assert result["difference"] > 0
+    assert result["ci_low"] is not None and result["ci_high"] is not None
+    assert result["families"] == len(families)
+    # Identical arms: zero difference, interval contains zero.
+    same = paired_family_bootstrap(families, arm_a, arm_a, resamples=1000)
+    assert same["difference"] == 0
+    assert same["ci_low"] <= 0 <= same["ci_high"]
+    # Both arms must cover every family.
+    with pytest.raises(ValueError, match="cover every family"):
+        paired_family_bootstrap(families, {f: (0, 1) for f in families[:-1]}, arm_b)
