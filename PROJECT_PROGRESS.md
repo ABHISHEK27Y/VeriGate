@@ -218,6 +218,16 @@ academic results report or a production-safety claim.
 
 ## 1 November 2026 gateway follow-up
 
+The later technical answer-quality lockbox is documented in
+`evaluation/runs/technical_bidirectional_lockbox_20261101_v1/FINDINGS.md`.
+Its frozen 10-family, 30-case comparison found 4/10 valid reuse, 0/10 invalid
+accepts, and 3/10 ambiguous accepts for the current assertion; the reverse
+assertion retained 3/10 valid, 0/10 invalid, and 3/10 ambiguous. The experimental
+check increased verifier calls and tail time, so it was **not enabled**. These
+controlled labels do not establish production error prevalence. Clear fencing,
+cross-worker memo purge, full HTTP replay, and real-provider validation remain
+pending.
+
 The response-scope, expiry-accounting, private-demo, and provider-terminal fixes
 are committed in `a70023c`. A subsequent deadline checkpoint bounds cache
 lookup (including queue wait) and the overall request, starts JSON and streaming

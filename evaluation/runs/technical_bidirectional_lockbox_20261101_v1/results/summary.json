@@ -1,0 +1,41 @@
+{
+  "workload_sha256": "9c14929b3e92697c70c1a08d26cce997ee96e1f05244a8eeb6511afc65e8ffe5",
+  "policy_artifact_sha256": "f9d2365021192fe7a78c54a0d250e1c384f416ad3c1818b084c5b89cd276b6a2",
+  "model": "cross-encoder/nli-deberta-v3-xsmall",
+  "revision": "a150876415327c80daeff35ca6f68f5ed8cf5c24",
+  "environment": {
+    "rss_initial_bytes": 54403072,
+    "rss_after_embedding_bytes": 570347520,
+    "rss_after_nli_bytes": 796196864,
+    "rss_after_decisions_bytes": 813047808,
+    "nli_prewarm_ms": 1280.394
+  },
+  "variants": {
+    "current answer assertion": {
+      "valid_reuse": 4,
+      "valid_denominator": 10,
+      "valid_retrieval_failures": 0,
+      "invalid_accepts": 0,
+      "invalid_denominator": 10,
+      "ambiguous_accepts": 3,
+      "ambiguous_denominator": 10,
+      "abstentions": 14,
+      "all_denominator": 30,
+      "decision_median_ms": 2.179,
+      "decision_p95_ms": 102.941
+    },
+    "bidirectional answer assertion": {
+      "valid_reuse": 3,
+      "valid_denominator": 10,
+      "valid_retrieval_failures": 0,
+      "invalid_accepts": 0,
+      "invalid_denominator": 10,
+      "ambiguous_accepts": 3,
+      "ambiguous_denominator": 10,
+      "abstentions": 15,
+      "all_denominator": 30,
+      "decision_median_ms": 2.043,
+      "decision_p95_ms": 182.426
+    }
+  }
+}

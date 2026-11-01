@@ -1,0 +1,13 @@
+{
+  "schema_version": "technical-answer-reuse-results-v1",
+  "frozen_input_commit": "dfd70a5d3a976106a4f87c2f77abea9e2f4d9251",
+  "workload_sha256": "9c14929b3e92697c70c1a08d26cce997ee96e1f05244a8eeb6511afc65e8ffe5",
+  "source": "scripts/evaluate_bidirectional_answer.py",
+  "source_sha256": "de4cc6a384f40262be7e6250605d92e0b754370daa8d599a237cf951d1a64774",
+  "command": "EMBEDDING_BACKEND=minilm HF_HUB_OFFLINE=1 python -m scripts.evaluate_bidirectional_answer evaluation/runs/technical_bidirectional_lockbox_20261101_v1/results_timed",
+  "outputs": {
+    "decisions.csv": "eed4dca95c49f31594d11192ce8dc5495e03607055883f82141e08ffff991981",
+    "summary.json": "d2ab41fcb43eda894dcb2b49eb732f3057c46e93e4b1341a3703c97c373bd023"
+  },
+  "limitations": "Fixed single candidates; controlled authored labels; shared-model process RSS; no paid calls."
+}
