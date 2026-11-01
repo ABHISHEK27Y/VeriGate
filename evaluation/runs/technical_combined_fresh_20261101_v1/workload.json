@@ -1,0 +1,77 @@
+[
+  {
+    "family": "rabbitmq_policy",
+    "candidates": [
+      {"question": "How do I grant publish permission on RabbitMQ exchange ledger in staging?", "answer": "Grant publish permission on exchange ledger in staging using the staging policy; verify the permission before publishing."},
+      {"question": "How do I revoke publish permission on RabbitMQ exchange ledger in staging?", "answer": "Revoke publish permission on exchange ledger in staging and confirm the principal can no longer publish."},
+      {"question": "How do I grant publish permission on RabbitMQ exchange invoice in staging?", "answer": "Grant publish permission on exchange invoice in staging using the invoice policy."}
+    ],
+    "probes": [
+      {"question": "What steps give publishing permission for RabbitMQ exchange ledger in stage?", "label": "valid", "suitable": [0], "evidence": "grant and give express the same permission change on ledger in staging"},
+      {"question": "How can I grant publish permission on RabbitMQ exchange ledger in staging?", "label": "valid", "suitable": [0], "evidence": "same action, resource and environment"},
+      {"question": "How do I remove publish permission on RabbitMQ exchange ledger in staging?", "label": "valid", "suitable": [1], "evidence": "removing a permission means revoke, not delete the exchange"},
+      {"question": "How do I grant publish permission on RabbitMQ exchange audit in staging?", "label": "invalid", "suitable": [], "evidence": "audit is a different named exchange"},
+      {"question": "How do I grant publish permission on RabbitMQ exchange ledger?", "label": "ambiguous", "suitable": [], "evidence": "the necessary environment is absent"}
+    ]
+  },
+  {
+    "family": "mysql_replica",
+    "candidates": [
+      {"question": "How do I restart MySQL replica east in production?", "answer": "Restart MySQL replica east in production during the maintenance window, then check replication lag."},
+      {"question": "How do I stop MySQL replica east in production?", "answer": "Stop MySQL replica east in production and confirm its state before maintenance."},
+      {"question": "How do I restart MySQL replica west in production?", "answer": "Restart MySQL replica west in production during its maintenance window."}
+    ],
+    "probes": [
+      {"question": "What is the procedure to reboot MySQL replica east in prod?", "label": "valid", "suitable": [0], "evidence": "reboot and restart are equivalent for the same replica"},
+      {"question": "How can I restart MySQL replica east in production?", "label": "valid", "suitable": [0], "evidence": "same replica and action"},
+      {"question": "How do I stop MySQL replica east in production safely?", "label": "valid", "suitable": [1], "evidence": "specific stop answer is suitable"},
+      {"question": "How do I restart MySQL replica north in production?", "label": "invalid", "suitable": [], "evidence": "north is neither east nor west"},
+      {"question": "How do I restart a MySQL replica in production?", "label": "ambiguous", "suitable": [], "evidence": "replica identity is missing"}
+    ]
+  },
+  {
+    "family": "npm_token",
+    "candidates": [
+      {"question": "How do I rotate NPM token `BuildToken` in staging?", "answer": "Rotate only the staging NPM token `BuildToken`; update its approved secret reference and verify the next build. Do not print the credential value in logs."},
+      {"question": "How do I revoke NPM token `BuildToken` in staging?", "answer": "Revoke the staging NPM token `BuildToken` and ensure its secret reference can no longer authenticate."},
+      {"question": "How do I rotate NPM token `buildtoken` in staging?", "answer": "Rotate the distinct staging NPM token `buildtoken` and update its own reference."}
+    ],
+    "probes": [
+      {"question": "What steps rotate the staging NPM token `BuildToken`?", "label": "valid", "suitable": [0], "evidence": "same case-sensitive identifier and action"},
+      {"question": "How can I rotate NPM token `BuildToken` in stage?", "label": "valid", "suitable": [0], "evidence": "stage is staging"},
+      {"question": "How do I revoke NPM token `BuildToken` in staging?", "label": "valid", "suitable": [1], "evidence": "revocation answer is the suitable second candidate"},
+      {"question": "How do I rotate NPM token `BUILDTOKEN` in staging?", "label": "invalid", "suitable": [], "evidence": "case-sensitive token identifier differs from both candidates"},
+      {"question": "How do I rotate the NPM token in staging?", "label": "ambiguous", "suitable": [], "evidence": "token identifier is absent"}
+    ]
+  },
+  {
+    "family": "http_retry",
+    "candidates": [
+      {"question": "How do I set retry 3 times and timeout 5 seconds for HTTP POST /orders?", "answer": "For POST /orders, configure retry 3 times and timeout 5 seconds. Retry only idempotency-key-protected requests; otherwise repeat submission can create duplicate orders. The client must preserve the same idempotency key across attempts and stop after the third attempt."},
+      {"question": "How do I set retry 5 times and timeout 3 seconds for HTTP POST /orders?", "answer": "For POST /orders, configure retry 5 times and timeout 3 seconds with an idempotency key."},
+      {"question": "How do I set retry 3 times and timeout 5 seconds for HTTP GET /orders?", "answer": "For GET /orders, configure retry 3 times and timeout 5 seconds."}
+    ],
+    "probes": [
+      {"question": "What is the way to configure 3 retries with a 5 second timeout for HTTP POST /orders?", "label": "valid", "suitable": [0], "evidence": "same retry count, timeout duration and HTTP method"},
+      {"question": "How can I set retry 3 times and timeout 5 seconds for HTTP POST /orders?", "label": "valid", "suitable": [0], "evidence": "same explicit bindings"},
+      {"question": "How do I set retry 3 times and timeout 5 seconds for HTTP GET /orders?", "label": "valid", "suitable": [2], "evidence": "GET answer is suitable; POST answer has an idempotency condition"},
+      {"question": "How do I set retry 5 times and timeout 5 seconds for HTTP POST /orders?", "label": "invalid", "suitable": [], "evidence": "changed retry count, no candidate covers that configuration"},
+      {"question": "How do I configure retries for HTTP POST /orders?", "label": "ambiguous", "suitable": [], "evidence": "necessary count, timeout and idempotency requirement unspecified"}
+    ]
+  },
+  {
+    "family": "helm_namespace",
+    "candidates": [
+      {"question": "How do I preview Helm release atlas in namespace red?", "answer": "Preview Helm release atlas in namespace red with a dry run; inspect the rendered manifests without applying changes."},
+      {"question": "How do I deploy Helm release atlas in namespace red?", "answer": "Deploy Helm release atlas into namespace red and check its rollout status."},
+      {"question": "How do I preview Helm release atlas in namespace blue?", "answer": "Preview Helm release atlas in namespace blue with a dry run."}
+    ],
+    "probes": [
+      {"question": "How can I plan the Helm release atlas for namespace red?", "label": "valid", "suitable": [0], "evidence": "planning a dry run is preview, not deployment"},
+      {"question": "What is the way to preview Helm release atlas in namespace red?", "label": "valid", "suitable": [0], "evidence": "same release, namespace and preview action"},
+      {"question": "How can I release Helm atlas to namespace red?", "label": "valid", "suitable": [1], "evidence": "release means deploy in this action context"},
+      {"question": "How do I preview Helm release atlas in namespace green?", "label": "invalid", "suitable": [], "evidence": "green is neither seeded namespace"},
+      {"question": "How do I preview Helm release atlas?", "label": "ambiguous", "suitable": [], "evidence": "namespace is necessary and omitted"}
+    ]
+  }
+]
