@@ -399,8 +399,8 @@ async function health(){try{const r=await fetch("/health");if(!r.ok)throw new Er
   $("demo-note").hidden=!h.demo_restore_available;
   $("org-demo-note").hidden=!h.organization_demo_available;
   $("mode-banner").classList.toggle("semantic",answerAware);
-  $("mode-label").textContent=answerAware?"Answer-aware semantic cache":h.cache_match_mode==="semantic"?"Semantic cache":"Exact cache";
-  $("mode-detail").textContent=answerAware?h.embedding_backend+" embeddings + "+(h.answer_verifier_kind==="task_reuse_experimental"?"experimental task reuse verifier":"NLI")+" · applicability "+(h.answer_policy_applicability_guard?"experimental ON":"off")+" · "+(h.answer_policy_prewarm?"prewarmed":"lazy verifier")+" · "+(h.organization_demo_available?"mock organization profiles":"provider: "+(h.providers||[]).join(", ")):"Provider: "+(h.providers||[]).join(", ");
+  $("mode-label").textContent=answerAware?"Answer-aware semantic cache":h.cache_match_mode==="semantic"?"Semantic cache (Tier-1 structural)":"Exact cache";
+  $("mode-detail").textContent=answerAware?h.embedding_backend+" embeddings + "+(h.answer_verifier_kind==="task_reuse_experimental"?"experimental task reuse verifier":"NLI")+" · applicability "+(h.answer_policy_applicability_guard?"experimental ON":"off")+" · "+(h.answer_policy_prewarm?"prewarmed":"lazy verifier")+" · "+(h.organization_demo_available?"mock organization profiles":"provider: "+(h.providers||[]).join(", ")):(h.active_semantic_policy==="tier1_structural"?"Tier-1 structural policy (no answer artifact; rejects most paraphrases) · ":"")+"Provider: "+(h.providers||[]).join(", ");
   $("cfg").innerHTML=[["matching",h.cache_match_mode],["policy",h.answer_policy_version||h.cache_policy_version],
     ["answer verifier",answerAware?h.answer_verifier_kind:"off"],["applicability guard",h.answer_policy_applicability_guard?"experimental ON":"off"],["verifier prewarm",h.answer_policy_prewarm?"ready":"off"],["redis",h.redis],["vector index",h.vector_backend],["embeddings",h.embedding_backend],
     ["provider",(h.providers||[]).join(", ")]].map(([k,v])=>`<div class="c"><div class="k">${k}</div><div class="v">${v}</div></div>`).join("");
