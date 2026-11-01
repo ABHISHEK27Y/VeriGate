@@ -71,8 +71,8 @@ def extract_constraints(text: str) -> ConstraintEvidence:
     unknown = False
     for match in _NEGATION.finditer(text):
         action = extract_actions(match.group("verb"))
-        if len(action.values) == 1 and not action.unknown:
-            negated.update(action.values)
+        if len(action.action_names) == 1 and not action.unknown:
+            negated.update(action.action_names)
         else:
             unknown = True
     return ConstraintEvidence(tuple(bindings), frozenset(negated), unknown)

@@ -99,7 +99,7 @@ def extract(question: str) -> TechnicalIdentity:
     actions = extract_actions(question)
     return TechnicalIdentity(
         products,
-        actions.values,
+        actions.action_names,
         frozenset(_ENVIRONMENTS[word] for word in words if word in _ENVIRONMENTS),
         frozenset(_CONSTRAINTS[word] for word in words if word in _CONSTRAINTS),
         frozenset(identifiers),

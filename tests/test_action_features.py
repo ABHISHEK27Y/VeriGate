@@ -24,14 +24,14 @@ from app.cache.technical_identity import compare
 )
 def test_action_evidence_has_source_span(text: str, expected: str) -> None:
     result = extract_actions(text)
-    assert expected in result.values
+    assert expected in result.action_names
     assert any(text[item.start : item.end] == item.surface for item in result.evidence)
 
 
 def test_unresolved_remove_target_is_unknown() -> None:
     result = extract_actions("How do I remove it?")
     assert result.unknown
-    assert not result.values
+    assert not result.action_names
 
 
 def test_action_normalization_is_shared_between_guards() -> None:

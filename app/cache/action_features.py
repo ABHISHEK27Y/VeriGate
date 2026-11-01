@@ -82,7 +82,7 @@ class ActionExtraction:
     unknown: bool = False
 
     @property
-    def values(self) -> frozenset[str]:
+    def action_names(self) -> frozenset[str]:
         return frozenset(item.value for item in self.evidence)
 
 

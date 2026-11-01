@@ -9,7 +9,7 @@ import pytest
 
 import app.main as gateway_main
 from app.cache.semantic_cache import LookupResult, SemanticCache
-from app.providers.mock import MockProvider
+from app.providers.base import ProviderEvent
 
 HEADERS = {"x-api-key": "demo-key-123"}
 
@@ -81,17 +81,23 @@ def test_expired_request_deadline_never_dispatches_provider(client, monkeypatch)
 def test_stream_provider_budget_starts_after_lookup(client, monkeypatch) -> None:
     client.app.state.config = client.app.state.config.model_copy(
         update={
-            "cache_lookup_timeout_sec": 0.3,
-            "provider_timeout": 0.1,
-            "request_deadline_sec": 1.0,
+            "cache_lookup_timeout_sec": 1.2,
+            "provider_timeout": 0.5,
+            "request_deadline_sec": 2.5,
         }
     )
-    provider = client.app.state.provider_registry.providers[0]
-    assert isinstance(provider, MockProvider)
-    provider.delay = 0.005
+
+    async def short_events():
+        yield ProviderEvent("content", content="Complete answer.")
+        yield ProviderEvent("complete", finish_reason="stop")
+
+    async def route_events(_self, _prompt):
+        return "mock", short_events()
+
+    monkeypatch.setattr(type(client.app.state.provider_registry), "route_events", route_events)
 
     async def delayed_lookup(*_args):
-        await asyncio.sleep(0.15)
+        await asyncio.sleep(0.8)
         return LookupResult(status="MISS", reason="empty_cache"), "private"
 
     monkeypatch.setattr(gateway_main, "_lookup_with_overlay", delayed_lookup)

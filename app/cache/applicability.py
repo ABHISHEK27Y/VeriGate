@@ -51,7 +51,7 @@ class Applicability:
 
 def _facets(text: str) -> dict[str, frozenset[str]]:
     words = [word.casefold() for word in _WORDS.findall(text)]
-    actions = extract_actions(text).values
+    actions = extract_actions(text).action_names
     environments = {_ENVIRONMENTS[word] for word in words if word in _ENVIRONMENTS}
     named: dict[str, set[str]] = {}
     for facet, value in _NAMED.findall(text):
