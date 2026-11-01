@@ -23,6 +23,8 @@ The gateway defaults to exact-prompt cache matching. Set `CACHE_MATCH_MODE=seman
 for workloads where approximate reuse is acceptable; NLI does not guarantee correctness.
 See [production configuration](docs/PRODUCTION_CONFIGURATION.md) and the
 [audit report](AUDIT_REPORT.md) for validation status and release blockers.
+New to the stack? Start with the chapter-by-chapter
+[VeriGate learning guide](docs/VERIGATE_LEARNING_GUIDE.md) before reading the audit.
 
 ## What is this project in one paragraph?
 
