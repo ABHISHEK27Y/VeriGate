@@ -24,6 +24,37 @@ The evaluation asks whether specific requests follow the intended scope and deci
 The economic motivation is to avoid generating the same useful answer repeatedly. On a cache hit, VeriGate avoids the upstream generation call. It still pays for its own CPU, memory, Redis operations, and any verification. On a miss, those checks can add work before generation. Cost effectiveness therefore depends on how often eligible requests recur, how reliably suitable answers are accepted, and the relative cost of verification and generation. Chapter~6 gives a break-even model alongside measured results rather than assuming that every cache hit is free.
 
 \section{Development Record}
-The repository contains versioned development, controlled-evaluation, and live-path checkpoints. A twelve-week historical schedule is not independently evidenced, so this report uses the recorded phases: initial gateway and pair-proxy work; answer-aware policy and controlled examples; RedisSearch and HTTP-path measurements; organization sharing and technical applicability experiments. Chapter~6 identifies each run's source, label type, and measurement boundary. The main implementation narrative records checkpoint \texttt{37dc7a7}, with diagram and dashboard reconciliation through \texttt{1cdb80a}. Each measured experiment retains its own source revision. Later changes can update the implementation record without rewriting these historical observations.
+The repository contains versioned development, controlled-evaluation, and live-path checkpoints. Figure~\ref{fig:gantt} summarizes how the work progressed by phase from August to November 2026, from the first gateway and query-pair studies, through the answer-aware policy and the semantic retrieval and HTTP measurements, to the organization-sharing experiments and the late-October production-readiness audit and the evaluation-integrity, continuous-integration, and report follow-up that closed the period. The chart is indicative and organized by phase rather than claiming independently verified daily effort; each measured experiment still carries its own recorded source revision.
+
+\begin{figure}[H]\centering
+\footnotesize
+\begin{ganttchart}[
+  hgrid={draw=black!12},
+  vgrid={{draw=black!10}},
+  x unit=0.70cm,
+  y unit title=0.66cm,
+  y unit chart=0.82cm,
+  title height=1,
+  bar height=0.5,
+  bar top shift=0.25,
+  bar label font=\scriptsize,
+  bar label node/.append style={text width=3.9cm,align=right,font=\scriptsize},
+  title label font=\small\bfseries,
+  bar/.append style={rounded corners=1.2pt,draw=black!55,line width=0.4pt},
+]{1}{16}
+\gantttitle{August}{4}\gantttitle{September}{4}\gantttitle{October}{4}\gantttitle{November}{4}\\
+\ganttbar[bar/.append style={fill=vgNavy!75}]{Requirements and gateway}{1}{4}\\
+\ganttbar[bar/.append style={fill=vgSlate!70}]{Query-pair / proxy studies}{2}{6}\\
+\ganttbar[bar/.append style={fill=vgTeal!80}]{Answer-aware policy}{5}{9}\\
+\ganttbar[bar/.append style={fill=vgTeal!50}]{MiniLM, RedisSearch, HTTP}{7}{11}\\
+\ganttbar[bar/.append style={fill=vgViolet!75}]{Organization sharing}{9}{12}\\
+\ganttbar[bar/.append style={fill=vgAmber!85}]{Production-readiness audit}{11}{13}\\
+\ganttbar[bar/.append style={fill=vgGreen!75}]{Evaluation integrity and CI}{13}{16}\\
+\ganttbar[bar/.append style={fill=vgNavy!35}]{Report writing}{4}{16}
+\end{ganttchart}
+\caption{Indicative project timeline by phase, August to November 2026. Each bar spans the weeks in which that phase was the main focus; phases overlap, and report writing runs throughout. The final phase is the production-readiness audit followed by the evaluation-integrity, continuous-integration, and report reconciliation work described in Chapter~6.}\label{fig:gantt}
+\end{figure}
+
+A twelve-week historical schedule is not independently evidenced, so this report uses the recorded phases: initial gateway and pair-proxy work; answer-aware policy and controlled examples; RedisSearch and HTTP-path measurements; organization sharing and technical applicability experiments. Chapter~6 identifies each run's source, label type, and measurement boundary. The main implementation narrative records checkpoint \texttt{37dc7a7}, with diagram and dashboard reconciliation through \texttt{1cdb80a}. Each measured experiment retains its own source revision. Later changes can update the implementation record without rewriting these historical observations.
 
 A later release should record its commit, enabled profile and test evidence separately. Configuration and model changes update the implementation description; they do not retroactively change the dataset, timing boundary or outcomes of a historical experiment.
