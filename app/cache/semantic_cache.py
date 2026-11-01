@@ -554,6 +554,12 @@ class SemanticCache:
                 if candidate_rank == 1:
                     reason = decision_reason
                     nli_score = decision.score
+                elif decision.action == "VERIFY" and reason.startswith("answer_reject:"):
+                    # A later unresolved candidate means the shortlist did not
+                    # wholly reject reuse. Report the abstention that prevented a HIT;
+                    # the trace still records the rank-one rejection.
+                    reason = decision_reason
+                    nli_score = decision.score
                 verifier_invoked |= decision.score is not None or decision.reason in {
                     "verifier_unavailable",
                     "context_too_long",

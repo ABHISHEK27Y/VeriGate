@@ -17,11 +17,17 @@ from evaluation.live_policy_replay import ReplayRow, replay_rows
 ARTIFACT = Path(__file__).resolve().parents[1] / "app/cache/artifacts/answer_policy_v1.json"
 TENANT = tenant_id("demo-key-123")
 SECOND_CANDIDATE = 2
+UNCERTAIN_SCORE = 0.5
 
 
 class AlwaysEntails:
     def entail_prob(self, _premise: str, _hypothesis: str) -> float:
         return 0.99
+
+
+class RejectFirstUncertainSecond:
+    def entail_prob(self, premise: str, _hypothesis: str) -> float:
+        return 0.01 if "production" in premise else UNCERTAIN_SCORE
 
 
 async def set_candidates(cache: SemanticCache, entries: list[tuple[str, str, float]]) -> None:
@@ -236,6 +242,46 @@ def test_later_valid_candidate_wins(client) -> None:
 
 
 test_later_valid_candidate_wins.config_overrides = {
+    "cache_match_mode": "semantic",
+    "answer_policy_artifact": str(ARTIFACT),
+}
+
+
+def test_later_uncertain_candidate_controls_final_miss_reason(client) -> None:
+    cache = client.app.state.semantic_cache
+    cache._test_config = client.app.state.config
+    cache._policy.verifier = RejectFirstUncertainSecond()
+    client.portal.call(
+        set_candidates,
+        cache,
+        [
+            (
+                "How do I restart the worker in production?",
+                "Restart the production worker.",
+                0.95,
+            ),
+            (
+                "How do I restart the worker in staging?",
+                "Restart the staging worker.",
+                0.90,
+            ),
+        ],
+    )
+    response = client.post(
+        "/v1/chat",
+        json={"prompt": "What steps restart the worker in staging?"},
+        headers={"x-api-key": "demo-key-123"},
+    ).json()
+    assert response["cache"] == "MISS"
+    assert response["note"] == "answer_verify:uncertain_answer"
+    assert response["nli_score"] == UNCERTAIN_SCORE
+    assert [(item["rank"], item["action"]) for item in response["candidate_trace"]] == [
+        (1, "REJECT"),
+        (2, "VERIFY"),
+    ]
+
+
+test_later_uncertain_candidate_controls_final_miss_reason.config_overrides = {
     "cache_match_mode": "semantic",
     "answer_policy_artifact": str(ARTIFACT),
 }
