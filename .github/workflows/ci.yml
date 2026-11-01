@@ -152,6 +152,27 @@ jobs:
         run: |
           python -m scripts.benchmark_prewarm_semantic evaluation/results/prewarm_semantic_ci
 
+      # The pinned-NLI transformation contract (audit F13) is opt-in because it loads the
+      # real cross-encoder; the earlier real-semantic step already warmed that pinned
+      # revision into the HF cache, so run it here and FAIL if it silently skips.
+      - name: Pinned NLI transformation contract (must execute, not skip)
+        timeout-minutes: 15
+        env:
+          REDIS_URL: redis://localhost:6379/0
+          VERIGATE_NLI_CONTRACT_TEST: "1"
+        run: |
+          python -m pytest tests/test_nli_contract.py -v \
+            --junitxml=evaluation/results/nli_contract.xml
+          python -m scripts.assert_junit_executed evaluation/results/nli_contract.xml --min-passed 3
+
+      - name: Upload NLI contract result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nli-contract-result
+          path: evaluation/results/nli_contract.xml
+          retention-days: 7
+
       - name: Upload live benchmark artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -168,6 +189,49 @@ jobs:
             evaluation/results/real_semantic_ci/
             evaluation/results/multiworker_redis_ci/
             evaluation/results/prewarm_semantic_ci/
+          retention-days: 7
+
+  browser-regression:
+    name: Browser Dashboard Regression
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install --require-hashes --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.lock
+          pip install --no-deps --no-build-isolation -e .
+
+      # Playwright is a test-only dependency; install it here rather than widening the
+      # locked runtime set. Pin an explicit version and download only the Chromium browser.
+      - name: Install Playwright Chromium
+        run: |
+          pip install playwright==1.48.0
+          python -m playwright install --with-deps chromium
+
+      # The dashboard regression is opt-in (needs a real browser). Run it with the browser
+      # flag set and FAIL the job if it silently skips (e.g. Chromium missing), so this
+      # job cannot pass without genuinely exercising the UI.
+      - name: Dashboard regression (must execute, not skip)
+        env:
+          VERIGATE_BROWSER_TEST: "1"
+        run: |
+          python -m pytest tests/test_dashboard_private_chip.py tests/test_dashboard_source_label.py -v \
+            --junitxml=evaluation/results/browser.xml
+          python -m scripts.assert_junit_executed evaluation/results/browser.xml --min-passed 2
+
+      - name: Upload browser regression result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-regression-result
+          path: evaluation/results/browser.xml
           retention-days: 7
 
   security-audit:
@@ -213,7 +277,8 @@ jobs:
     name: Deploy Check
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-    needs: [lint-and-typecheck, test, test-with-redis, security-audit, docker-build]
+    needs:
+      [lint-and-typecheck, test, test-with-redis, browser-regression, security-audit, docker-build]
     steps:
       - name: All checks passed
         run: echo "All CI checks passed! Ready for deployment."
