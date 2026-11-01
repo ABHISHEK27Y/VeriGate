@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import time
 import uuid
 
 from redis.exceptions import ResponseError, WatchError
@@ -42,6 +41,11 @@ def _limits(tenant: str) -> tuple[int, int]:
 
 def _text(value) -> str:
     return value.decode() if isinstance(value, bytes) else value
+
+
+def _clock_to_seconds(clock) -> float:
+    """Fractional seconds from a Redis TIME reply ([seconds, microseconds])."""
+    return float(clock[0]) + float(clock[1]) / 1_000_000
 
 
 async def _put_scoped(  # noqa: PLR0912, PLR0913, PLR0915, PLR0917 - atomic quota transaction
@@ -304,6 +308,9 @@ async def put(r, tenant: str, eid: str, mapping: dict, namespace: str | None = N
         try:
             async with r.pipeline(transaction=True) as pipe:
                 await pipe.watch(ids, lru)
+                # Use the Redis clock for recency so writes and hit touches share
+                # one authoritative source and cannot disorder LRU under host skew.
+                now = _clock_to_seconds(await pipe.time())
                 count = await pipe.zcard(lru)
                 existing = await pipe.zscore(lru, eid)
                 limit = get_settings().max_cache_entries_per_tenant
@@ -321,7 +328,7 @@ async def put(r, tenant: str, eid: str, mapping: dict, namespace: str | None = N
                     pipe.expire(ids, get_settings().cache_ttl_sec)
                     pipe.expire(lru, get_settings().cache_ttl_sec)
                 pipe.sadd(ids, eid)
-                pipe.zadd(lru, {eid: time.time()})
+                pipe.zadd(lru, {eid: now})
                 # Expire metadata after creating it, including the first write.
                 if get_settings().cache_ttl_sec > 0:
                     pipe.expire(ids, get_settings().cache_ttl_sec)
@@ -331,6 +338,12 @@ async def put(r, tenant: str, eid: str, mapping: dict, namespace: str | None = N
                     pipe.delete(prefix + value)
                     pipe.srem(ids, victim)
                     pipe.zrem(lru, victim)
+                if victims:
+                    # Count LRU evictions for occupancy, mirroring the scoped path.
+                    evictions_key = f"{namespace}:evictions:{tenant}"
+                    pipe.incrby(evictions_key, len(victims))
+                    if get_settings().cache_ttl_sec > 0:
+                        pipe.expire(evictions_key, get_settings().cache_ttl_sec)
                 await pipe.execute()
                 return True
         except WatchError:
@@ -342,7 +355,9 @@ async def touch(r, tenant: str, eid: str, namespace: str | None = None) -> None:
     """Refresh recency only for a served hit, in both scoped quota indexes."""
     namespace = namespace or current_namespace()
     _, lru, _ = keys(tenant, namespace)
-    score = time.time()
+    # Read the Redis clock so a served hit's recency uses the same authoritative
+    # source as the write path; a skewed gateway clock must not reorder eviction.
+    score = _clock_to_seconds(await r.time())
     async with r.pipeline(transaction=True) as pipe:
         pipe.zadd(lru, {eid: score}, xx=True)
         if _scoped(tenant):

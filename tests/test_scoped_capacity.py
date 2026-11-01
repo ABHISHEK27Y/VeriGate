@@ -186,3 +186,47 @@ async def test_old_expiry_score_never_deletes_live_hash() -> None:
     finally:
         _runtime.reset(token)
         await r.aclose()
+
+
+@pytest.mark.asyncio
+async def test_legacy_tenant_counts_lru_evictions() -> None:
+    """Unscoped (legacy) writes must record evictions for occupancy, like scoped."""
+    config = Settings(_env_file=None, max_cache_entries_per_tenant=2)
+    token = _runtime.set(config)
+    r = fakeredis.aioredis.FakeRedis(decode_responses=True)
+    tenant = "t_legacyeviction"
+    try:
+        for number in range(4):  # 2 over the per-tenant limit -> 2 evictions
+            assert await storage.put(
+                r, tenant, str(number), {"query": str(number), "answer": str(number)}
+            )
+        occupancy = await storage.occupancy(r, tenant)
+        assert occupancy["entries"] == 2
+        assert occupancy["evictions"] == 2
+    finally:
+        _runtime.reset(token)
+        await r.aclose()
+
+
+@pytest.mark.asyncio
+async def test_touch_uses_redis_clock_for_recency() -> None:
+    """A hit touch must order recency by the Redis clock, not a skewed host clock."""
+    config = Settings(_env_file=None)
+    token = _runtime.set(config)
+    r = fakeredis.aioredis.FakeRedis(decode_responses=True)
+    tenant = "t_clockskew"
+    try:
+        assert await storage.put(r, tenant, "e", {"query": "q", "answer": "a"})
+        _, lru, _ = storage.keys(tenant)
+        write_score = await r.zscore(lru, "e")
+        clock = await r.time()
+        now = float(clock[0]) + float(clock[1]) / 1_000_000
+        # Both the write score and a subsequent touch score track Redis time.
+        assert abs(write_score - now) < 5
+        await storage.touch(r, tenant, "e")
+        touch_score = await r.zscore(lru, "e")
+        assert touch_score >= write_score
+        assert abs(touch_score - now) < 5
+    finally:
+        _runtime.reset(token)
+        await r.aclose()
