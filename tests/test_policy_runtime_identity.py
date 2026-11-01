@@ -50,3 +50,30 @@ def test_readiness_reports_verifier_degradation() -> None:
         response = client.get("/ready")
         assert response.status_code == HTTPStatus.SERVICE_UNAVAILABLE
         assert response.json()["detail"] == "answer verifier unavailable"
+
+
+def test_readiness_and_dashboard_expose_actual_applicability_flag() -> None:
+    for enabled in (False, True):
+        config = Settings(
+            _env_file=None,
+            cache_match_mode="semantic",
+            embedding_backend="hash",
+            answer_policy_artifact=str(ARTIFACT),
+            answer_policy_applicability_guard=enabled,
+        )
+        with TestClient(create_app(config)) as client:
+            assert client.get("/ready").json()["answer_policy_applicability_guard"] is enabled
+            dashboard = client.get("/ui").text
+            assert "h.answer_policy_applicability_guard" in dashboard
+            assert "applicability guard" in dashboard
+    with TestClient(
+        create_app(
+            Settings(
+                _env_file=None,
+                cache_match_mode="exact",
+                answer_policy_artifact=str(ARTIFACT),
+                answer_policy_applicability_guard=True,
+            )
+        )
+    ) as client:
+        assert client.get("/ready").json()["answer_policy_applicability_guard"] is False

@@ -74,6 +74,7 @@ jobs:
           python -m scripts.verify_live_runs
           python -m scripts.verify_bidirectional_answer
           python -m scripts.verify_applicability
+          python -m scripts.verify_live_applicability
           git diff --exit-code -- evaluation/results/checks.json report/generated/ docs/RESULTS_DIRECTIONAL.md docs/RESULTS_ANSWER_AWARE.md
 
       - name: Upload evaluation results

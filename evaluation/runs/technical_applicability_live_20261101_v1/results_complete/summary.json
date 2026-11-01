@@ -1,0 +1,32 @@
+{
+  "applicability_off": {
+    "valid_reuse": 4,
+    "valid_total": 15,
+    "invalid_accepts": 0,
+    "invalid_total": 5,
+    "ambiguous_approvals": 0,
+    "ambiguous_total": 5,
+    "retrieval_failures": 0,
+    "verification_abstentions": 21,
+    "provider_calls": 21,
+    "first_http_ms": 275.495,
+    "warm_http_p50_ms": 341.792,
+    "warm_http_p95_ms": 1458.667,
+    "startup_ms": 39383.353
+  },
+  "applicability_on": {
+    "valid_reuse": 4,
+    "valid_total": 15,
+    "invalid_accepts": 0,
+    "invalid_total": 5,
+    "ambiguous_approvals": 0,
+    "ambiguous_total": 5,
+    "retrieval_failures": 0,
+    "verification_abstentions": 21,
+    "provider_calls": 21,
+    "first_http_ms": 134.904,
+    "warm_http_p50_ms": 155.311,
+    "warm_http_p95_ms": 279.052,
+    "startup_ms": 36280.479
+  }
+}

@@ -640,6 +640,11 @@ async def _health_details(request: Request) -> dict:
             else None
         ),
         "answer_policy_prewarm": answer_verifier.prewarmed,
+        "answer_policy_applicability_guard": (
+            bool(request.app.state.semantic_cache._answer_policy)
+            and get_settings().cache_match_mode == "semantic"
+            and get_settings().answer_policy_applicability_guard
+        ),
         "answer_verifier_state": (
             "unavailable"
             if answer_verifier.unavailable

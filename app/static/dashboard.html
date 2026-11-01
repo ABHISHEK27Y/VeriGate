@@ -392,9 +392,9 @@ async function health(){try{const r=await fetch("/health");if(!r.ok)throw new Er
   $("org-demo-note").hidden=!h.organization_demo_available;
   $("mode-banner").classList.toggle("semantic",answerAware);
   $("mode-label").textContent=answerAware?"Answer-aware semantic cache":h.cache_match_mode==="semantic"?"Semantic cache":"Exact cache";
-  $("mode-detail").textContent=answerAware?h.embedding_backend+" embeddings + NLI · "+(h.answer_policy_prewarm?"prewarmed":"lazy NLI")+" · "+(h.organization_demo_available?"mock organization profiles":"provider: "+(h.providers||[]).join(", ")):"Provider: "+(h.providers||[]).join(", ");
+  $("mode-detail").textContent=answerAware?h.embedding_backend+" embeddings + NLI · applicability "+(h.answer_policy_applicability_guard?"experimental ON":"off")+" · "+(h.answer_policy_prewarm?"prewarmed":"lazy NLI")+" · "+(h.organization_demo_available?"mock organization profiles":"provider: "+(h.providers||[]).join(", ")):"Provider: "+(h.providers||[]).join(", ");
   $("cfg").innerHTML=[["matching",h.cache_match_mode],["policy",h.answer_policy_version||h.cache_policy_version],
-    ["answer-aware NLI",answerAware?"enabled":"off"],["NLI prewarm",h.answer_policy_prewarm?"ready":"off"],["redis",h.redis],["vector index",h.vector_backend],["embeddings",h.embedding_backend],
+    ["answer-aware NLI",answerAware?"enabled":"off"],["applicability guard",h.answer_policy_applicability_guard?"experimental ON":"off"],["NLI prewarm",h.answer_policy_prewarm?"ready":"off"],["redis",h.redis],["vector index",h.vector_backend],["embeddings",h.embedding_backend],
     ["provider",(h.providers||[]).join(", ")]].map(([k,v])=>`<div class="c"><div class="k">${k}</div><div class="v">${v}</div></div>`).join("");
   $("stat").textContent=h.cache_match_mode+" · "+(h.providers||[]).join(",");
 }catch(e){$("stat").textContent="offline";$("mode-label").textContent="Gateway offline";}}

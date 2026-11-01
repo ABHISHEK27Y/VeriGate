@@ -1,5 +1,21 @@
 # VeriGate software progress — 31 October 2026
 
+## Live applicability evaluation — 1 November 2026
+
+The applicability guard remains opt-in and off by default. A disjoint,
+25-probe technical challenge was frozen in commit `9e673e4` before a paired
+live HTTP run with real MiniLM, RedisSearch top-k, pinned NLI, and a controlled
+provider. With the same three candidates reseeded before every probe, guard
+OFF and ON each reused 4/15 valid answers, accepted 0/5 invalid answers,
+approved 0/5 ambiguous requests, and made 21 controlled-provider calls.
+All suitable candidates were retrieved; the 11 valid misses per variant were
+verification/selection misses. Readiness and the dashboard now expose the
+actual experimental flag; candidate traces retain applicability reasons.
+See `evaluation/runs/technical_applicability_live_20261101_v1/FINDINGS.md`
+for the frozen labels, row-level decisions, cold/warm timings, and limitations.
+The guard has no demonstrated live-path quality gain on this small authored
+set, so deployment defaults and the normal demo remain unchanged.
+
 ## Follow-up correctness checkpoint — 1 November 2026
 
 The static follow-up was checked against `7aed35b61cecb3fb656a10966e62093cdaead117`.
