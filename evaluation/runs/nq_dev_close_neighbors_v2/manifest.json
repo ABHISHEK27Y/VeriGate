@@ -1,0 +1,27 @@
+{
+  "schema_version": "close-neighbor-pilot-v1",
+  "run_id": "nq_dev_close_neighbors_v2",
+  "freeze_sha256": "0897f83b6b4a3743ace8694770c65e38482ad6f3b673e6d1ed56c69b908b9005",
+  "source_sha256": "f15567f38099f3615f5b8a685c0aef449c11ad90d3da3735e8d1b98115b40616",
+  "excluded_random_pilot_sha256": "084e726c900ffe9230c2889a6fac76ab9a14dcdb6f544e14791069242f3e2c6c",
+  "mined_train_sha256": "52aef4caca650b814523cc9b4f9951a8cce59d5f6613597d982e7fa199cdda67",
+  "eligible_questions": 3520,
+  "selected_pairs": 40,
+  "selected_question_lines_sha256": "eff8ec9db035a8562d2c2f79868df28b5d742e2ee458d4ef714c799138b6d837",
+  "answer_policy_artifact_sha256": "f9d2365021192fe7a78c54a0d250e1c384f416ad3c1818b084c5b89cd276b6a2",
+  "nli_model": "cross-encoder/nli-deberta-v3-xsmall",
+  "nli_revision": "a150876415327c80daeff35ca6f68f5ed8cf5c24",
+  "python": "3.13.2",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "label_type": "nq_directional_reference_proxy",
+  "source_code_sha256": {
+    "app/cache/answer_policy.py": "911df51df7e0543782be9d8414b2188f3c0c24282d41fbc48ff5070814b5f248",
+    "app/cache/policy.py": "0d58d431bdf0cc21883d84b8c606ddc60b17634a37798ffe1c0f51c38a887d6e",
+    "app/cache/verifier.py": "381f41d31327cfc431bd918fef015f572c81f9c84a16792ae6a7bcab34e7b415",
+    "scripts/run_close_neighbor_pilot.py": "33a4339833c1db9b08c8418c1dbe936cfd0722061e2bb61874d6d05f1ea430d3"
+  },
+  "outputs": {
+    "decisions.csv": "4df5f86c3191f82528368107f88ab97991bdb94bcc739c37273e05e32446e633",
+    "metrics.csv": "fc8873fdb0f526217f6c571b8769f8dab71c7f63340a38345bf014fcefa6490f"
+  }
+}

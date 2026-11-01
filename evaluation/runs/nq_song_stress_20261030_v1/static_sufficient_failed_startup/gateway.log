@@ -1,0 +1,149 @@
+INFO:     Started server process [39576]
+INFO:     Waiting for application startup.
+{"version": "0.1.0", "event": "Starting VeriGate gateway", "level": "info", "timestamp": "2026-10-30T11:24:39.400067Z"}
+No device provided, using cpu
+Loading SentenceTransformer model from sentence-transformers/all-MiniLM-L6-v2.
+'[Errno 11001] getaddrinfo failed' thrown while requesting HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/adapter_config.json
+'[Errno 11001] getaddrinfo failed' thrown while requesting HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/1110a243fdf4706b3f48f1d95db1a4f5529b4d41/adapter_config.json
+Retrying in 1s [Retry 1/5].
+Retrying in 1s [Retry 1/5].
+{"event": "Shutting down VeriGate gateway", "level": "info", "timestamp": "2026-10-30T11:27:22.805783Z"}
+ERROR:    Traceback (most recent call last):
+  File "C:\Users\ASUS\AppData\Roaming\Python\Python313\site-packages\starlette\routing.py", line 693, in lifespan
+    async with self.lifespan_context(app) as maybe_state:
+               ~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "C:\Program Files\Python313\Lib\contextlib.py", line 214, in __aenter__
+    return await anext(self.gen)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "D:\miniProject\verigate\app\main.py", line 96, in lifespan
+    await asyncio.to_thread(app.state.model.embed, "warmup")
+  File "C:\Program Files\Python313\Lib\asyncio\threads.py", line 25, in to_thread
+    return await loop.run_in_executor(None, func_call)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Program Files\Python313\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+  File "D:\miniProject\verigate\app\embeddings.py", line 71, in embed
+    self.model = SentenceTransformer(
+                 ~~~~~~~~~~~~~~~~~~~^
+        get_settings().embedding_model,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        revision=get_settings().embedding_revision or None,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\ASUS\AppData\Roaming\Python\Python313\site-packages\sentence_transformers\util\decorators.py", line 46, in wrapper
+    return func(*args, **kwargs)
+  File "C:\Users\ASUS\AppData\Roaming\Python\Python313\site-packages\sentence_transformers\sentence_transformer\model.py", line 194, in __init__
+    super().__init__(
+    ~~~~~~~~~~~~~~~~^
+        model_name_or_path=model_name_or_path,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<13 lines>...
+        default_prompt_name=default_prompt_name,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\ASUS\AppData\Roaming\Python\Python313\site-packages\sentence_transformers\base\model.py", line 236, in __init__
+    modules, self.module_kwargs = self._load_modules(
+                                  ~~~~~~~~~~~~~~~~~~^
+        model_name_or_path,
+        ^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+        config_kwargs=config_kwargs,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\ASUS\AppData\Roaming\Python\Python313\site-packages\sentence_transformers\base\model.py", line 1081, in _load_modules
+    return self._load_config_modules(model_name_or_path, **load_kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ASUS\AppData\Roaming\Python\Python313\site-packages\sentence_transformers\base\model.py", line 1298, in _load_config_modules
+    module = module_class.load(
+        model_name_or_path,
+    ...<12 lines>...
+        **extra_load_kwargs,
+    )
+  File "C:\Users\ASUS\AppData\Roaming\Python\Python313\site-packages\sentence_transformers\base\modules\transformer.py", line 2635, in load
+    return cls(model_name_or_path=model_name_or_path, **init_kwargs)
+  File "C:\Users\ASUS\AppData\Roaming\Python\Python313\site-packages\sentence_transformers\util\decorators.py", line 92, in wrapper
+    return func(*args, **kwargs)
+  File "C:\Users\ASUS\AppData\Roaming\Python\Python313\site-packages\sentence_transformers\base\modules\transformer.py", line 832, in __init__
+    config, is_peft_model = self._load_config(model_name_or_path, backend, config_kwargs)
+                            ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ASUS\AppData\Roaming\Python\Python313\site-packages\sentence_transformers\base\modules\transformer.py", line 2246, in _load_config
+    adapter_config_file = find_adapter_config_file(
+        model_name_or_path,
+    ...<4 lines>...
+        local_files_only=config_kwargs.get("local_files_only", False),
+    )
+  File "C:\Users\ASUS\AppData\Roaming\Python\Python313\site-packages\transformers\utils\peft_utils.py", line 84, in find_adapter_config_file
+    adapter_cached_filename = cached_file(
+        model_id,
+    ...<11 lines>...
+        _raise_exceptions_for_connection_errors=False,
+    )
+  File "C:\Users\ASUS\AppData\Roaming\Python\Python313\site-packages\transformers\utils\hub.py", line 277, in cached_file
+    file = cached_files(path_or_repo_id=path_or_repo_id, filenames=[filename], **kwargs)
+  File "C:\Users\ASUS\AppData\Roaming\Python\Python313\site-packages\transformers\utils\hub.py", line 508, in cached_files
+    raise e
+  File "C:\Users\ASUS\AppData\Roaming\Python\Python313\site-packages\transformers\utils\hub.py", line 420, in cached_files
+    hf_hub_download(
+    ~~~~~~~~~~~~~~~^
+        path_or_repo_id,
+        ^^^^^^^^^^^^^^^^
+    ...<9 lines>...
+        local_files_only=local_files_only,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\ASUS\AppData\Roaming\Python\Python313\site-packages\huggingface_hub\utils\_validators.py", line 89, in _inner_fn
+    return fn(*args, **kwargs)
+  File "C:\Users\ASUS\AppData\Roaming\Python\Python313\site-packages\huggingface_hub\file_download.py", line 986, in hf_hub_download
+    return _hf_hub_download_to_cache_dir(
+        # Destination
+    ...<15 lines>...
+        dry_run=dry_run,
+    )
+  File "C:\Users\ASUS\AppData\Roaming\Python\Python313\site-packages\huggingface_hub\file_download.py", line 1119, in _hf_hub_download_to_cache_dir
+    _get_metadata_or_catch_error(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        repo_id=repo_id,
+        ^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+        retry_on_errors=True,
+        ^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\ASUS\AppData\Roaming\Python\Python313\site-packages\huggingface_hub\file_download.py", line 1653, in _get_metadata_or_catch_error
+    metadata = get_hf_file_metadata(
+        url=url,
+    ...<4 lines>...
+        retry_on_errors=retry_on_errors,
+    )
+  File "C:\Users\ASUS\AppData\Roaming\Python\Python313\site-packages\huggingface_hub\utils\_validators.py", line 89, in _inner_fn
+    return fn(*args, **kwargs)
+  File "C:\Users\ASUS\AppData\Roaming\Python\Python313\site-packages\huggingface_hub\file_download.py", line 1576, in get_hf_file_metadata
+    response = _httpx_follow_relative_redirects_with_backoff(
+        method="HEAD", url=url, headers=hf_headers, timeout=timeout, retry_on_errors=retry_on_errors
+    )
+  File "C:\Users\ASUS\AppData\Roaming\Python\Python313\site-packages\huggingface_hub\utils\_http.py", line 685, in _httpx_follow_relative_redirects_with_backoff
+    response = http_backoff(
+        method=method,
+    ...<3 lines>...
+        **no_retry_kwargs,
+    )
+  File "C:\Users\ASUS\AppData\Roaming\Python\Python313\site-packages\huggingface_hub\utils\_http.py", line 559, in http_backoff
+    return next(
+        _http_backoff_base(
+    ...<9 lines>...
+        )
+    )
+  File "C:\Users\ASUS\AppData\Roaming\Python\Python313\site-packages\huggingface_hub\utils\_http.py", line 467, in _http_backoff_base
+    response = client.request(method=method, url=url, **kwargs)
+  File "C:\Users\ASUS\AppData\Roaming\Python\Python313\site-packages\httpx\_client.py", line 825, in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\ASUS\AppData\Roaming\Python\Python313\site-packages\httpx\_client.py", line 901, in send
+    raise RuntimeError("Cannot send a request, as the client has been closed.")
+RuntimeError: Cannot send a request, as the client has been closed.
+
+ERROR:    Application startup failed. Exiting.

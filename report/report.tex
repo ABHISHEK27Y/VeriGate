@@ -39,7 +39,8 @@
 \usepackage{longtable}
 \usepackage[nottoc]{tocbibind}
 \usepackage{url}
-\usepackage{hyperref}
+\usepackage[colorlinks=true,linkcolor=blue!45!black,citecolor=teal!55!black,urlcolor=blue!60!black,breaklinks=true]{hyperref}
+\hypersetup{pdftitle={VeriGate: Organization-Aware Answer Reuse Gateway},pdfauthor={Abhishek Yadav},bookmarksnumbered=true}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{pgfgantt} % For Gantt charts
@@ -48,7 +49,6 @@
 \usepackage{multirow}
 \usepackage[boxed]{algorithm}
 \usepackage{algpseudocode}
-\usepackage[none]{hyphenat}
 \usepackage{listings}
 
 \lstset{
@@ -153,13 +153,29 @@ In this submission, I have expressed my idea in my own words, and I have adequat
 
 
 \newpage
-\addcontentsline{toc}{chapter}{Abstract}
+\phantomsection\addcontentsline{toc}{chapter}{Abstract}
 \begin{center}
     { \LARGE \textbf{Abstract}}
 \end{center}
 \vspace{1.5cm}
 {\large
-Large Language Models (LLMs) are increasingly deployed in production, but every API call incurs monetary cost and high latency. A \textit{semantic cache} mitigates this by returning a stored answer when a new query is semantically ``close enough'' to a past one. However, existing semantic caches (e.g. GPTCache) rely on a \textbf{single fixed similarity threshold}, which produces \textbf{false cache hits} --- serving the wrong stored answer to a look-alike query (for example, returning the answer for \textit{``capital of Austria''} to \textit{``capital of Australia''}). This report presents \textbf{VeriGate}, a production-grade LLM Gateway whose core novel contribution is an \textbf{adaptive, self-verifying semantic cache}: it (i) adapts the similarity threshold per query using neighbourhood density, (ii) \textit{verifies} a candidate hit with a two-tier verifier (a near-free structural check on numbers, negation and named entities, and an optional NLI cross-encoder), and (iii) detects volatile queries to skip caching time-sensitive answers. A second contribution, a \textbf{cost-aware model cascade}, routes easy queries to a cheap model and escalates only hard ones. On a controlled benchmark, VeriGate reduces the false-hit rate from the fixed-threshold baseline's \textbf{46.7\%} to \textbf{0.0\%} (100\% precision), with structural verification costing only \textbf{$\sim$0.03~ms}; a vectorised index brings the cache-hit path to \textbf{$\sim$10~ms} ($\sim$78$\times$ faster than an 800~ms LLM call), and the cascade cuts LLM cost by \textbf{$\sim$47\%} with no quality loss on hard queries. The system is engineered for production with per-tenant cache isolation, per-key spend budgets, a provider circuit breaker, Prometheus/Grafana observability, and Docker packaging.
+VeriGate is an organization-aware LLM gateway for internal developer tools, technical
+support, and applications across separately configured organizations. Authorized employees
+share eligible workspace answers while private responses remain isolated. It addresses repeated
+technical requests while avoiding reuse of a nearby but unsuitable recorded answer.
+The gateway authenticates a principal, limits reuse to authorized workspace or private
+scope, retrieves exact or semantic candidates, and uses an optional answer-aware policy
+to assess the stored question, stored answer, and incoming task before a cache hit.
+Otherwise it calls the configured provider. Avoiding repeated generation is the intended
+cost benefit; gateway computation and storage still incur overhead. Self-verifying denotes this suitability
+assessment, not guaranteed factual truth. Exact matching remains the default.
+Functional tests, controlled answer labels, and saved MiniLM/RedisSearch HTTP runs
+evaluate different parts of the design. In a fresh 25-probe authored HTTP workload,
+combined technical guards served 8 of 15 valid opportunities versus 6 of 15 for the
+baseline, with no invalid accept among five examples; the improvement missed its
+predeclared promotion gate. Mock-provider timings do not establish billed savings
+or broad scalability. Independent answer-level review and real-provider validation
+remain necessary before production semantic reuse.
 }
 
 \newpage
@@ -183,8 +199,8 @@ Large Language Models (LLMs) are increasingly deployed in production, but every 
 
 	\vspace{1cm}
 
-	\addcontentsline{toc}{chapter}{Acknowledgement}
-	\tableofcontents
+	\phantomsection\addcontentsline{toc}{chapter}{Acknowledgement}
+	{\small\setlength{\parskip}{0pt}\tableofcontents}
 	\listoffigures
         \listoftables
 	\chapter{Introduction}
@@ -201,6 +217,10 @@ Large Language Models (LLMs) are increasingly deployed in production, but every 
         \input{chapters/6_Results}
         \chapter{Conclusion}
         \input{chapters/7_Conclusion}
+
+        \appendix
+        \chapter{Historical Proxy Tables}\label{app:historical}
+        \input{chapters/A_Historical_Proxy}
 
         \bibliography{report}
 	\bibliographystyle{plain}

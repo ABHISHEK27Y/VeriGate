@@ -1,0 +1,36 @@
+{
+  "n": 20,
+  "valid_n": 12,
+  "unsafe_n": 8,
+  "valid_accepted": 7,
+  "lost_valid_reuse": 5,
+  "unsafe_accepted": 0,
+  "unsafe_declined": 8,
+  "nli_scored": 8,
+  "by_category": {
+    "answer_mentioned": {
+      "n": 8,
+      "valid_accepted": 0,
+      "valid_declined": 4,
+      "unsafe_accepted": 0
+    },
+    "exact_repeat": {
+      "n": 2,
+      "valid_accepted": 2,
+      "valid_declined": 0,
+      "unsafe_accepted": 0
+    },
+    "paraphrase": {
+      "n": 2,
+      "valid_accepted": 2,
+      "valid_declined": 0,
+      "unsafe_accepted": 0
+    },
+    "scope_change": {
+      "n": 8,
+      "valid_accepted": 3,
+      "valid_declined": 1,
+      "unsafe_accepted": 0
+    }
+  }
+}

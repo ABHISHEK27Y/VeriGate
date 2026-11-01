@@ -1,0 +1,29 @@
+{
+  "requests": 21,
+  "source": "new authored technical scenarios",
+  "selection": "7 disjoint scenarios in Nginx, MySQL, FastAPI, S3, Git, Linux, and Node.js; seed, paraphrase, near match; v2 uses new operations/identifiers",
+  "label_limit": "Stipulated controls, not independently verified technical answers",
+  "workload_sha256": "5ffb0b0ca29d970fd0ba86518c32383421cdddf8f41c8fd453e30c7048314ad1",
+  "provider_answers_sha256": "ae26607e880f0de4bc4ef679538782ccf6cb3df1583ecf913697d2287983be39",
+  "policy_sha256": "f9d2365021192fe7a78c54a0d250e1c384f416ad3c1818b084c5b89cd276b6a2",
+  "comparison": {
+    "unchanged": false,
+    "technical_guard": true
+  },
+  "settings": {
+    "unchanged": {
+      "cache_ttl_sec": 86400,
+      "max_cache_entries_per_tenant": 256
+    },
+    "technical_guard": {
+      "cache_ttl_sec": 86400,
+      "max_cache_entries_per_tenant": 256
+    }
+  },
+  "embedding_model": "all-MiniLM-L6-v2",
+  "embedding_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+  "nli_model": "cross-encoder/nli-deberta-v3-xsmall",
+  "nli_revision": "a150876415327c80daeff35ca6f68f5ed8cf5c24",
+  "runner_sha256": "7b9ecb50f9486daa813697df05908bc532dd052944b20f33a903b45fd6ea291a",
+  "technical_identity_sha256": "baee691e2f04d7ec534c9b3b03341888d1d6b74d07ded2a72c2080529719628d"
+}

@@ -184,7 +184,7 @@ async def test_openai_compatible_http_path(monkeypatch):
         lambda **kwargs: real_client(transport=httpx.MockTransport(upstream), **kwargs),
     )
     provider = OpenAICompatibleProvider(
-        "test", "test-upstream", "https://example.invalid/v1", "model"
+        "test", "test-upstream", "https://example.invalid/v1", "model", family="openai"
     )
     assert "".join([chunk async for chunk in provider.stream("hello")]) == "Hello"
 
@@ -203,7 +203,7 @@ def test_stream_preserves_multiline_text(client):
             headers={"x-api-key": "demo-key-123"},
             json={"prompt": "line example"},
         )
-        lines = [line[6:] for line in result.text.splitlines() if line.startswith("data: ")]
+        lines = [frame[6:] for frame in result.text.split("\n\n") if frame.startswith("data: ")]
         assert lines[-1] == "[DONE]"
         assert "".join(json.loads(value) for value in lines[:-1]) == "first\n\ndata: injected\nlast"
 

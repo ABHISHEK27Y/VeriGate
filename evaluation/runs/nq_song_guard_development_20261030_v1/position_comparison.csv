@@ -1,0 +1,1001 @@
+id,old_outcome,guarded_outcome,old_cached_query,guarded_cached_query,guarded_reason
+song-148:paraphrase_1,cold_miss,cold_miss,,,empty_cache
+song-172:paraphrase_3,cold_miss,cold_miss,Name the writer of the song drive by the cars.,Name the writer of the song drive by the cars.,answer_reject:subject_identity_conflict
+song-053:hard_negative,cold_miss,cold_miss,Name the writer of the song drive by the cars.,Name the writer of the song drive by the cars.,answer_reject:subject_identity_conflict
+song-021:original,cold_miss,cold_miss,"For the song total eclipse of the heart, who wrote it?","For the song total eclipse of the heart, who wrote it?",answer_reject:subject_identity_conflict
+song-097:paraphrase_2,cold_miss,cold_miss,"For the song total eclipse of the heart, who wrote it?","For the song total eclipse of the heart, who wrote it?",answer_reject:subject_identity_conflict
+song-030:paraphrase_3,cold_miss,cold_miss,Name the writer of the song drive by the cars.,Name the writer of the song drive by the cars.,answer_reject:subject_identity_conflict
+song-116:paraphrase_1,cold_miss,cold_miss,Name the writer of the song drive by the cars.,Name the writer of the song drive by the cars.,answer_reject:subject_identity_conflict
+song-007:paraphrase_1,cold_miss,cold_miss,Name the writer of the song drive by the cars.,Name the writer of the song drive by the cars.,answer_reject:subject_identity_conflict
+song-143:paraphrase_2,cold_miss,cold_miss,"For the song rest your love on me, who is credited as its writer?","For the song rest your love on me, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-068:paraphrase_1,cold_miss,cold_miss,Name the writer of the song drive by the cars.,Name the writer of the song drive by the cars.,answer_reject:subject_identity_conflict
+song-172:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song that's alright mama.,Identify the person who wrote the song that's alright mama.,answer_accept:answer_entailment
+song-011:hard_negative,cold_miss,cold_miss,"For the song rest your love on me, who is credited as its writer?","For the song rest your love on me, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-020:paraphrase_3,cold_miss,cold_miss,"For the song rest your love on me, who is credited as its writer?","For the song rest your love on me, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-047:paraphrase_2,cold_miss,cold_miss,"For the song rest your love on me, who is credited as its writer?","For the song rest your love on me, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-033:paraphrase_1,cold_miss,cold_miss,Name the writer of the song till i gain control again.,Name the writer of the song till i gain control again.,answer_reject:subject_identity_conflict
+song-171:original,cold_miss,cold_miss,Name the writer of the song drive by the cars.,Name the writer of the song drive by the cars.,answer_reject:subject_identity_conflict
+song-008:paraphrase_3,cold_miss,cold_miss,Identify the person who wrote the song am i losing you.,Identify the person who wrote the song am i losing you.,answer_reject:subject_identity_conflict
+song-043:paraphrase_2,cold_miss,cold_miss,"For the song rest your love on me, who is credited as its writer?","For the song rest your love on me, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-074:paraphrase_3,cold_miss,cold_miss,Identify the person who wrote the song am i losing you.,Identify the person who wrote the song am i losing you.,answer_reject:subject_identity_conflict
+song-081:paraphrase_1,cold_miss,cold_miss,Name the writer of the song till i gain control again.,Name the writer of the song till i gain control again.,answer_reject:subject_identity_conflict
+song-095:paraphrase_2,cold_miss,cold_miss,"For the song rest your love on me, who is credited as its writer?","For the song rest your love on me, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-071:paraphrase_3,cold_miss,cold_miss,Identify the person who wrote the song just someone i used to know.,Identify the person who wrote the song just someone i used to know.,answer_reject:subject_identity_conflict
+song-060:paraphrase_3,cold_miss,cold_miss,Identify the person who wrote the song just someone i used to know.,Identify the person who wrote the song just someone i used to know.,answer_reject:subject_identity_conflict
+song-086:original,cold_miss,cold_miss,Who wrote the song take a walk on the wild side?,Who wrote the song take a walk on the wild side?,answer_reject:subject_identity_conflict
+song-029:paraphrase_1,incorrect_acceptance,cold_miss,"For the song i'll see you in my dreams, who is credited as its writer?","For the song i'll see you in my dreams, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-103:paraphrase_1,cold_miss,cold_miss,"For the song i'll see you in my dreams, who is credited as its writer?","For the song i'll see you in my dreams, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-086:paraphrase_3,correct_hit,correct_hit,Who wrote the song better man for little big town?,Who wrote the song better man for little big town?,answer_accept:answer_entailment
+song-016:hard_negative,cold_miss,cold_miss,"For the song total eclipse of the heart, who wrote it?","For the song total eclipse of the heart, who wrote it?",answer_reject:subject_identity_conflict
+song-049:paraphrase_3,cold_miss,cold_miss,Identify the person who wrote the song just someone i used to know.,Identify the person who wrote the song just someone i used to know.,answer_reject:number_mismatch
+song-102:original,incorrect_acceptance,cold_miss,"For the song all i want is you, who is credited as its writer?","For the song all i want is you, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-156:paraphrase_3,cold_miss,cold_miss,Identify the person who wrote the song just someone i used to know.,Identify the person who wrote the song just someone i used to know.,answer_reject:subject_identity_conflict
+song-010:hard_negative,cold_miss,cold_miss,Identify the person who wrote the song am i losing you.,Identify the person who wrote the song am i losing you.,answer_reject:subject_identity_conflict
+song-026:original,cold_miss,cold_miss,Identify the person who wrote the song when i was 17.,Identify the person who wrote the song when i was 17.,answer_reject:number_mismatch
+song-190:hard_negative,cold_miss,cold_miss,"For the song rest your love on me, who is credited as its writer?","For the song rest your love on me, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-125:paraphrase_1,cold_miss,cold_miss,Identify the person who wrote the song lord i hope this day is good.,Name the writer of the song this i promise you.,answer_reject:subject_identity_conflict
+song-046:hard_negative,correct_hit,correct_hit,"For the song i'll see you in my dreams, who is credited as its writer?","For the song i'll see you in my dreams, who is credited as its writer?",answer_accept:answer_entailment
+song-068:paraphrase_2,correct_hit,correct_hit,Name the writer of the song till i gain control again.,Name the writer of the song till i gain control again.,answer_accept:answer_entailment
+song-105:paraphrase_2,cold_miss,cold_miss,"For the song rudolph the red nosed reindeer, who wrote it?","For the song rudolph the red nosed reindeer, who wrote it?",answer_reject:subject_identity_conflict
+song-181:hard_negative,cold_miss,cold_miss,"For the song everytime you go away, who wrote it?","For the song everytime you go away, who wrote it?",answer_reject:subject_identity_conflict
+song-008:original,correct_hit,correct_hit,Identify the person who wrote the song woman by peter and gordon.,Identify the person who wrote the song woman by peter and gordon.,answer_accept:answer_entailment
+song-191:paraphrase_2,correct_hit,correct_hit,"For the song what's so funny bout peace love and understanding, who wrote it?","For the song what's so funny bout peace love and understanding, who wrote it?",answer_accept:answer_entailment
+song-165:original,cold_miss,cold_miss,"For the song jesus is just alright with me, who is credited as its writer?","For the song jesus is just alright with me, who is credited as its writer?",answer_reject:negation_mismatch
+song-184:original,cold_miss,cold_miss,"For the song everytime you go away, who wrote it?","For the song everytime you go away, who wrote it?",answer_reject:negation_mismatch
+song-177:hard_negative,incorrect_acceptance,cold_miss,Who wrote the song take a walk on the wild side?,Who wrote the song take a walk on the wild side?,answer_reject:subject_identity_conflict
+song-198:hard_negative,cold_miss,cold_miss,Who wrote the song better man for little big town?,Who wrote the song better man for little big town?,answer_reject:subject_identity_conflict
+song-130:hard_negative,cold_miss,cold_miss,"For the song where have all the flowers gone, who wrote it?","For the song where have all the flowers gone, who wrote it?",answer_reject:subject_identity_conflict
+song-185:paraphrase_3,cold_miss,cold_miss,Identify the person who wrote the song lord i hope this day is good.,Identify the person who wrote the song lord i hope this day is good.,answer_reject:subject_identity_conflict
+song-028:hard_negative,incorrect_acceptance,correct_hit,"For the song i'll see you in my dreams, who is credited as its writer?",Name the writer of the song this i promise you.,answer_accept:answer_entailment
+song-110:original,cold_miss,cold_miss,Who wrote the song better man for little big town?,Who wrote the song better man for little big town?,answer_reject:subject_identity_conflict
+song-151:hard_negative,cold_miss,cold_miss,"For the song jesus is just alright with me, who is credited as its writer?","For the song jesus is just alright with me, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-056:paraphrase_3,cold_miss,cold_miss,Identify the person who wrote the song just someone i used to know.,Identify the person who wrote the song just someone i used to know.,answer_reject:subject_identity_conflict
+song-085:paraphrase_2,cold_miss,cold_miss,"For the song jesus is just alright with me, who is credited as its writer?","For the song jesus is just alright with me, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-050:paraphrase_3,cold_miss,cold_miss,Identify the person who wrote the song just someone i used to know.,Identify the person who wrote the song just someone i used to know.,answer_reject:subject_identity_conflict
+song-148:hard_negative,cold_miss,cold_miss,Identify the person who wrote the song lord i hope this day is good.,Identify the person who wrote the song lord i hope this day is good.,answer_reject:subject_identity_conflict
+song-072:paraphrase_1,cold_miss,cold_miss,"For the song total eclipse of the heart, who wrote it?","For the song total eclipse of the heart, who wrote it?",answer_reject:subject_identity_conflict
+song-091:hard_negative,cold_miss,cold_miss,Identify the person who wrote the song when i was 17.,Identify the person who wrote the song when i was 17.,answer_reject:number_mismatch
+song-028:paraphrase_2,cold_miss,cold_miss,"For the song jesus is just alright with me, who is credited as its writer?","For the song try and catch the wind, who wrote it?",answer_reject:subject_identity_conflict
+song-111:paraphrase_1,cold_miss,cold_miss,Who wrote the song better man for little big town?,Name the writer of the song this i promise you.,answer_reject:subject_identity_conflict
+song-192:paraphrase_2,cold_miss,cold_miss,Name the writer of the song till i gain control again.,Name the writer of the song till i gain control again.,answer_reject:subject_identity_conflict
+song-107:original,cold_miss,cold_miss,Identify the person who wrote the song woman by peter and gordon.,Identify the person who wrote the song woman by peter and gordon.,answer_reject:subject_identity_conflict
+song-012:paraphrase_2,correct_hit,correct_hit,"For the song rudolph the red nosed reindeer, who wrote it?","For the song rudolph the red nosed reindeer, who wrote it?",answer_accept:answer_entailment
+song-175:paraphrase_2,cold_miss,cold_miss,"For the song rest your love on me, who is credited as its writer?","For the song rest your love on me, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-155:original,cold_miss,cold_miss,"For the song heaven help us all, who wrote it?","For the song heaven help us all, who wrote it?",answer_reject:subject_identity_conflict
+song-196:paraphrase_3,cold_miss,cold_miss,Identify the person who wrote the song when i was 17.,Identify the person who wrote the song when i was 17.,answer_reject:number_mismatch
+song-057:original,cold_miss,cold_miss,Who wrote the song help me make it through the night?,Who wrote the song help me make it through the night?,answer_reject:subject_identity_conflict
+song-113:paraphrase_2,cold_miss,cold_miss,"For the song hero by mariah carey, who is credited as its writer?","For the song hero by mariah carey, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-004:original,cold_miss,cold_miss,"For the song he knows my name, who wrote it?","For the song he knows my name, who wrote it?",answer_reject:subject_identity_conflict
+song-023:hard_negative,cold_miss,cold_miss,"For the song heaven help us all, who wrote it?","For the song heaven help us all, who wrote it?",answer_reject:subject_identity_conflict
+song-160:hard_negative,cold_miss,cold_miss,"For the song he knows my name, who wrote it?",Who wrote the song you're the one that i want?,answer_reject:subject_identity_conflict
+song-193:hard_negative,bypass,bypass,,,volatile_query
+song-034:paraphrase_1,cold_miss,cold_miss,Who wrote the song crazy little thing called love?,"For the song try and catch the wind, who wrote it?",answer_reject:subject_identity_conflict
+song-062:paraphrase_1,cold_miss,cold_miss,Who wrote the song help me make it through the night?,Who wrote the song help me make it through the night?,answer_reject:subject_identity_conflict
+song-127:paraphrase_1,cold_miss,cold_miss,Identify the person who wrote the song lord i hope this day is good.,Identify the person who wrote the song lord i hope this day is good.,answer_reject:subject_identity_conflict
+song-162:paraphrase_2,bypass,bypass,,,volatile_query
+song-109:hard_negative,correct_hit,correct_hit,Who wrote the song crazy little thing called love?,Who wrote the song crazy little thing called love?,answer_accept:answer_entailment
+song-014:paraphrase_3,incorrect_acceptance,cold_miss,"For the song you're the one, who wrote it?","For the song you're the one, who wrote it?",answer_reject:subject_identity_conflict
+song-050:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song just as i am.,Identify the person who wrote the song just as i am.,answer_accept:answer_entailment
+song-193:paraphrase_2,cold_miss,cold_miss,"For the song rest your love on me, who is credited as its writer?","For the song rest your love on me, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-020:hard_negative,correct_hit,correct_hit,Who wrote the song home from the wiz?,Who wrote the song home from the wiz?,answer_accept:answer_entailment
+song-046:original,cold_miss,cold_miss,"For the song everytime you go away, who wrote it?","For the song everytime you go away, who wrote it?",answer_reject:subject_identity_conflict
+song-150:paraphrase_2,cold_miss,cold_miss,"For the song a change is going to come, who is credited as its writer?","For the song a change is going to come, who is credited as its writer?",answer_reject:negation_mismatch
+song-164:hard_negative,correct_hit,correct_hit,Who wrote the song pass me not oh gentle saviour?,Who wrote the song pass me not oh gentle saviour?,answer_accept:answer_entailment
+song-186:paraphrase_3,cold_miss,cold_miss,Identify the person who wrote the song just someone i used to know.,Identify the person who wrote the song just someone i used to know.,answer_reject:subject_identity_conflict
+song-010:paraphrase_3,bypass,bypass,,,volatile_query
+song-093:hard_negative,cold_miss,cold_miss,"For the song may the good lord bless and keep you, who wrote it?","For the song may the good lord bless and keep you, who wrote it?",answer_reject:subject_identity_conflict
+song-013:hard_negative,cold_miss,correct_rejection_unsuitable_candidate,"For the song you're the one, who wrote it?","For the song you're the one, who wrote it?",answer_reject:subject_identity_conflict
+song-068:original,correct_hit,correct_hit,Name the writer of the song till i gain control again.,Name the writer of the song till i gain control again.,answer_accept:answer_entailment
+song-108:paraphrase_1,cold_miss,cold_miss,Name the writer of the song angel in the morning.,Name the writer of the song angel in the morning.,answer_reject:subject_identity_conflict
+song-178:hard_negative,cold_miss,cold_miss,"For the song heaven help us all, who wrote it?","For the song try and catch the wind, who wrote it?",answer_reject:subject_identity_conflict
+song-196:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song hit me with your best shot.,Identify the person who wrote the song hit me with your best shot.,answer_accept:answer_entailment
+song-118:paraphrase_3,cold_miss,cold_miss,Identify the person who wrote the song just someone i used to know.,Identify the person who wrote the song just someone i used to know.,answer_reject:subject_identity_conflict
+song-006:paraphrase_2,cold_miss,cold_miss,"For the song rest your love on me, who is credited as its writer?","For the song rest your love on me, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-194:original,bypass,bypass,,,volatile_query
+song-178:paraphrase_1,cold_miss,correct_hit,Name the writer of the song call me the breeze.,"For the song try and catch the wind, who wrote it?",answer_accept:answer_entailment
+song-189:hard_negative,cold_miss,cold_miss,Who wrote the song ask the blind man he saw it all?,Who wrote the song ask the blind man he saw it all?,answer_reject:subject_identity_conflict
+song-128:paraphrase_1,incorrect_acceptance,cold_miss,Who wrote the song go light your world?,Who wrote the song go light your world?,answer_reject:subject_identity_conflict
+song-038:paraphrase_2,cold_miss,cold_miss,"For the song i'll see you in my dreams, who is credited as its writer?","For the song i'll see you in my dreams, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-085:original,verifier_false_rejection,verifier_false_rejection,"For the song hero by mariah carey, who is credited as its writer?","For the song hero by mariah carey, who is credited as its writer?",answer_verify:answer_mentioned_in_question
+song-073:paraphrase_1,cold_miss,cold_miss,Name the writer of the song rainy night in georgia.,Name the writer of the song rainy night in georgia.,answer_reject:subject_identity_conflict
+song-074:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song just someone i used to know.,Identify the person who wrote the song just someone i used to know.,answer_accept:answer_entailment
+song-083:paraphrase_2,cold_miss,cold_miss,"For the song don't give up, who is credited as its writer?","For the song don't give up, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-086:paraphrase_1,correct_hit,correct_hit,Who wrote the song better man for little big town?,Who wrote the song better man for little big town?,answer_accept:answer_entailment
+song-112:hard_negative,correct_hit,correct_hit,"For the song my heroes have always been cowboys, who is credited as its writer?","For the song my heroes have always been cowboys, who is credited as its writer?",answer_accept:answer_entailment
+song-077:original,cold_miss,cold_miss,Who wrote the song go light your world?,Who wrote the song go light your world?,answer_reject:subject_identity_conflict
+song-047:paraphrase_1,correct_hit,correct_hit,"For the song i'll see you in my dreams, who is credited as its writer?","For the song i'll see you in my dreams, who is credited as its writer?",answer_accept:answer_entailment
+song-052:paraphrase_3,cold_miss,cold_miss,Identify the person who wrote the song just someone i used to know.,Identify the person who wrote the song you're still the one.,answer_reject:subject_identity_conflict
+song-084:paraphrase_1,cold_miss,cold_miss,Name the writer of the song man in the box.,Name the writer of the song man in the box.,answer_reject:subject_identity_conflict
+song-170:paraphrase_1,cold_miss,cold_miss,Name the writer of the song drive by the cars.,Name the writer of the song drive by the cars.,answer_reject:subject_identity_conflict
+song-051:paraphrase_1,cold_miss,cold_miss,Name the writer of the song call me the breeze.,Name the writer of the song call me the breeze.,answer_reject:subject_identity_conflict
+song-126:original,cold_miss,cold_miss,"For the song you're still the one, who wrote it?","For the song you're still the one, who wrote it?",answer_reject:subject_identity_conflict
+song-128:hard_negative,cold_miss,cold_miss,"For the song if you love me really love me, who is credited as its writer?","For the song if you love me really love me, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-064:paraphrase_2,cold_miss,cold_miss,Identify the person who wrote the song i go to pieces.,Identify the person who wrote the song i go to pieces.,answer_reject:subject_identity_conflict
+song-030:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song send in the clowns.,Identify the person who wrote the song send in the clowns.,answer_accept:answer_entailment
+song-163:hard_negative,cold_miss,cold_miss,"For the song you're still the one, who wrote it?","For the song you're still the one, who wrote it?",answer_reject:subject_identity_conflict
+song-104:hard_negative,correct_hit,correct_hit,"For the song jeremiah was a bullfrog, who is credited as its writer?","For the song jeremiah was a bullfrog, who is credited as its writer?",answer_accept:answer_entailment
+song-059:paraphrase_3,cold_miss,cold_miss,Identify the person who wrote the song i go to pieces.,Identify the person who wrote the song i go to pieces.,answer_reject:subject_identity_conflict
+song-193:original,correct_hit,correct_hit,"For the song easy like sunday morning, who is credited as its writer?","For the song easy like sunday morning, who is credited as its writer?",answer_accept:answer_entailment
+song-116:hard_negative,cold_miss,cold_miss,"For the song everytime you go away, who wrote it?","For the song everytime you go away, who wrote it?",answer_reject:negation_mismatch
+song-091:paraphrase_2,cold_miss,cold_miss,"For the song don't give up, who is credited as its writer?","For the song don't give up, who is credited as its writer?",answer_reject:negation_mismatch
+song-074:hard_negative,cold_miss,cold_miss,"For the song all i want is you, who is credited as its writer?","For the song all i want is you, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-149:hard_negative,correct_hit,correct_hit,"For the song don't give up, who is credited as its writer?","For the song don't give up, who is credited as its writer?",answer_accept:answer_entailment
+song-072:paraphrase_3,correct_hit,correct_hit,Name the writer of the song historia de un amor.,Name the writer of the song historia de un amor.,answer_accept:answer_entailment
+song-087:paraphrase_2,cold_miss,cold_miss,"For the song rest your love on me, who is credited as its writer?","For the song rest your love on me, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-142:paraphrase_2,cold_miss,cold_miss,"For the song it never entered my mind, who is credited as its writer?","For the song it never entered my mind, who is credited as its writer?",answer_reject:negation_mismatch
+song-178:paraphrase_2,verifier_false_rejection,correct_hit,Name the writer of the song try and catch the wind.,"For the song try and catch the wind, who wrote it?",answer_accept:answer_entailment
+song-159:paraphrase_3,cold_miss,cold_miss,Identify the person who wrote the song just someone i used to know.,Identify the person who wrote the song just someone i used to know.,answer_reject:subject_identity_conflict
+song-036:paraphrase_2,cold_miss,cold_miss,"For the song go your own way, who is credited as its writer?","For the song go your own way, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-129:paraphrase_1,correct_hit,correct_hit,"For the song i will always love you sung by whitney houston, who wrote it?","For the song i will always love you sung by whitney houston, who wrote it?",answer_accept:answer_entailment
+song-073:paraphrase_3,correct_hit,correct_hit,Name the writer of the song good time charlie's got the blues.,Name the writer of the song good time charlie's got the blues.,answer_accept:answer_entailment
+song-017:paraphrase_3,correct_hit,correct_hit,"For the song wreck of the edmund fitzgerald, who wrote it?","For the song wreck of the edmund fitzgerald, who wrote it?",answer_accept:answer_entailment
+song-019:paraphrase_1,incorrect_acceptance,cold_miss,Identify the person who wrote the song the man comes around.,Identify the person who wrote the song the man comes around.,answer_reject:subject_identity_conflict
+song-130:original,cold_miss,cold_miss,"For the song may the good lord bless and keep you, who wrote it?","For the song may the good lord bless and keep you, who wrote it?",answer_reject:subject_identity_conflict
+song-114:paraphrase_3,cold_miss,cold_miss,"For the song i'll see you in my dreams, who is credited as its writer?","For the song i'll see you in my dreams, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-155:paraphrase_3,correct_hit,correct_hit,Who wrote the song help me make it through the night?,Who wrote the song help me make it through the night?,answer_accept:answer_entailment
+song-089:hard_negative,incorrect_acceptance,cold_miss,"For the song go your own way, who is credited as its writer?","For the song go your own way, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-195:paraphrase_2,cold_miss,cold_miss,"For the song you're the one, who wrote it?","For the song you're the one, who wrote it?",answer_reject:subject_identity_conflict
+song-197:hard_negative,cold_miss,cold_miss,"For the song a change is going to come, who is credited as its writer?","For the song a change is going to come, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-124:paraphrase_3,cold_miss,cold_miss,Identify the person who wrote the song the man comes around.,Identify the person who wrote the song the man comes around.,answer_reject:subject_identity_conflict
+song-021:hard_negative,cold_miss,cold_miss,"For the song it never entered my mind, who is credited as its writer?","For the song that just the way it is, who wrote it?",answer_reject:subject_identity_conflict
+song-129:hard_negative,correct_hit,correct_hit,Who wrote the song thank you for being a friend?,Who wrote the song thank you for being a friend?,answer_accept:answer_entailment
+song-149:paraphrase_3,correct_hit,correct_hit,"For the song heaven help us all, who wrote it?","For the song heaven help us all, who wrote it?",answer_accept:answer_entailment
+song-152:hard_negative,cold_miss,cold_miss,Identify the person who wrote the song that's alright mama.,Identify the person who wrote the song that's alright mama.,answer_reject:subject_identity_conflict
+song-187:paraphrase_3,cold_miss,cold_miss,Identify the person who wrote the song i go to pieces.,Identify the person who wrote the song i go to pieces.,answer_reject:subject_identity_conflict
+song-086:hard_negative,correct_hit,correct_hit,"For the song here comes the sun, who is credited as its writer?","For the song here comes the sun, who is credited as its writer?",answer_accept:answer_entailment
+song-123:paraphrase_1,cold_miss,cold_miss,Name the writer of the song call me the breeze.,Name the writer of the song call me the breeze.,answer_reject:subject_identity_conflict
+song-028:paraphrase_1,correct_hit,correct_hit,"For the song kind of a drag, who is credited as its writer?","For the song kind of a drag, who is credited as its writer?",answer_accept:answer_entailment
+song-157:paraphrase_2,cold_miss,cold_miss,Identify the person who wrote the song when i was 17.,Identify the person who wrote the song when i was 17.,answer_reject:number_mismatch
+song-051:paraphrase_3,correct_hit,correct_hit,Name the writer of the song till the storm passes by.,Name the writer of the song till the storm passes by.,answer_accept:answer_entailment
+song-131:hard_negative,cold_miss,cold_miss,Name the writer of the song rainy night in georgia.,Name the writer of the song rainy night in georgia.,answer_reject:subject_identity_conflict
+song-116:original,correct_hit,correct_hit,Name the writer of the song two tickets to paradise.,Name the writer of the song two tickets to paradise.,answer_accept:answer_entailment
+song-098:original,cold_miss,cold_miss,"For the song where have all the flowers gone, who wrote it?","For the song where have all the flowers gone, who wrote it?",answer_reject:subject_identity_conflict
+song-019:paraphrase_3,cold_miss,correct_hit,Identify the person who wrote the song the man comes around.,Name the writer of the song here comes my baby.,answer_accept:answer_entailment
+song-112:paraphrase_2,cold_miss,cold_miss,"For the song a mighty fortress is our god, who wrote it?","For the song a mighty fortress is our god, who wrote it?",answer_reject:subject_identity_conflict
+song-128:paraphrase_2,incorrect_acceptance,correct_hit,Who wrote the song go light your world?,Name the writer of the song amanda light of my life.,answer_accept:answer_entailment
+song-084:original,correct_hit,correct_hit,Name the writer of the song the man who sold the world.,Name the writer of the song the man who sold the world.,answer_accept:answer_entailment
+song-019:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song am i losing you.,Identify the person who wrote the song am i losing you.,answer_accept:answer_entailment
+song-033:paraphrase_2,verifier_false_rejection,verifier_false_rejection,Name the writer of the song it ain't over til it's over.,Name the writer of the song it ain't over til it's over.,answer_verify:uncertain_answer
+song-119:original,incorrect_acceptance,cold_miss,"For the song shout to the lord, who is credited as its writer?","For the song shout to the lord, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-161:hard_negative,bypass,bypass,,,volatile_query
+song-081:hard_negative,cold_miss,cold_miss,"For the song may the good lord bless and keep you, who wrote it?","For the song may the good lord bless and keep you, who wrote it?",answer_reject:subject_identity_conflict
+song-058:paraphrase_2,cold_miss,cold_miss,Name the writer of the song angel in the morning.,Name the writer of the song angel in the morning.,answer_reject:subject_identity_conflict
+song-004:paraphrase_3,correct_hit,correct_hit,Who wrote the song ask the blind man he saw it all?,Who wrote the song ask the blind man he saw it all?,answer_accept:answer_entailment
+song-002:paraphrase_2,incorrect_acceptance,cold_miss,Who wrote the song go light your world?,Who wrote the song go light your world?,answer_reject:subject_identity_conflict
+song-140:paraphrase_2,cold_miss,cold_miss,"For the song i'm on fire, who is credited as its writer?","For the song i'm on fire, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-050:hard_negative,correct_hit,correct_hit,Name the writer of the song till the storm passes by.,Name the writer of the song till the storm passes by.,answer_accept:answer_entailment
+song-182:hard_negative,cold_miss,cold_miss,"For the song heaven help us all, who wrote it?","For the song heaven help us all, who wrote it?",answer_reject:subject_identity_conflict
+song-175:paraphrase_1,correct_hit,correct_hit,"For the song if you love me really love me, who is credited as its writer?","For the song if you love me really love me, who is credited as its writer?",answer_accept:answer_entailment
+song-160:paraphrase_3,incorrect_acceptance,cold_miss,Who wrote the song thank you for being a friend?,Who wrote the song thank you for being a friend?,answer_reject:subject_identity_conflict
+song-087:paraphrase_1,correct_hit,correct_hit,"For the song here comes the sun, who is credited as its writer?","For the song here comes the sun, who is credited as its writer?",answer_accept:answer_entailment
+song-009:paraphrase_3,incorrect_acceptance,cold_miss,Identify the person who wrote the song i go to pieces.,Identify the person who wrote the song i go to pieces.,answer_reject:subject_identity_conflict
+song-080:paraphrase_1,incorrect_acceptance,cold_miss,"For the song if you love me really love me, who is credited as its writer?","For the song if you love me really love me, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-109:paraphrase_3,cold_miss,cold_miss,Identify the person who wrote the song am i losing you.,Identify the person who wrote the song am i losing you.,answer_reject:subject_identity_conflict
+song-047:hard_negative,cold_miss,cold_miss,"For the song may the good lord bless and keep you, who wrote it?","For the song may the good lord bless and keep you, who wrote it?",answer_reject:subject_identity_conflict
+song-012:original,correct_hit,correct_hit,"For the song rudolph the red nosed reindeer, who wrote it?","For the song rudolph the red nosed reindeer, who wrote it?",answer_accept:answer_entailment
+song-066:paraphrase_2,incorrect_acceptance,cold_miss,"For the song mama i'm coming home, who wrote it?","For the song mama i'm coming home, who wrote it?",answer_reject:subject_identity_conflict
+song-081:paraphrase_2,verifier_false_rejection,verifier_false_rejection,Name the writer of the song why sung by annie lennox.,Name the writer of the song why sung by annie lennox.,answer_verify:answer_mentioned_in_question
+song-140:hard_negative,cold_miss,cold_miss,"For the song total eclipse of the heart, who wrote it?","For the song total eclipse of the heart, who wrote it?",answer_reject:subject_identity_conflict
+song-098:paraphrase_3,correct_hit,correct_hit,Who wrote the song the last full measure of devotion?,Who wrote the song the last full measure of devotion?,answer_accept:answer_entailment
+song-184:paraphrase_2,correct_hit,correct_hit,Who wrote the song i'll never find another you?,Who wrote the song i'll never find another you?,answer_accept:answer_entailment
+song-182:paraphrase_1,correct_hit,correct_hit,"For the song where have all the flowers gone, who wrote it?","For the song where have all the flowers gone, who wrote it?",answer_accept:answer_entailment
+song-017:paraphrase_1,correct_hit,correct_hit,"For the song wreck of the edmund fitzgerald, who wrote it?","For the song wreck of the edmund fitzgerald, who wrote it?",answer_accept:answer_entailment
+song-198:original,correct_hit,correct_hit,"For the song don t go changing, who wrote it?","For the song don t go changing, who wrote it?",answer_accept:answer_entailment
+song-010:paraphrase_1,bypass,bypass,,,volatile_query
+song-137:paraphrase_1,cold_miss,cold_miss,Name the writer of the song life is a highway.,Name the writer of the song life is a highway.,answer_reject:number_mismatch
+song-179:paraphrase_3,correct_hit,correct_hit,"For the song flight of the bumblebee, who wrote it?","For the song flight of the bumblebee, who wrote it?",answer_accept:answer_entailment
+song-126:paraphrase_1,correct_hit,correct_hit,Who wrote the song if i were a carpenter?,Who wrote the song if i were a carpenter?,answer_accept:answer_entailment
+song-032:paraphrase_2,cold_miss,cold_miss,"For the song easy like sunday morning, who is credited as its writer?","For the song easy like sunday morning, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-166:hard_negative,cold_miss,cold_miss,"For the song may the good lord bless and keep you, who wrote it?","For the song try and catch the wind, who wrote it?",answer_reject:subject_identity_conflict
+song-071:original,correct_hit,correct_hit,Identify the person who wrote the song peanut butter jelly time.,Identify the person who wrote the song peanut butter jelly time.,answer_accept:answer_entailment
+song-005:paraphrase_3,cold_miss,cold_miss,Identify the person who wrote the song just someone i used to know.,Identify the person who wrote the song just someone i used to know.,answer_reject:subject_identity_conflict
+song-036:hard_negative,cold_miss,cold_miss,"For the song go your own way, who is credited as its writer?","For the song go your own way, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-111:hard_negative,correct_hit,correct_hit,"For the song shout to the lord, who is credited as its writer?","For the song shout to the lord, who is credited as its writer?",answer_accept:answer_entailment
+song-032:hard_negative,correct_hit,correct_hit,"For the song it ain't over til it's over, who is credited as its writer?","For the song it ain't over til it's over, who is credited as its writer?",answer_accept:answer_entailment
+song-154:paraphrase_3,cold_miss,cold_miss,Identify the person who wrote the song on the eve of destruction.,Identify the person who wrote the song on the eve of destruction.,answer_reject:subject_identity_conflict
+song-153:original,correct_hit,correct_hit,"For the song mama i'm coming home, who wrote it?","For the song mama i'm coming home, who wrote it?",answer_accept:answer_entailment
+song-105:paraphrase_1,correct_hit,correct_hit,"For the song jeremiah was a bullfrog, who is credited as its writer?","For the song jeremiah was a bullfrog, who is credited as its writer?",answer_accept:answer_entailment
+song-111:paraphrase_2,verifier_false_rejection,verifier_false_rejection,Name the writer of the song man in the box.,Name the writer of the song man in the box.,answer_verify:uncertain_answer
+song-085:paraphrase_3,verifier_false_rejection,verifier_false_rejection,"For the song hero by mariah carey, who is credited as its writer?","For the song hero by mariah carey, who is credited as its writer?",answer_verify:answer_mentioned_in_question
+song-002:paraphrase_3,incorrect_acceptance,correct_hit,Who wrote the song go light your world?,"For the song i saw the light, who is credited as its writer?",answer_accept:answer_entailment
+song-147:paraphrase_2,cold_miss,cold_miss,"For the song rest your love on me, who is credited as its writer?","For the song rest your love on me, who is credited as its writer?",answer_reject:negation_mismatch
+song-115:paraphrase_1,cold_miss,cold_miss,"For the song the dance by garth brooks, who is credited as its writer?","For the song the dance by garth brooks, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-032:paraphrase_3,correct_hit,correct_hit,"For the song saturday in the park, who is credited as its writer?","For the song saturday in the park, who is credited as its writer?",answer_accept:answer_entailment
+song-162:paraphrase_3,bypass,bypass,,,volatile_query
+song-066:paraphrase_3,incorrect_acceptance,correct_hit,"For the song mama i'm coming home, who wrote it?","For the song bring it on home, who is credited as its writer?",answer_accept:answer_entailment
+song-082:hard_negative,correct_hit,correct_hit,"For the song it never entered my mind, who is credited as its writer?","For the song it never entered my mind, who is credited as its writer?",answer_accept:answer_entailment
+song-114:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song imagine by the beatles.,Identify the person who wrote the song imagine by the beatles.,answer_accept:answer_entailment
+song-142:paraphrase_1,correct_hit,correct_hit,"For the song the dance by garth brooks, who is credited as its writer?","For the song the dance by garth brooks, who is credited as its writer?",answer_accept:answer_entailment
+song-076:original,cold_miss,cold_miss,Who wrote the song take a walk on the wild side?,Who wrote the song take a walk on the wild side?,answer_reject:subject_identity_conflict
+song-056:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song somebody loan me a dime.,Identify the person who wrote the song somebody loan me a dime.,answer_accept:answer_entailment
+song-023:paraphrase_2,cold_miss,cold_miss,"For the song kind of a drag, who is credited as its writer?","For the song kind of a drag, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-176:paraphrase_1,cold_miss,cold_miss,Name the writer of the song good time charlie's got the blues.,Name the writer of the song good time charlie's got the blues.,answer_reject:subject_identity_conflict
+song-088:paraphrase_2,cold_miss,cold_miss,"For the song once i was 7 years old, who is credited as its writer?","For the song once i was 7 years old, who is credited as its writer?",answer_reject:number_mismatch
+song-022:original,verifier_false_rejection,verifier_false_rejection,"For the song perfect that ed sheeran sings, who wrote it?","For the song perfect that ed sheeran sings, who wrote it?",answer_verify:answer_mentioned_in_question
+song-123:paraphrase_2,verifier_false_rejection,verifier_false_rejection,Name the writer of the song call me by aretha franklin.,Name the writer of the song call me by aretha franklin.,answer_verify:answer_mentioned_in_question
+song-134:paraphrase_3,cold_miss,cold_miss,Identify the person who wrote the song when i was 17.,Identify the person who wrote the song when i was 17.,answer_reject:number_mismatch
+song-046:paraphrase_2,correct_hit,correct_hit,Who wrote the song back in the new york groove?,Who wrote the song back in the new york groove?,answer_accept:answer_entailment
+song-055:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song somebody loan me a dime.,Identify the person who wrote the song somebody loan me a dime.,answer_accept:answer_entailment
+song-129:paraphrase_3,correct_hit,correct_hit,"For the song i will always love you sung by whitney houston, who wrote it?","For the song i will always love you sung by whitney houston, who wrote it?",answer_accept:answer_entailment
+song-065:paraphrase_2,incorrect_acceptance,cold_miss,"For the song if you love me really love me, who is credited as its writer?","For the song if you love me really love me, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-061:hard_negative,verifier_false_rejection,verifier_false_rejection,Name the writer of the song rainy night in georgia.,Name the writer of the song rainy night in georgia.,answer_verify:ambiguous_context
+song-124:original,correct_hit,correct_hit,Identify the person who wrote the song who let the dogs out.,Identify the person who wrote the song who let the dogs out.,answer_accept:answer_entailment
+song-168:original,cold_miss,cold_miss,"For the song what do you want from me, who wrote it?","For the song what do you want from me, who wrote it?",answer_reject:subject_identity_conflict
+song-142:hard_negative,correct_hit,correct_hit,"For the song do you believe in magic, who is credited as its writer?","For the song do you believe in magic, who is credited as its writer?",answer_accept:answer_entailment
+song-077:hard_negative,cold_miss,cold_miss,"For the song i'll see you in my dreams, who is credited as its writer?","For the song i'll see you in my dreams, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-135:original,cold_miss,cold_miss,"For the song you're the one, who wrote it?","For the song you're the one, who wrote it?",answer_reject:subject_identity_conflict
+song-198:paraphrase_2,correct_hit,correct_hit,"For the song don t go changing, who wrote it?","For the song don t go changing, who wrote it?",answer_accept:answer_entailment
+song-112:paraphrase_3,correct_hit,correct_hit,"For the song shout to the lord, who is credited as its writer?","For the song shout to the lord, who is credited as its writer?",answer_accept:answer_entailment
+song-167:paraphrase_2,correct_hit,correct_hit,"For the song the wind cries mary, who wrote it?","For the song the wind cries mary, who wrote it?",answer_accept:answer_entailment
+song-190:paraphrase_3,correct_hit,correct_hit,"For the song i would rather go blind, who wrote it?","For the song i would rather go blind, who wrote it?",answer_accept:answer_entailment
+song-029:original,cold_miss,correct_hit,Who wrote the song i write the song?,Name the writer of the song this i promise you.,answer_accept:answer_entailment
+song-173:paraphrase_1,incorrect_acceptance,cold_miss,"For the song a change is going to come, who is credited as its writer?","For the song a change is going to come, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-093:original,cold_miss,cold_miss,Who wrote the song i write the song?,Who wrote the song i write the song?,answer_reject:subject_identity_conflict
+song-140:paraphrase_3,correct_hit,correct_hit,"For the song i fought the law, who is credited as its writer?","For the song i fought the law, who is credited as its writer?",answer_accept:answer_entailment
+song-079:paraphrase_3,cold_miss,cold_miss,"For the song easy like sunday morning, who is credited as its writer?","For the song easy like sunday morning, who is credited as its writer?",answer_reject:negation_mismatch
+song-105:paraphrase_3,correct_hit,correct_hit,"For the song jeremiah was a bullfrog, who is credited as its writer?","For the song jeremiah was a bullfrog, who is credited as its writer?",answer_accept:answer_entailment
+song-036:paraphrase_1,correct_hit,correct_hit,"For the song keep your hands to yourself, who is credited as its writer?","For the song keep your hands to yourself, who is credited as its writer?",answer_accept:answer_entailment
+song-078:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song it don't come easy.,Identify the person who wrote the song it don't come easy.,answer_accept:answer_entailment
+song-026:paraphrase_1,correct_hit,correct_hit,Who wrote the song the age of aquarius?,Who wrote the song the age of aquarius?,answer_accept:answer_entailment
+song-195:original,correct_hit,correct_hit,"For the song one wing from sparkle, who is credited as its writer?","For the song one wing from sparkle, who is credited as its writer?",answer_accept:answer_entailment
+song-169:paraphrase_3,cold_miss,cold_miss,Identify the person who wrote the song just someone i used to know.,Identify the person who wrote the song just someone i used to know.,answer_reject:subject_identity_conflict
+song-008:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song woman by peter and gordon.,Identify the person who wrote the song woman by peter and gordon.,answer_accept:answer_entailment
+song-003:paraphrase_2,cold_miss,cold_miss,"For the song isn't she lovely, who is credited as its writer?","For the song isn't she lovely, who is credited as its writer?",answer_reject:negation_mismatch
+song-045:paraphrase_2,cold_miss,cold_miss,"For the song rudolph the red nosed reindeer, who wrote it?","For the song rudolph the red nosed reindeer, who wrote it?",answer_reject:subject_identity_conflict
+song-060:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song lord i hope this day is good.,Identify the person who wrote the song lord i hope this day is good.,answer_accept:answer_entailment
+song-057:paraphrase_1,correct_hit,correct_hit,Who wrote the song go light your world?,Who wrote the song go light your world?,answer_accept:answer_entailment
+song-159:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song have you ever seen the rain.,Identify the person who wrote the song have you ever seen the rain.,answer_accept:answer_entailment
+song-089:paraphrase_3,cold_miss,cold_miss,Identify the person who wrote the song here comes my baby.,Identify the person who wrote the song the man comes around.,answer_reject:subject_identity_conflict
+song-106:hard_negative,correct_hit,correct_hit,Who wrote the song her name was joanne?,Who wrote the song her name was joanne?,answer_accept:answer_entailment
+song-167:paraphrase_3,correct_hit,correct_hit,"For the song the wind cries mary, who wrote it?","For the song the wind cries mary, who wrote it?",answer_accept:answer_entailment
+song-070:paraphrase_1,cold_miss,cold_miss,Who wrote the song go light your world?,Name the writer of the song amanda light of my life.,answer_reject:subject_identity_conflict
+song-144:hard_negative,cold_miss,cold_miss,Who wrote the song i write the song?,"For the song try and catch the wind, who wrote it?",answer_reject:subject_identity_conflict
+song-195:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song hit me with your best shot.,Identify the person who wrote the song hit me with your best shot.,answer_accept:answer_entailment
+song-053:paraphrase_3,cold_miss,cold_miss,Identify the person who wrote the song somebody loan me a dime.,Identify the person who wrote the song somebody loan me a dime.,answer_reject:subject_identity_conflict
+song-177:paraphrase_3,cold_miss,cold_miss,Identify the person who wrote the song on the eve of destruction.,Identify the person who wrote the song on the eve of destruction.,answer_reject:subject_identity_conflict
+song-069:paraphrase_3,cold_miss,cold_miss,Identify the person who wrote the song just someone i used to know.,Identify the person who wrote the song just someone i used to know.,answer_reject:subject_identity_conflict
+song-014:hard_negative,cold_miss,cold_miss,Who wrote the song i write the song?,Who wrote the song i write the song?,answer_reject:subject_identity_conflict
+song-144:original,cold_miss,cold_miss,Who wrote the song i write the song?,Who wrote the song i write the song?,answer_reject:subject_identity_conflict
+song-051:paraphrase_2,correct_hit,correct_hit,Name the writer of the song till the storm passes by.,Name the writer of the song till the storm passes by.,answer_accept:answer_entailment
+song-147:hard_negative,correct_hit,correct_hit,Name the writer of the song drive by the cars.,Name the writer of the song drive by the cars.,answer_accept:answer_entailment
+song-133:original,cold_miss,cold_miss,Identify the person who wrote the song on the eve of destruction.,Identify the person who wrote the song on the eve of destruction.,answer_reject:subject_identity_conflict
+song-017:paraphrase_2,correct_hit,correct_hit,"For the song wreck of the edmund fitzgerald, who wrote it?","For the song wreck of the edmund fitzgerald, who wrote it?",answer_accept:answer_entailment
+song-035:paraphrase_1,cold_miss,cold_miss,Identify the person who wrote the song i go to pieces.,Identify the person who wrote the song i go to pieces.,answer_reject:subject_identity_conflict
+song-136:hard_negative,correct_hit,correct_hit,Name the writer of the song get your kicks on route 66.,Name the writer of the song get your kicks on route 66.,answer_accept:answer_entailment
+song-146:paraphrase_1,cold_miss,cold_miss,Who wrote the song home from the wiz?,Who wrote the song home from the wiz?,answer_reject:subject_identity_conflict
+song-194:hard_negative,correct_hit,correct_hit,"For the song one wing from sparkle, who is credited as its writer?","For the song one wing from sparkle, who is credited as its writer?",answer_accept:answer_entailment
+song-023:original,correct_hit,correct_hit,"For the song the weight by the band, who is credited as its writer?","For the song the weight by the band, who is credited as its writer?",answer_accept:answer_entailment
+song-018:paraphrase_3,cold_miss,cold_miss,Identify the person who wrote the song imagine by the beatles.,Identify the person who wrote the song imagine by the beatles.,answer_reject:subject_identity_conflict
+song-176:paraphrase_2,correct_hit,correct_hit,Name the writer of the song still got the blues for you.,Name the writer of the song still got the blues for you.,answer_accept:answer_entailment
+song-141:hard_negative,correct_hit,correct_hit,"For the song the dance by garth brooks, who is credited as its writer?","For the song the dance by garth brooks, who is credited as its writer?",answer_accept:answer_entailment
+song-084:paraphrase_3,correct_hit,correct_hit,Name the writer of the song the man who sold the world.,Name the writer of the song the man who sold the world.,answer_accept:answer_entailment
+song-034:hard_negative,correct_hit,correct_hit,Name the writer of the song it's the climb.,Name the writer of the song it's the climb.,answer_accept:answer_entailment
+song-159:hard_negative,incorrect_acceptance,correct_hit,Who wrote the song thank you for being a friend?,Identify the person who wrote the song you got a friend.,answer_accept:answer_entailment
+song-090:paraphrase_3,cold_miss,correct_hit,Identify the person who wrote the song just someone i used to know.,"For the song that just the way it is, who wrote it?",answer_accept:answer_entailment
+song-165:paraphrase_3,correct_hit,correct_hit,Who wrote the song pass me not oh gentle saviour?,Who wrote the song pass me not oh gentle saviour?,answer_accept:answer_entailment
+song-021:paraphrase_3,correct_hit,correct_hit,Who wrote the song home from the wiz?,Who wrote the song home from the wiz?,answer_accept:answer_entailment
+song-065:original,incorrect_acceptance,correct_hit,Identify the person who wrote the song you really got a hold on me.,"For the song you really got me, who is credited as its writer?",answer_accept:answer_entailment
+song-132:paraphrase_2,verifier_false_rejection,verifier_false_rejection,"For the song that's the night when the lights went out in georgia, who wrote it?","For the song that's the night when the lights went out in georgia, who wrote it?",answer_verify:ambiguous_context
+song-026:hard_negative,cold_miss,cold_miss,"For the song it never entered my mind, who is credited as its writer?","For the song it never entered my mind, who is credited as its writer?",answer_reject:negation_mismatch
+song-014:paraphrase_1,correct_hit,correct_hit,"For the song you're still the one, who wrote it?",Identify the person who wrote the song you're still the one.,answer_accept:answer_entailment
+song-197:paraphrase_1,cold_miss,cold_miss,Name the writer of the song the man who sold the world.,Name the writer of the song the man who sold the world.,answer_reject:subject_identity_conflict
+song-149:paraphrase_1,correct_hit,correct_hit,"For the song heaven help us all, who wrote it?","For the song heaven help us all, who wrote it?",answer_accept:answer_entailment
+song-094:paraphrase_1,correct_hit,correct_hit,"For the song bewitched bothered and bewildered, who wrote it?","For the song bewitched bothered and bewildered, who wrote it?",answer_accept:answer_entailment
+song-066:hard_negative,cold_miss,cold_miss,Who wrote the song help me make it through the night?,Who wrote the song help me make it through the night?,answer_reject:subject_identity_conflict
+song-171:paraphrase_3,correct_hit,correct_hit,Who wrote the song take a walk on the wild side?,Who wrote the song take a walk on the wild side?,answer_accept:answer_entailment
+song-077:paraphrase_1,correct_hit,correct_hit,Who wrote the song come to my window?,Who wrote the song come to my window?,answer_accept:answer_entailment
+song-163:original,cold_miss,cold_miss,"For the song where do we go from here, who wrote it?","For the song where do we go from here, who wrote it?",answer_reject:subject_identity_conflict
+song-062:hard_negative,incorrect_acceptance,cold_miss,Who wrote the song home from the wiz?,Who wrote the song home from the wiz?,answer_reject:subject_identity_conflict
+song-104:paraphrase_2,cold_miss,cold_miss,"For the song all i want is you, who is credited as its writer?","For the song all i want is you, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-037:paraphrase_2,correct_hit,correct_hit,"For the song where do we go from here, who wrote it?","For the song where do we go from here, who wrote it?",answer_accept:answer_entailment
+song-039:original,cold_miss,cold_miss,Name the writer of the song it's the climb.,Name the writer of the song it's the climb.,answer_reject:negation_mismatch
+song-040:original,cold_miss,cold_miss,"For the song where do we go from here, who wrote it?","For the song where do we go from here, who wrote it?",answer_reject:subject_identity_conflict
+song-061:paraphrase_1,cold_miss,cold_miss,"For the song rest your love on me, who is credited as its writer?",Name the writer of the song i love you truly.,answer_reject:subject_identity_conflict
+song-085:hard_negative,correct_hit,correct_hit,Who wrote the song better man for little big town?,Who wrote the song better man for little big town?,answer_accept:answer_entailment
+song-053:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song hurt by nine inch nails.,Identify the person who wrote the song hurt by nine inch nails.,answer_accept:answer_entailment
+song-143:paraphrase_1,correct_hit,correct_hit,"For the song do you believe in magic, who is credited as its writer?","For the song do you believe in magic, who is credited as its writer?",answer_accept:answer_entailment
+song-096:paraphrase_1,incorrect_acceptance,cold_miss,"For the song if you love me really love me, who is credited as its writer?","For the song if you love me really love me, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-173:original,incorrect_acceptance,correct_hit,"For the song a change is going to come, who is credited as its writer?",Name the writer of the song waiting for the world to change.,answer_accept:answer_entailment
+song-044:paraphrase_2,cold_miss,cold_miss,"For the song kind of a drag, who is credited as its writer?","For the song kind of a drag, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-113:original,correct_hit,correct_hit,"For the song my heroes have always been cowboys, who is credited as its writer?","For the song my heroes have always been cowboys, who is credited as its writer?",answer_accept:answer_entailment
+song-032:original,correct_hit,correct_hit,"For the song saturday in the park, who is credited as its writer?","For the song saturday in the park, who is credited as its writer?",answer_accept:answer_entailment
+song-118:original,correct_hit,correct_hit,Identify the person who wrote the song manic monday for the bangles.,Identify the person who wrote the song manic monday for the bangles.,answer_accept:answer_entailment
+song-119:paraphrase_1,cold_miss,correct_hit,"For the song shout to the lord, who is credited as its writer?",Who wrote the song here i am lord?,answer_accept:answer_entailment
+song-006:paraphrase_3,correct_hit,correct_hit,"For the song i'm on fire, who is credited as its writer?","For the song i'm on fire, who is credited as its writer?",answer_accept:answer_entailment
+song-112:paraphrase_1,correct_hit,correct_hit,"For the song shout to the lord, who is credited as its writer?","For the song shout to the lord, who is credited as its writer?",answer_accept:answer_entailment
+song-164:paraphrase_2,correct_hit,correct_hit,"For the song i wanna grow old with you, who wrote it?","For the song i wanna grow old with you, who wrote it?",answer_accept:answer_entailment
+song-181:paraphrase_1,incorrect_acceptance,cold_miss,"For the song go your own way, who is credited as its writer?","For the song go your own way, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-071:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song peanut butter jelly time.,Identify the person who wrote the song peanut butter jelly time.,answer_accept:answer_entailment
+song-067:paraphrase_3,correct_hit,correct_hit,"For the song dark as a dungeon, who wrote it?","For the song dark as a dungeon, who wrote it?",answer_accept:answer_entailment
+song-082:paraphrase_2,correct_hit,correct_hit,"For the song vaishnav jan to tene kahiye, who wrote it?","For the song vaishnav jan to tene kahiye, who wrote it?",answer_accept:answer_entailment
+song-159:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song have you ever seen the rain.,Identify the person who wrote the song have you ever seen the rain.,answer_accept:answer_entailment
+song-185:original,correct_hit,correct_hit,Identify the person who wrote the song wishing on a star.,Identify the person who wrote the song wishing on a star.,answer_accept:answer_entailment
+song-002:original,incorrect_acceptance,correct_hit,Who wrote the song go light your world?,"For the song i saw the light, who is credited as its writer?",answer_accept:answer_entailment
+song-131:paraphrase_1,correct_hit,correct_hit,"For the song those were the days, who wrote it?","For the song those were the days, who wrote it?",answer_accept:answer_entailment
+song-066:paraphrase_1,incorrect_acceptance,correct_hit,"For the song mama i'm coming home, who wrote it?","For the song bring it on home, who is credited as its writer?",answer_accept:answer_entailment
+song-060:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song lord i hope this day is good.,Identify the person who wrote the song lord i hope this day is good.,answer_accept:answer_entailment
+song-087:original,correct_hit,correct_hit,"For the song here comes the sun, who is credited as its writer?","For the song here comes the sun, who is credited as its writer?",answer_accept:answer_entailment
+song-180:paraphrase_1,cold_miss,cold_miss,Name the writer of the song here i am lord.,"For the song keep your hands to yourself, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-110:hard_negative,correct_hit,correct_hit,"For the song man in the box, who is credited as its writer?","For the song man in the box, who is credited as its writer?",answer_accept:answer_entailment
+song-013:original,incorrect_acceptance,cold_miss,Who wrote the song help me make it through the night?,Who wrote the song help me make it through the night?,answer_reject:subject_identity_conflict
+song-110:paraphrase_3,correct_hit,correct_hit,Who wrote the song crazy little thing called love?,Who wrote the song crazy little thing called love?,answer_accept:answer_entailment
+song-161:original,correct_hit,correct_hit,"For the song you're the one, who wrote it?","For the song you're the one, who wrote it?",answer_accept:answer_entailment
+song-094:hard_negative,correct_hit,correct_hit,"For the song jesus is just alright with me, who is credited as its writer?","For the song jesus is just alright with me, who is credited as its writer?",answer_accept:answer_entailment
+song-174:paraphrase_3,cold_miss,cold_miss,"For the song don't give up, who is credited as its writer?","For the song don't give up, who is credited as its writer?",answer_reject:negation_mismatch
+song-158:original,cold_miss,cold_miss,Who wrote the song i write the song?,Who wrote the song i write the song?,answer_reject:subject_identity_conflict
+song-125:paraphrase_3,correct_hit,correct_hit,Name the writer of the song kadam kadam badhaye ja khusi k geet gaye ja.,Name the writer of the song kadam kadam badhaye ja khusi k geet gaye ja.,answer_accept:answer_entailment
+song-183:paraphrase_3,verifier_false_rejection,verifier_false_rejection,"For the song in my time of dying, who wrote it?","For the song in my time of dying, who wrote it?",answer_verify:uncertain_answer
+song-100:original,cold_miss,cold_miss,Who wrote the song go light your world?,Who wrote the song go light your world?,answer_reject:subject_identity_conflict
+song-025:paraphrase_1,cold_miss,cold_miss,Who wrote the song i write the song?,Who wrote the song i write the song?,answer_reject:subject_identity_conflict
+song-148:original,correct_hit,correct_hit,Name the writer of the song drive by the cars.,Name the writer of the song drive by the cars.,answer_accept:answer_entailment
+song-089:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song here comes the boom.,Identify the person who wrote the song here comes the boom.,answer_accept:answer_entailment
+song-139:original,incorrect_acceptance,cold_miss,Name the writer of the song call me the breeze.,Name the writer of the song call me the breeze.,answer_reject:subject_identity_conflict
+song-033:hard_negative,verifier_false_rejection,verifier_false_rejection,Name the writer of the song call me the breeze.,Name the writer of the song call me the breeze.,answer_verify:uncertain_answer
+song-108:original,correct_hit,correct_hit,Name the writer of the song breakfast at tiffany's.,Name the writer of the song breakfast at tiffany's.,answer_accept:answer_entailment
+song-003:paraphrase_1,correct_hit,correct_hit,"For the song too marvelous for words, who is credited as its writer?","For the song too marvelous for words, who is credited as its writer?",answer_accept:answer_entailment
+song-075:original,correct_hit,correct_hit,"For the song what do you want from me, who wrote it?","For the song what do you want from me, who wrote it?",answer_accept:answer_entailment
+song-191:paraphrase_1,correct_hit,correct_hit,"For the song what's so funny bout peace love and understanding, who wrote it?","For the song what's so funny bout peace love and understanding, who wrote it?",answer_accept:answer_entailment
+song-135:hard_negative,cold_miss,cold_miss,Who wrote the song i'm proud to be an american?,Who wrote the song i'm proud to be an american?,answer_reject:subject_identity_conflict
+song-047:paraphrase_3,correct_hit,correct_hit,"For the song i'll see you in my dreams, who is credited as its writer?","For the song i'll see you in my dreams, who is credited as its writer?",answer_accept:answer_entailment
+song-039:paraphrase_2,correct_hit,correct_hit,Who wrote the song ain't no mountain high enough?,Who wrote the song ain't no mountain high enough?,answer_accept:answer_entailment
+song-189:paraphrase_2,cold_miss,cold_miss,"For the song rest your love on me, who is credited as its writer?","For the song rest your love on me, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-078:paraphrase_1,correct_hit,correct_hit,"For the song when will i see you again, who wrote it?","For the song when will i see you again, who wrote it?",answer_accept:answer_entailment
+song-001:paraphrase_1,cold_miss,cold_miss,Name the writer of the song angel in the morning.,Name the writer of the song angel in the morning.,answer_reject:subject_identity_conflict
+song-076:hard_negative,correct_hit,correct_hit,Who wrote the song come to my window?,Who wrote the song come to my window?,answer_accept:answer_entailment
+song-037:original,correct_hit,correct_hit,"For the song where do we go from here, who wrote it?","For the song where do we go from here, who wrote it?",answer_accept:answer_entailment
+song-156:original,correct_hit,correct_hit,Identify the person who wrote the song i go to pieces.,Identify the person who wrote the song i go to pieces.,answer_accept:answer_entailment
+song-187:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song that's how i got to memphis.,Identify the person who wrote the song that's how i got to memphis.,answer_accept:answer_entailment
+song-043:original,correct_hit,correct_hit,"For the song all i want is you, who is credited as its writer?","For the song all i want is you, who is credited as its writer?",answer_accept:answer_entailment
+song-017:original,correct_hit,correct_hit,"For the song wreck of the edmund fitzgerald, who wrote it?","For the song wreck of the edmund fitzgerald, who wrote it?",answer_accept:answer_entailment
+song-035:original,correct_hit,correct_hit,Name the writer of the song it's the climb.,Name the writer of the song it's the climb.,answer_accept:answer_entailment
+song-039:paraphrase_1,correct_hit,correct_hit,Who wrote the song ain't no mountain high enough?,Who wrote the song ain't no mountain high enough?,answer_accept:answer_entailment
+song-096:hard_negative,correct_hit,correct_hit,"For the song rest your love on me, who is credited as its writer?","For the song rest your love on me, who is credited as its writer?",answer_accept:answer_entailment
+song-153:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song joy to the world.,Identify the person who wrote the song joy to the world.,answer_accept:answer_entailment
+song-071:hard_negative,correct_hit,correct_hit,Name the writer of the song historia de un amor.,Name the writer of the song historia de un amor.,answer_accept:answer_entailment
+song-100:hard_negative,cold_miss,cold_miss,"For the song i would rather go blind, who wrote it?","For the song i would rather go blind, who wrote it?",answer_reject:subject_identity_conflict
+song-000:paraphrase_2,cold_miss,cold_miss,"For the song a mighty fortress is our god, who wrote it?","For the song a mighty fortress is our god, who wrote it?",answer_reject:subject_identity_conflict
+song-103:original,correct_hit,correct_hit,Name the writer of the song the first time i ever saw your face.,Name the writer of the song the first time i ever saw your face.,answer_accept:answer_entailment
+song-102:paraphrase_3,incorrect_acceptance,correct_hit,"For the song you're the one, who wrote it?",Who wrote the song you're the one that i want?,answer_accept:answer_entailment
+song-098:hard_negative,cold_miss,cold_miss,Who wrote the song i write the song?,Who wrote the song i write the song?,answer_reject:subject_identity_conflict
+song-082:original,correct_hit,correct_hit,"For the song vaishnav jan to tene kahiye, who wrote it?","For the song vaishnav jan to tene kahiye, who wrote it?",answer_accept:answer_entailment
+song-122:paraphrase_3,cold_miss,cold_miss,Identify the person who wrote the song joy to the world.,Identify the person who wrote the song joy to the world.,answer_reject:subject_identity_conflict
+song-071:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song peanut butter jelly time.,Identify the person who wrote the song peanut butter jelly time.,answer_accept:answer_entailment
+song-004:paraphrase_2,correct_hit,correct_hit,Who wrote the song ask the blind man he saw it all?,Who wrote the song ask the blind man he saw it all?,answer_accept:answer_entailment
+song-043:paraphrase_3,correct_hit,correct_hit,"For the song all i want is you, who is credited as its writer?","For the song all i want is you, who is credited as its writer?",answer_accept:answer_entailment
+song-166:paraphrase_3,incorrect_acceptance,cold_miss,"For the song call me the breeze, who wrote it?","For the song call me the breeze, who wrote it?",answer_reject:subject_identity_conflict
+song-183:hard_negative,correct_hit,correct_hit,Who wrote the song i'll never find another you?,Who wrote the song i'll never find another you?,answer_accept:answer_entailment
+song-002:hard_negative,correct_hit,correct_hit,"For the song too marvelous for words, who is credited as its writer?","For the song too marvelous for words, who is credited as its writer?",answer_accept:answer_entailment
+song-179:paraphrase_1,correct_hit,correct_hit,"For the song flight of the bumblebee, who wrote it?","For the song flight of the bumblebee, who wrote it?",answer_accept:answer_entailment
+song-155:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song i go to pieces.,Identify the person who wrote the song i go to pieces.,answer_accept:answer_entailment
+song-072:original,correct_hit,correct_hit,Name the writer of the song historia de un amor.,Name the writer of the song historia de un amor.,answer_accept:answer_entailment
+song-098:paraphrase_1,correct_hit,correct_hit,Who wrote the song the last full measure of devotion?,Who wrote the song the last full measure of devotion?,answer_accept:answer_entailment
+song-183:original,correct_hit,correct_hit,"For the song in my time of dying, who wrote it?","For the song in my time of dying, who wrote it?",answer_accept:answer_entailment
+song-007:original,correct_hit,correct_hit,Name the writer of the song last night i had the strangest dream.,Name the writer of the song last night i had the strangest dream.,answer_accept:answer_entailment
+song-175:hard_negative,verifier_false_rejection,verifier_false_rejection,Name the writer of the song still got the blues for you.,Name the writer of the song still got the blues for you.,answer_verify:uncertain_answer
+song-122:paraphrase_1,verifier_false_rejection,verifier_false_rejection,Identify the person who wrote the song happy by pharrell williams.,Identify the person who wrote the song happy by pharrell williams.,answer_verify:answer_mentioned_in_question
+song-151:original,cold_miss,cold_miss,"For the song i'm on fire, who is credited as its writer?","For the song i'm on fire, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-199:original,verifier_false_rejection,verifier_false_rejection,"For the song country boy by aaron lewis, who wrote it?","For the song country boy by aaron lewis, who wrote it?",answer_verify:answer_mentioned_in_question
+song-174:original,correct_hit,correct_hit,Identify the person who wrote the song don t want to miss a thing.,Identify the person who wrote the song don t want to miss a thing.,answer_accept:answer_entailment
+song-052:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song hurt by nine inch nails.,Identify the person who wrote the song hurt by nine inch nails.,answer_accept:answer_entailment
+song-189:paraphrase_3,correct_hit,correct_hit,"For the song scars to your beautiful, who is credited as its writer?","For the song scars to your beautiful, who is credited as its writer?",answer_accept:answer_entailment
+song-134:hard_negative,correct_hit,correct_hit,Who wrote the song i write the song?,Who wrote the song i write the song?,answer_accept:answer_entailment
+song-042:hard_negative,correct_hit,correct_hit,"For the song all i want is you, who is credited as its writer?","For the song all i want is you, who is credited as its writer?",answer_accept:answer_entailment
+song-033:paraphrase_3,correct_hit,correct_hit,Name the writer of the song it ain't over til it's over.,Name the writer of the song it ain't over til it's over.,answer_accept:answer_entailment
+song-117:paraphrase_2,correct_hit,correct_hit,"For the song don't you ever get tired of hurting me, who wrote it?","For the song don't you ever get tired of hurting me, who wrote it?",answer_accept:answer_entailment
+song-076:paraphrase_2,correct_hit,correct_hit,Who wrote the song these boots are made for walking?,Who wrote the song these boots are made for walking?,answer_accept:answer_entailment
+song-070:original,correct_hit,correct_hit,Name the writer of the song you light up my life.,Name the writer of the song you light up my life.,answer_accept:answer_entailment
+song-135:paraphrase_1,correct_hit,correct_hit,Who wrote the song i write the song?,Who wrote the song i write the song?,answer_accept:answer_entailment
+song-089:original,correct_hit,correct_hit,Identify the person who wrote the song here comes the boom.,Identify the person who wrote the song here comes the boom.,answer_accept:answer_entailment
+song-025:hard_negative,correct_hit,correct_hit,Who wrote the song the age of aquarius?,Who wrote the song the age of aquarius?,answer_accept:answer_entailment
+song-009:hard_negative,bypass,bypass,,,volatile_query
+song-133:paraphrase_3,verifier_false_rejection,verifier_false_rejection,Who wrote the song rise up by andra day?,Who wrote the song rise up by andra day?,answer_verify:answer_mentioned_in_question
+song-097:original,correct_hit,correct_hit,"For the song rest your love on me, who is credited as its writer?","For the song rest your love on me, who is credited as its writer?",answer_accept:answer_entailment
+song-075:paraphrase_3,correct_hit,correct_hit,"For the song what do you want from me, who wrote it?","For the song what do you want from me, who wrote it?",answer_accept:answer_entailment
+song-174:hard_negative,correct_hit,correct_hit,"For the song if you love me really love me, who is credited as its writer?","For the song if you love me really love me, who is credited as its writer?",answer_accept:answer_entailment
+song-024:paraphrase_1,correct_hit,correct_hit,"For the song may the good lord bless and keep you, who wrote it?","For the song may the good lord bless and keep you, who wrote it?",answer_accept:answer_entailment
+song-188:paraphrase_2,cold_miss,cold_miss,"For the song kind of a drag, who is credited as its writer?","For the song kind of a drag, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-166:paraphrase_2,cold_miss,correct_hit,"For the song try and catch the wind, who is credited as its writer?",Identify the person who wrote the song blowin in the wind.,answer_accept:answer_entailment
+song-099:paraphrase_1,correct_hit,correct_hit,"For the song the little drummer boy, who wrote it?","For the song the little drummer boy, who wrote it?",answer_accept:answer_entailment
+song-146:paraphrase_2,correct_hit,correct_hit,Name the writer of the song our house is a very very fine house.,Name the writer of the song our house is a very very fine house.,answer_accept:answer_entailment
+song-104:original,correct_hit,correct_hit,"For the song all kinds of everything, who is credited as its writer?","For the song all kinds of everything, who is credited as its writer?",answer_accept:answer_entailment
+song-130:paraphrase_3,correct_hit,correct_hit,Who wrote the song thank you for being a friend?,Who wrote the song thank you for being a friend?,answer_accept:answer_entailment
+song-084:hard_negative,verifier_false_rejection,verifier_false_rejection,Who wrote the song hero by mariah carey?,Who wrote the song hero by mariah carey?,answer_verify:answer_mentioned_in_question
+song-013:paraphrase_1,cold_miss,correct_hit,"For the song here comes the sun, who is credited as its writer?",Who wrote the song here comes the night?,answer_accept:answer_entailment
+song-139:hard_negative,correct_hit,correct_hit,"For the song i fought the law, who is credited as its writer?","For the song i fought the law, who is credited as its writer?",answer_accept:answer_entailment
+song-166:paraphrase_1,correct_hit,correct_hit,"For the song blowin in the wind, who is credited as its writer?",Identify the person who wrote the song blowin in the wind.,answer_accept:answer_entailment
+song-184:paraphrase_1,correct_hit,correct_hit,Who wrote the song i'll never find another you?,Who wrote the song i'll never find another you?,answer_accept:answer_entailment
+song-185:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song wishing on a star.,Identify the person who wrote the song wishing on a star.,answer_accept:answer_entailment
+song-192:original,correct_hit,correct_hit,"For the song a change is going to come, who is credited as its writer?","For the song a change is going to come, who is credited as its writer?",answer_accept:answer_entailment
+song-054:paraphrase_1,correct_hit,correct_hit,"For the song total eclipse of the heart, who wrote it?","For the song total eclipse of the heart, who wrote it?",answer_accept:answer_entailment
+song-083:hard_negative,correct_hit,correct_hit,Name the writer of the song the man who sold the world.,Name the writer of the song the man who sold the world.,answer_accept:answer_entailment
+song-087:paraphrase_3,correct_hit,correct_hit,"For the song here comes the sun, who is credited as its writer?","For the song here comes the sun, who is credited as its writer?",answer_accept:answer_entailment
+song-013:paraphrase_3,correct_hit,correct_hit,Name the writer of the song here comes the night.,Who wrote the song here comes the night?,answer_accept:answer_entailment
+song-075:paraphrase_2,correct_hit,correct_hit,"For the song what do you want from me, who wrote it?","For the song what do you want from me, who wrote it?",answer_accept:answer_entailment
+song-088:paraphrase_3,correct_hit,correct_hit,"For the song the old bog road, who is credited as its writer?","For the song the old bog road, who is credited as its writer?",answer_accept:answer_entailment
+song-095:original,correct_hit,correct_hit,"For the song jesus is just alright with me, who is credited as its writer?","For the song jesus is just alright with me, who is credited as its writer?",answer_accept:answer_entailment
+song-008:hard_negative,cold_miss,correct_hit,"For the song don t go changing, who wrote it?",Identify the person who wrote the song i'm going down.,answer_accept:answer_entailment
+song-080:paraphrase_2,incorrect_acceptance,verifier_false_rejection,"For the song if you love me really love me, who is credited as its writer?",Name the writer of the song i love you truly.,answer_verify:uncertain_answer
+song-088:original,correct_hit,correct_hit,"For the song the old bog road, who is credited as its writer?","For the song the old bog road, who is credited as its writer?",answer_accept:answer_entailment
+song-079:hard_negative,incorrect_acceptance,correct_hit,"For the song if you love me really love me, who is credited as its writer?","For the song i love you truly, who is credited as its writer?",answer_accept:answer_entailment
+song-045:original,correct_hit,correct_hit,"For the song grandma got run over by a reindeer, who is credited as its writer?","For the song grandma got run over by a reindeer, who is credited as its writer?",answer_accept:answer_entailment
+song-195:paraphrase_3,correct_hit,correct_hit,"For the song one wing from sparkle, who is credited as its writer?","For the song one wing from sparkle, who is credited as its writer?",answer_accept:answer_entailment
+song-065:hard_negative,incorrect_acceptance,correct_hit,"For the song mama i'm coming home, who wrote it?","For the song bring it on home, who is credited as its writer?",answer_accept:answer_entailment
+song-150:original,correct_hit,correct_hit,"For the song don't give up, who is credited as its writer?","For the song don't give up, who is credited as its writer?",answer_accept:answer_entailment
+song-115:hard_negative,correct_hit,correct_hit,Name the writer of the song two tickets to paradise.,Name the writer of the song two tickets to paradise.,answer_accept:answer_entailment
+song-137:paraphrase_3,correct_hit,correct_hit,Name the writer of the song get your kicks on route 66.,Name the writer of the song get your kicks on route 66.,answer_accept:answer_entailment
+song-067:hard_negative,correct_hit,correct_hit,Name the writer of the song till i gain control again.,Name the writer of the song till i gain control again.,answer_accept:answer_entailment
+song-049:original,correct_hit,correct_hit,Identify the person who wrote the song when i was 17.,Identify the person who wrote the song when i was 17.,answer_accept:answer_entailment
+song-158:paraphrase_1,correct_hit,correct_hit,Who wrote the song i'm proud to be an american?,Who wrote the song i'm proud to be an american?,answer_accept:answer_entailment
+song-025:original,correct_hit,correct_hit,Name the writer of the song i let her lie.,Name the writer of the song i let her lie.,answer_accept:answer_entailment
+song-146:hard_negative,correct_hit,correct_hit,"For the song isn't she lovely, who is credited as its writer?","For the song isn't she lovely, who is credited as its writer?",answer_accept:answer_entailment
+song-193:paraphrase_1,correct_hit,correct_hit,"For the song easy like sunday morning, who is credited as its writer?","For the song easy like sunday morning, who is credited as its writer?",answer_accept:answer_entailment
+song-197:original,correct_hit,correct_hit,Name the writer of the song top of the world.,Name the writer of the song top of the world.,answer_accept:answer_entailment
+song-036:original,correct_hit,correct_hit,"For the song keep your hands to yourself, who is credited as its writer?","For the song keep your hands to yourself, who is credited as its writer?",answer_accept:answer_entailment
+song-069:hard_negative,correct_hit,correct_hit,Name the writer of the song you light up my life.,Name the writer of the song you light up my life.,answer_accept:answer_entailment
+song-057:paraphrase_3,correct_hit,correct_hit,Who wrote the song go light your world?,Who wrote the song go light your world?,answer_accept:answer_entailment
+song-114:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song imagine by the beatles.,Identify the person who wrote the song imagine by the beatles.,answer_accept:answer_entailment
+song-113:paraphrase_3,correct_hit,correct_hit,"For the song my heroes have always been cowboys, who is credited as its writer?","For the song my heroes have always been cowboys, who is credited as its writer?",answer_accept:answer_entailment
+song-077:paraphrase_3,correct_hit,correct_hit,Who wrote the song come to my window?,Who wrote the song come to my window?,answer_accept:answer_entailment
+song-181:original,incorrect_acceptance,correct_hit,"For the song go your own way, who is credited as its writer?",Name the writer of the song in spite of ourselves.,answer_accept:answer_entailment
+song-123:paraphrase_3,verifier_false_rejection,verifier_false_rejection,Name the writer of the song call me by aretha franklin.,Name the writer of the song call me by aretha franklin.,answer_verify:answer_mentioned_in_question
+song-136:paraphrase_2,correct_hit,correct_hit,"For the song america my country tis of thee, who wrote it?","For the song america my country tis of thee, who wrote it?",answer_accept:answer_entailment
+song-050:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song just as i am.,Identify the person who wrote the song just as i am.,answer_accept:answer_entailment
+song-072:paraphrase_2,verifier_false_rejection,verifier_false_rejection,Name the writer of the song historia de un amor.,Name the writer of the song historia de un amor.,answer_verify:uncertain_answer
+song-104:paraphrase_3,correct_hit,correct_hit,"For the song all kinds of everything, who is credited as its writer?","For the song all kinds of everything, who is credited as its writer?",answer_accept:answer_entailment
+song-152:paraphrase_1,correct_hit,correct_hit,"For the song a mighty fortress is our god, who wrote it?","For the song a mighty fortress is our god, who wrote it?",answer_accept:answer_entailment
+song-170:paraphrase_3,correct_hit,correct_hit,Name the writer of the song life is a highway.,Name the writer of the song life is a highway.,answer_accept:answer_entailment
+song-003:hard_negative,correct_hit,correct_hit,Who wrote the song ask the blind man he saw it all?,Who wrote the song ask the blind man he saw it all?,answer_accept:answer_entailment
+song-015:paraphrase_3,correct_hit,correct_hit,"For the song brandy you're a fine girl, who wrote it?","For the song brandy you're a fine girl, who wrote it?",answer_accept:answer_entailment
+song-027:original,correct_hit,correct_hit,"For the song the very thought of you, who wrote it?","For the song the very thought of you, who wrote it?",answer_accept:answer_entailment
+song-092:original,correct_hit,correct_hit,"For the song he knows my name, who wrote it?","For the song he knows my name, who wrote it?",answer_accept:answer_entailment
+song-152:original,correct_hit,correct_hit,"For the song a mighty fortress is our god, who wrote it?","For the song a mighty fortress is our god, who wrote it?",answer_accept:answer_entailment
+song-144:paraphrase_2,correct_hit,correct_hit,Who wrote the song miles and miles of texas?,Who wrote the song miles and miles of texas?,answer_accept:answer_entailment
+song-122:hard_negative,verifier_false_rejection,verifier_false_rejection,"For the song call me by aretha franklin, who is credited as its writer?","For the song call me by aretha franklin, who is credited as its writer?",answer_verify:answer_mentioned_in_question
+song-194:paraphrase_1,bypass,bypass,,,volatile_query
+song-063:paraphrase_3,incorrect_acceptance,correct_hit,Who wrote the song home from the wiz?,"For the song home performed by phillip, who wrote it?",answer_accept:answer_entailment
+song-178:original,verifier_false_rejection,correct_hit,Name the writer of the song try and catch the wind.,"For the song try and catch the wind, who wrote it?",answer_accept:answer_entailment
+song-108:paraphrase_3,correct_hit,correct_hit,Name the writer of the song breakfast at tiffany's.,Name the writer of the song breakfast at tiffany's.,answer_accept:answer_entailment
+song-177:original,correct_hit,correct_hit,Identify the person who wrote the song the rose by bette midler.,Identify the person who wrote the song the rose by bette midler.,answer_accept:answer_entailment
+song-102:hard_negative,correct_hit,correct_hit,Name the writer of the song the first time i ever saw your face.,Name the writer of the song the first time i ever saw your face.,answer_accept:answer_entailment
+song-075:hard_negative,correct_hit,correct_hit,Who wrote the song these boots are made for walking?,Who wrote the song these boots are made for walking?,answer_accept:answer_entailment
+song-171:paraphrase_2,correct_hit,correct_hit,Who wrote the song take a walk on the wild side?,Who wrote the song take a walk on the wild side?,answer_accept:answer_entailment
+song-165:paraphrase_1,verifier_false_rejection,verifier_false_rejection,Who wrote the song pass me not oh gentle saviour?,Who wrote the song pass me not oh gentle saviour?,answer_verify:uncertain_answer
+song-135:paraphrase_2,correct_hit,correct_hit,Who wrote the song i write the song?,Who wrote the song i write the song?,answer_accept:answer_entailment
+song-165:hard_negative,correct_hit,correct_hit,"For the song blowin in the wind, who is credited as its writer?",Identify the person who wrote the song blowin in the wind.,answer_accept:answer_entailment
+song-078:original,correct_hit,correct_hit,"For the song when will i see you again, who wrote it?","For the song when will i see you again, who wrote it?",answer_accept:answer_entailment
+song-166:original,correct_hit,correct_hit,"For the song blowin in the wind, who is credited as its writer?",Identify the person who wrote the song blowin in the wind.,answer_accept:answer_entailment
+song-022:paraphrase_1,verifier_false_rejection,verifier_false_rejection,"For the song perfect that ed sheeran sings, who wrote it?","For the song perfect that ed sheeran sings, who wrote it?",answer_verify:answer_mentioned_in_question
+song-125:original,correct_hit,correct_hit,Name the writer of the song kadam kadam badhaye ja khusi k geet gaye ja.,Name the writer of the song kadam kadam badhaye ja khusi k geet gaye ja.,answer_accept:answer_entailment
+song-061:paraphrase_3,correct_hit,correct_hit,Name the writer of the song i love rock and roll.,Name the writer of the song i love rock and roll.,answer_accept:answer_entailment
+song-109:original,correct_hit,correct_hit,Identify the person who wrote the song on the eve of destruction.,Identify the person who wrote the song on the eve of destruction.,answer_accept:answer_entailment
+song-090:hard_negative,correct_hit,correct_hit,"For the song let's call the whole thing off, who is credited as its writer?","For the song let's call the whole thing off, who is credited as its writer?",answer_accept:answer_entailment
+song-115:paraphrase_3,correct_hit,correct_hit,Name the writer of the song ruby sung by kenny rogers.,Name the writer of the song ruby sung by kenny rogers.,answer_accept:answer_entailment
+song-068:paraphrase_3,correct_hit,correct_hit,Name the writer of the song till i gain control again.,Name the writer of the song till i gain control again.,answer_accept:answer_entailment
+song-095:hard_negative,cold_miss,correct_hit,Who wrote the song i write the song?,Name the writer of the song save your love for me.,answer_accept:answer_entailment
+song-093:paraphrase_2,correct_hit,correct_hit,Who wrote the song i'll remember you?,Who wrote the song i'll remember you?,answer_accept:answer_entailment
+song-056:original,correct_hit,correct_hit,Identify the person who wrote the song somebody loan me a dime.,Identify the person who wrote the song somebody loan me a dime.,answer_accept:answer_entailment
+song-130:paraphrase_1,correct_hit,correct_hit,Who wrote the song thank you for being a friend?,Who wrote the song thank you for being a friend?,answer_accept:answer_entailment
+song-125:hard_negative,correct_hit,correct_hit,Who wrote the song if i were a carpenter?,Who wrote the song if i were a carpenter?,answer_accept:answer_entailment
+song-184:paraphrase_3,correct_hit,correct_hit,Who wrote the song i'll never find another you?,Who wrote the song i'll never find another you?,answer_accept:answer_entailment
+song-154:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song joy to the world.,Identify the person who wrote the song joy to the world.,answer_accept:answer_entailment
+song-121:paraphrase_2,cold_miss,cold_miss,"For the song rest your love on me, who is credited as its writer?","For the song i love you truly, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-129:paraphrase_2,correct_hit,correct_hit,"For the song i will always love you sung by whitney houston, who wrote it?","For the song i will always love you sung by whitney houston, who wrote it?",answer_accept:answer_entailment
+song-096:paraphrase_3,correct_hit,correct_hit,"For the song save your love for me, who wrote it?",Name the writer of the song save your love for me.,answer_accept:answer_entailment
+song-001:paraphrase_3,correct_hit,correct_hit,Name the writer of the song play me the waltz of the angels.,Name the writer of the song play me the waltz of the angels.,answer_accept:answer_entailment
+song-015:paraphrase_1,correct_hit,correct_hit,"For the song brandy you're a fine girl, who wrote it?","For the song brandy you're a fine girl, who wrote it?",answer_accept:answer_entailment
+song-016:paraphrase_1,cold_miss,cold_miss,"For the song it never entered my mind, who is credited as its writer?","For the song it never entered my mind, who is credited as its writer?",answer_reject:negation_mismatch
+song-107:paraphrase_1,correct_hit,correct_hit,Who wrote the song her name was joanne?,Who wrote the song her name was joanne?,answer_accept:answer_entailment
+song-158:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song have you ever seen the rain.,Identify the person who wrote the song have you ever seen the rain.,answer_accept:answer_entailment
+song-041:paraphrase_1,cold_miss,cold_miss,"For the song everytime you go away, who wrote it?","For the song everytime you go away, who wrote it?",answer_reject:subject_identity_conflict
+song-003:original,correct_hit,correct_hit,"For the song too marvelous for words, who is credited as its writer?","For the song too marvelous for words, who is credited as its writer?",answer_accept:answer_entailment
+song-068:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song jessica by the allman brothers.,Identify the person who wrote the song jessica by the allman brothers.,answer_accept:answer_entailment
+song-031:hard_negative,correct_hit,correct_hit,"For the song saturday in the park, who is credited as its writer?","For the song saturday in the park, who is credited as its writer?",answer_accept:answer_entailment
+song-154:hard_negative,correct_hit,correct_hit,Who wrote the song help me make it through the night?,Who wrote the song help me make it through the night?,answer_accept:answer_entailment
+song-144:paraphrase_1,correct_hit,correct_hit,Who wrote the song miles and miles of texas?,Who wrote the song miles and miles of texas?,answer_accept:answer_entailment
+song-180:paraphrase_3,correct_hit,correct_hit,Name the writer of the song take my hand precious lord.,Name the writer of the song take my hand precious lord.,answer_accept:answer_entailment
+song-041:paraphrase_3,correct_hit,correct_hit,Name the writer of the song ain't it funny how time slips away.,Name the writer of the song ain't it funny how time slips away.,answer_accept:answer_entailment
+song-058:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song the man comes around.,Identify the person who wrote the song the man comes around.,answer_accept:answer_entailment
+song-110:paraphrase_2,correct_hit,correct_hit,Who wrote the song crazy little thing called love?,Who wrote the song crazy little thing called love?,answer_accept:answer_entailment
+song-118:hard_negative,correct_hit,correct_hit,Name the writer of the song here i am lord.,Who wrote the song here i am lord?,answer_accept:answer_entailment
+song-012:paraphrase_1,correct_hit,correct_hit,"For the song rudolph the red nosed reindeer, who wrote it?","For the song rudolph the red nosed reindeer, who wrote it?",answer_accept:answer_entailment
+song-055:paraphrase_3,cold_miss,cold_miss,Identify the person who wrote the song joy to the world.,Identify the person who wrote the song you got a friend.,answer_reject:subject_identity_conflict
+song-063:paraphrase_1,incorrect_acceptance,verifier_false_rejection,Who wrote the song home from the wiz?,"For the song home performed by phillip, who wrote it?",answer_verify:uncertain_answer
+song-092:hard_negative,correct_hit,correct_hit,Who wrote the song i'll remember you?,Who wrote the song i'll remember you?,answer_accept:answer_entailment
+song-179:original,correct_hit,correct_hit,"For the song flight of the bumblebee, who wrote it?","For the song flight of the bumblebee, who wrote it?",answer_accept:answer_entailment
+song-024:original,correct_hit,correct_hit,"For the song may the good lord bless and keep you, who wrote it?","For the song may the good lord bless and keep you, who wrote it?",answer_accept:answer_entailment
+song-179:paraphrase_2,correct_hit,correct_hit,"For the song flight of the bumblebee, who wrote it?","For the song flight of the bumblebee, who wrote it?",answer_accept:answer_entailment
+song-162:original,bypass,bypass,,,volatile_query
+song-045:paraphrase_3,correct_hit,correct_hit,"For the song grandma got run over by a reindeer, who is credited as its writer?","For the song grandma got run over by a reindeer, who is credited as its writer?",answer_accept:answer_entailment
+song-080:original,incorrect_acceptance,correct_hit,"For the song if you love me really love me, who is credited as its writer?",Name the writer of the song i love you truly.,answer_accept:answer_entailment
+song-114:original,correct_hit,correct_hit,Identify the person who wrote the song imagine by the beatles.,Identify the person who wrote the song imagine by the beatles.,answer_accept:answer_entailment
+song-065:paraphrase_1,incorrect_acceptance,correct_hit,Identify the person who wrote the song you really got a hold on me.,"For the song you really got me, who is credited as its writer?",answer_accept:answer_entailment
+song-136:paraphrase_3,correct_hit,correct_hit,"For the song america my country tis of thee, who wrote it?","For the song america my country tis of thee, who wrote it?",answer_accept:answer_entailment
+song-133:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song son of a preacher man.,Identify the person who wrote the song son of a preacher man.,answer_accept:answer_entailment
+song-038:paraphrase_1,verifier_false_rejection,verifier_false_rejection,"For the song dream on by aerosmith, who is credited as its writer?","For the song dream on by aerosmith, who is credited as its writer?",answer_verify:uncertain_answer
+song-091:paraphrase_3,correct_hit,correct_hit,"For the song let's call the whole thing off, who is credited as its writer?","For the song let's call the whole thing off, who is credited as its writer?",answer_accept:answer_entailment
+song-129:original,correct_hit,correct_hit,"For the song i will always love you sung by whitney houston, who wrote it?","For the song i will always love you sung by whitney houston, who wrote it?",answer_accept:answer_entailment
+song-190:paraphrase_1,correct_hit,correct_hit,"For the song i would rather go blind, who wrote it?","For the song i would rather go blind, who wrote it?",answer_accept:answer_entailment
+song-011:paraphrase_1,correct_hit,correct_hit,"For the song everytime you go away, who wrote it?","For the song everytime you go away, who wrote it?",answer_accept:answer_entailment
+song-046:paraphrase_3,correct_hit,correct_hit,Who wrote the song back in the new york groove?,Who wrote the song back in the new york groove?,answer_accept:answer_entailment
+song-076:paraphrase_1,correct_hit,correct_hit,Who wrote the song these boots are made for walking?,Who wrote the song these boots are made for walking?,answer_accept:answer_entailment
+song-186:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song have i told you lately.,Identify the person who wrote the song have i told you lately.,answer_accept:answer_entailment
+song-092:paraphrase_2,correct_hit,correct_hit,"For the song he knows my name, who wrote it?","For the song he knows my name, who wrote it?",answer_accept:answer_entailment
+song-035:paraphrase_3,correct_hit,correct_hit,Name the writer of the song it's the climb.,Name the writer of the song it's the climb.,answer_accept:answer_entailment
+song-022:hard_negative,correct_hit,correct_hit,"For the song the weight by the band, who is credited as its writer?","For the song the weight by the band, who is credited as its writer?",answer_accept:answer_entailment
+song-150:paraphrase_3,correct_hit,correct_hit,"For the song don't give up, who is credited as its writer?","For the song don't give up, who is credited as its writer?",answer_accept:answer_entailment
+song-195:paraphrase_1,correct_hit,correct_hit,"For the song one wing from sparkle, who is credited as its writer?","For the song one wing from sparkle, who is credited as its writer?",answer_accept:answer_entailment
+song-079:original,correct_hit,correct_hit,Identify the person who wrote the song it don't come easy.,Identify the person who wrote the song it don't come easy.,answer_accept:answer_entailment
+song-145:paraphrase_3,correct_hit,correct_hit,"For the song on eagle's wings, who wrote it?","For the song on eagle's wings, who wrote it?",answer_accept:answer_entailment
+song-020:original,correct_hit,correct_hit,Identify the person who wrote the song am i losing you.,Identify the person who wrote the song am i losing you.,answer_accept:answer_entailment
+song-172:hard_negative,cold_miss,correct_hit,"For the song a change is going to come, who is credited as its writer?",Name the writer of the song waiting for the world to change.,answer_accept:answer_entailment
+song-006:paraphrase_1,correct_hit,correct_hit,"For the song i'm on fire, who is credited as its writer?","For the song i'm on fire, who is credited as its writer?",answer_accept:answer_entailment
+song-185:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song wishing on a star.,Identify the person who wrote the song wishing on a star.,answer_accept:answer_entailment
+song-042:paraphrase_1,cold_miss,cold_miss,Who wrote the song i write the song?,Who wrote the song i write the song?,answer_reject:subject_identity_conflict
+song-140:original,correct_hit,correct_hit,"For the song i fought the law, who is credited as its writer?","For the song i fought the law, who is credited as its writer?",answer_accept:answer_entailment
+song-145:original,correct_hit,correct_hit,"For the song on eagle's wings, who wrote it?","For the song on eagle's wings, who wrote it?",answer_accept:answer_entailment
+song-121:paraphrase_3,correct_hit,correct_hit,"For the song you're so vain, who is credited as its writer?","For the song you're so vain, who is credited as its writer?",answer_accept:answer_entailment
+song-170:paraphrase_2,verifier_false_rejection,verifier_false_rejection,Name the writer of the song life is a highway.,Name the writer of the song life is a highway.,answer_verify:uncertain_answer
+song-052:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song you really got a hold on me.,Identify the person who wrote the song you really got a hold on me.,answer_accept:answer_entailment
+song-101:original,correct_hit,correct_hit,"For the song the sounds of silence, who wrote it?","For the song the sounds of silence, who wrote it?",answer_accept:answer_entailment
+song-058:paraphrase_3,correct_hit,correct_hit,"For the song kiss an angel good morning, who is credited as its writer?","For the song kiss an angel good morning, who is credited as its writer?",answer_accept:answer_entailment
+song-143:hard_negative,correct_hit,correct_hit,Who wrote the song miles and miles of texas?,Who wrote the song miles and miles of texas?,answer_accept:answer_entailment
+song-196:original,correct_hit,correct_hit,Identify the person who wrote the song hit me with your best shot.,Identify the person who wrote the song hit me with your best shot.,answer_accept:answer_entailment
+song-196:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song hit me with your best shot.,Identify the person who wrote the song hit me with your best shot.,answer_accept:answer_entailment
+song-011:original,correct_hit,correct_hit,"For the song everytime you go away, who wrote it?","For the song everytime you go away, who wrote it?",answer_accept:answer_entailment
+song-100:paraphrase_3,correct_hit,correct_hit,Who wrote the song pink fluffy unicorns dancing on rainbows?,Who wrote the song pink fluffy unicorns dancing on rainbows?,answer_accept:answer_entailment
+song-081:original,verifier_false_rejection,verifier_false_rejection,"For the song why sung by annie lennox, who is credited as its writer?","For the song why sung by annie lennox, who is credited as its writer?",answer_verify:answer_mentioned_in_question
+song-101:paraphrase_2,correct_hit,correct_hit,"For the song the sounds of silence, who wrote it?","For the song the sounds of silence, who wrote it?",answer_accept:answer_entailment
+song-099:paraphrase_3,correct_hit,correct_hit,"For the song the little drummer boy, who wrote it?","For the song the little drummer boy, who wrote it?",answer_accept:answer_entailment
+song-027:hard_negative,correct_hit,correct_hit,"For the song kind of a drag, who is credited as its writer?","For the song kind of a drag, who is credited as its writer?",answer_accept:answer_entailment
+song-101:paraphrase_1,correct_hit,correct_hit,"For the song the sounds of silence, who wrote it?","For the song the sounds of silence, who wrote it?",answer_accept:answer_entailment
+song-006:original,correct_hit,correct_hit,"For the song i'm on fire, who is credited as its writer?","For the song i'm on fire, who is credited as its writer?",answer_accept:answer_entailment
+song-009:original,correct_hit,correct_hit,"For the song i'm going down, who wrote it?",Identify the person who wrote the song i'm going down.,answer_accept:answer_entailment
+song-024:paraphrase_3,correct_hit,correct_hit,"For the song may the good lord bless and keep you, who wrote it?","For the song may the good lord bless and keep you, who wrote it?",answer_accept:answer_entailment
+song-119:hard_negative,cold_miss,cold_miss,"For the song that's the night when the lights went out in georgia, who wrote it?","For the song that's the night when the lights went out in georgia, who wrote it?",answer_reject:subject_identity_conflict
+song-088:paraphrase_1,correct_hit,correct_hit,"For the song the old bog road, who is credited as its writer?","For the song the old bog road, who is credited as its writer?",answer_accept:answer_entailment
+song-177:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song the rose by bette midler.,Identify the person who wrote the song the rose by bette midler.,answer_accept:answer_entailment
+song-101:paraphrase_3,correct_hit,correct_hit,"For the song the sounds of silence, who wrote it?","For the song the sounds of silence, who wrote it?",answer_accept:answer_entailment
+song-064:paraphrase_3,correct_hit,correct_hit,"For the song go your own way, who is credited as its writer?","For the song go your own way, who is credited as its writer?",answer_accept:answer_entailment
+song-022:paraphrase_2,verifier_false_rejection,verifier_false_rejection,"For the song perfect that ed sheeran sings, who wrote it?","For the song perfect that ed sheeran sings, who wrote it?",answer_verify:answer_mentioned_in_question
+song-114:hard_negative,correct_hit,correct_hit,Name the writer of the song ruby sung by kenny rogers.,Name the writer of the song ruby sung by kenny rogers.,answer_accept:answer_entailment
+song-164:paraphrase_3,correct_hit,correct_hit,"For the song i wanna grow old with you, who wrote it?","For the song i wanna grow old with you, who wrote it?",answer_accept:answer_entailment
+song-092:paraphrase_3,correct_hit,correct_hit,"For the song he knows my name, who wrote it?","For the song he knows my name, who wrote it?",answer_accept:answer_entailment
+song-146:original,correct_hit,correct_hit,Name the writer of the song our house is a very very fine house.,Name the writer of the song our house is a very very fine house.,answer_accept:answer_entailment
+song-040:hard_negative,correct_hit,correct_hit,Name the writer of the song ain't it funny how time slips away.,Name the writer of the song ain't it funny how time slips away.,answer_accept:answer_entailment
+song-168:paraphrase_1,correct_hit,correct_hit,Who wrote the song you do something to me?,Who wrote the song you do something to me?,answer_accept:answer_entailment
+song-037:paraphrase_1,correct_hit,correct_hit,"For the song where do we go from here, who wrote it?","For the song where do we go from here, who wrote it?",answer_accept:answer_entailment
+song-079:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song it don't come easy.,Identify the person who wrote the song it don't come easy.,answer_accept:answer_entailment
+song-157:paraphrase_1,correct_hit,correct_hit,"For the song once i was 7 years old, who is credited as its writer?","For the song once i was 7 years old, who is credited as its writer?",answer_accept:answer_entailment
+song-020:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song am i losing you.,Identify the person who wrote the song am i losing you.,answer_accept:answer_entailment
+song-137:original,correct_hit,correct_hit,Name the writer of the song get your kicks on route 66.,Name the writer of the song get your kicks on route 66.,answer_accept:answer_entailment
+song-137:paraphrase_2,correct_hit,correct_hit,Name the writer of the song get your kicks on route 66.,Name the writer of the song get your kicks on route 66.,answer_accept:answer_entailment
+song-036:paraphrase_3,correct_hit,correct_hit,"For the song keep your hands to yourself, who is credited as its writer?","For the song keep your hands to yourself, who is credited as its writer?",answer_accept:answer_entailment
+song-117:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song manic monday for the bangles.,Identify the person who wrote the song manic monday for the bangles.,answer_accept:answer_entailment
+song-186:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song that's how i got to memphis.,Identify the person who wrote the song that's how i got to memphis.,answer_accept:answer_entailment
+song-031:paraphrase_2,cold_miss,cold_miss,"For the song if you love me really love me, who is credited as its writer?","For the song i love you truly, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-155:paraphrase_1,correct_hit,correct_hit,Who wrote the song help me make it through the night?,Who wrote the song help me make it through the night?,answer_accept:answer_entailment
+song-074:original,correct_hit,correct_hit,Identify the person who wrote the song just someone i used to know.,Identify the person who wrote the song just someone i used to know.,answer_accept:answer_entailment
+song-024:paraphrase_2,correct_hit,correct_hit,"For the song may the good lord bless and keep you, who wrote it?","For the song may the good lord bless and keep you, who wrote it?",answer_accept:answer_entailment
+song-141:paraphrase_1,correct_hit,correct_hit,"For the song pain in my heart, who wrote it?","For the song pain in my heart, who wrote it?",answer_accept:answer_entailment
+song-164:paraphrase_1,correct_hit,correct_hit,"For the song i wanna grow old with you, who wrote it?","For the song i wanna grow old with you, who wrote it?",answer_accept:answer_entailment
+song-174:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song don t want to miss a thing.,Identify the person who wrote the song don t want to miss a thing.,answer_accept:answer_entailment
+song-017:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song if i can only imagine.,Identify the person who wrote the song if i can only imagine.,answer_accept:answer_entailment
+song-030:original,correct_hit,correct_hit,Identify the person who wrote the song send in the clowns.,Identify the person who wrote the song send in the clowns.,answer_accept:answer_entailment
+song-182:original,correct_hit,correct_hit,"For the song where have all the flowers gone, who wrote it?","For the song where have all the flowers gone, who wrote it?",answer_accept:answer_entailment
+song-133:paraphrase_2,verifier_false_rejection,verifier_false_rejection,Who wrote the song rise up by andra day?,Who wrote the song rise up by andra day?,answer_verify:answer_mentioned_in_question
+song-054:paraphrase_2,correct_hit,correct_hit,"For the song total eclipse of the heart, who wrote it?","For the song total eclipse of the heart, who wrote it?",answer_accept:answer_entailment
+song-010:original,bypass,bypass,,,volatile_query
+song-138:hard_negative,incorrect_acceptance,correct_hit,"For the song call me the breeze, who wrote it?",Who wrote the song this is the air i breathe?,answer_accept:answer_entailment
+song-044:paraphrase_1,verifier_false_rejection,verifier_false_rejection,"For the song carry me back to old virginny, who is credited as its writer?","For the song carry me back to old virginny, who is credited as its writer?",answer_verify:uncertain_answer
+song-181:paraphrase_3,cold_miss,correct_hit,Identify the person who wrote the song on the eve of destruction.,Name the writer of the song in spite of ourselves.,answer_accept:answer_entailment
+song-055:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song i've got the world on a string.,Identify the person who wrote the song i've got the world on a string.,answer_accept:answer_entailment
+song-049:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song just as i am.,Identify the person who wrote the song just as i am.,answer_accept:answer_entailment
+song-183:paraphrase_1,verifier_false_rejection,verifier_false_rejection,"For the song in my time of dying, who wrote it?","For the song in my time of dying, who wrote it?",answer_verify:uncertain_answer
+song-124:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song who let the dogs out.,Identify the person who wrote the song who let the dogs out.,answer_accept:answer_entailment
+song-032:paraphrase_1,correct_hit,correct_hit,"For the song saturday in the park, who is credited as its writer?","For the song saturday in the park, who is credited as its writer?",answer_accept:answer_entailment
+song-150:paraphrase_1,correct_hit,correct_hit,"For the song don't give up, who is credited as its writer?","For the song don't give up, who is credited as its writer?",answer_accept:answer_entailment
+song-186:original,correct_hit,correct_hit,Identify the person who wrote the song have i told you lately.,Identify the person who wrote the song have i told you lately.,answer_accept:answer_entailment
+song-141:original,correct_hit,correct_hit,"For the song pain in my heart, who wrote it?","For the song pain in my heart, who wrote it?",answer_accept:answer_entailment
+song-197:paraphrase_2,verifier_false_rejection,verifier_false_rejection,Name the writer of the song top of the world.,Name the writer of the song top of the world.,answer_verify:uncertain_answer
+song-192:paraphrase_1,correct_hit,correct_hit,"For the song a change is going to come, who is credited as its writer?","For the song a change is going to come, who is credited as its writer?",answer_accept:answer_entailment
+song-042:paraphrase_3,correct_hit,correct_hit,Name the writer of the song a song for you.,Name the writer of the song a song for you.,answer_accept:answer_entailment
+song-062:original,verifier_false_rejection,verifier_false_rejection,"For the song rainy night in georgia, who wrote it?","For the song rainy night in georgia, who wrote it?",answer_verify:ambiguous_context
+song-044:paraphrase_3,correct_hit,correct_hit,Name the writer of the song carry me back to old virginny.,Name the writer of the song carry me back to old virginny.,answer_accept:answer_entailment
+song-157:paraphrase_3,correct_hit,correct_hit,"For the song once i was 7 years old, who is credited as its writer?","For the song once i was 7 years old, who is credited as its writer?",answer_accept:answer_entailment
+song-090:original,correct_hit,correct_hit,Identify the person who wrote the song that just the way it is.,"For the song that just the way it is, who wrote it?",answer_accept:answer_entailment
+song-000:hard_negative,correct_hit,correct_hit,Name the writer of the song play me the waltz of the angels.,Name the writer of the song play me the waltz of the angels.,answer_accept:answer_entailment
+song-161:paraphrase_3,correct_hit,correct_rejection_unsuitable_candidate,"For the song you're the one, who wrote it?",Identify the person who wrote the song you're still the one.,answer_reject:subject_identity_conflict
+song-093:paraphrase_1,correct_hit,correct_hit,Who wrote the song i'll remember you?,Who wrote the song i'll remember you?,answer_accept:answer_entailment
+song-018:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song if i can only imagine.,Identify the person who wrote the song if i can only imagine.,answer_accept:answer_entailment
+song-115:paraphrase_2,correct_hit,correct_hit,Name the writer of the song ruby sung by kenny rogers.,Name the writer of the song ruby sung by kenny rogers.,answer_accept:answer_entailment
+song-194:paraphrase_3,bypass,bypass,,,volatile_query
+song-154:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song joy to the world.,Identify the person who wrote the song joy to the world.,answer_accept:answer_entailment
+song-132:original,verifier_false_rejection,verifier_false_rejection,"For the song that's the night when the lights went out in georgia, who wrote it?","For the song that's the night when the lights went out in georgia, who wrote it?",answer_verify:ambiguous_context
+song-070:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song peanut butter jelly time.,Identify the person who wrote the song peanut butter jelly time.,answer_accept:answer_entailment
+song-099:hard_negative,correct_hit,correct_hit,Who wrote the song pink fluffy unicorns dancing on rainbows?,Who wrote the song pink fluffy unicorns dancing on rainbows?,answer_accept:answer_entailment
+song-164:original,correct_hit,correct_hit,"For the song i wanna grow old with you, who wrote it?","For the song i wanna grow old with you, who wrote it?",answer_accept:answer_entailment
+song-198:paraphrase_3,correct_hit,correct_hit,"For the song don t go changing, who wrote it?","For the song don t go changing, who wrote it?",answer_accept:answer_entailment
+song-069:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song jessica by the allman brothers.,Identify the person who wrote the song jessica by the allman brothers.,answer_accept:answer_entailment
+song-127:paraphrase_2,correct_hit,correct_hit,Name the writer of the song angel in the morning.,Name the writer of the song angel in the morning.,answer_accept:answer_entailment
+song-158:paraphrase_3,correct_hit,correct_hit,Who wrote the song i'm proud to be an american?,Who wrote the song i'm proud to be an american?,answer_accept:answer_entailment
+song-190:paraphrase_2,correct_hit,correct_hit,"For the song i would rather go blind, who wrote it?","For the song i would rather go blind, who wrote it?",answer_accept:answer_entailment
+song-059:original,correct_hit,correct_hit,Identify the person who wrote the song the man comes around.,Identify the person who wrote the song the man comes around.,answer_accept:answer_entailment
+song-022:paraphrase_3,verifier_false_rejection,verifier_false_rejection,Name the writer of the song perfect that ed sheeran sings.,Name the writer of the song perfect that ed sheeran sings.,answer_verify:answer_mentioned_in_question
+song-090:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song that just the way it is.,"For the song that just the way it is, who wrote it?",answer_accept:answer_entailment
+song-005:hard_negative,correct_hit,correct_hit,"For the song i'm on fire, who is credited as its writer?","For the song i'm on fire, who is credited as its writer?",answer_accept:answer_entailment
+song-069:original,correct_hit,correct_hit,Identify the person who wrote the song jessica by the allman brothers.,Identify the person who wrote the song jessica by the allman brothers.,answer_accept:answer_entailment
+song-153:paraphrase_1,correct_hit,correct_hit,"For the song mama i'm coming home, who wrote it?","For the song mama i'm coming home, who wrote it?",answer_accept:answer_entailment
+song-014:original,correct_hit,correct_hit,"For the song you're still the one, who wrote it?","For the song you're still the one, who wrote it?",answer_accept:answer_entailment
+song-172:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song that's alright mama.,Identify the person who wrote the song that's alright mama.,answer_accept:answer_entailment
+song-198:paraphrase_1,correct_hit,correct_hit,"For the song don t go changing, who wrote it?","For the song don t go changing, who wrote it?",answer_accept:answer_entailment
+song-031:paraphrase_1,verifier_false_rejection,verifier_false_rejection,"For the song oh how he loves us, who is credited as its writer?","For the song oh how he loves us, who is credited as its writer?",answer_verify:uncertain_answer
+song-149:original,correct_hit,correct_hit,"For the song heaven help us all, who wrote it?","For the song heaven help us all, who wrote it?",answer_accept:answer_entailment
+song-176:original,correct_hit,correct_hit,"For the song still got the blues for you, who wrote it?","For the song still got the blues for you, who wrote it?",answer_accept:answer_entailment
+song-011:paraphrase_2,correct_hit,correct_hit,"For the song everytime you go away, who wrote it?","For the song everytime you go away, who wrote it?",answer_accept:answer_entailment
+song-012:paraphrase_3,correct_hit,correct_hit,"For the song rudolph the red nosed reindeer, who wrote it?","For the song rudolph the red nosed reindeer, who wrote it?",answer_accept:answer_entailment
+song-016:original,correct_hit,correct_hit,Name the writer of the song got my mind set on you.,Name the writer of the song got my mind set on you.,answer_accept:answer_entailment
+song-037:paraphrase_3,correct_hit,correct_hit,"For the song where do we go from here, who wrote it?","For the song where do we go from here, who wrote it?",answer_accept:answer_entailment
+song-162:hard_negative,correct_hit,correct_hit,Who wrote the song will you go lassie go?,Who wrote the song will you go lassie go?,answer_accept:answer_entailment
+song-107:paraphrase_3,correct_hit,correct_hit,Who wrote the song her name was joanne?,Who wrote the song her name was joanne?,answer_accept:answer_entailment
+song-078:paraphrase_3,correct_hit,correct_hit,"For the song when will i see you again, who wrote it?","For the song when will i see you again, who wrote it?",answer_accept:answer_entailment
+song-094:original,correct_hit,correct_hit,"For the song bewitched bothered and bewildered, who wrote it?","For the song bewitched bothered and bewildered, who wrote it?",answer_accept:answer_entailment
+song-112:original,correct_hit,correct_hit,"For the song shout to the lord, who is credited as its writer?","For the song shout to the lord, who is credited as its writer?",answer_accept:answer_entailment
+song-025:paraphrase_2,correct_hit,correct_hit,Name the writer of the song i let her lie.,Name the writer of the song i let her lie.,answer_accept:answer_entailment
+song-025:paraphrase_3,correct_hit,correct_hit,Name the writer of the song i let her lie.,Name the writer of the song i let her lie.,answer_accept:answer_entailment
+song-083:paraphrase_1,correct_hit,correct_hit,"For the song it never entered my mind, who is credited as its writer?","For the song it never entered my mind, who is credited as its writer?",answer_accept:answer_entailment
+song-048:paraphrase_3,correct_hit,correct_hit,"For the song always stay humble and kind, who wrote it?","For the song always stay humble and kind, who wrote it?",answer_accept:answer_entailment
+song-103:paraphrase_2,correct_hit,correct_hit,Name the writer of the song the first time i ever saw your face.,Name the writer of the song the first time i ever saw your face.,answer_accept:answer_entailment
+song-142:original,correct_hit,correct_hit,"For the song the dance by garth brooks, who is credited as its writer?","For the song the dance by garth brooks, who is credited as its writer?",answer_accept:answer_entailment
+song-199:paraphrase_2,verifier_false_rejection,verifier_false_rejection,"For the song country boy by aaron lewis, who wrote it?","For the song country boy by aaron lewis, who wrote it?",answer_verify:answer_mentioned_in_question
+song-055:original,correct_hit,correct_hit,Identify the person who wrote the song i've got the world on a string.,Identify the person who wrote the song i've got the world on a string.,answer_accept:answer_entailment
+song-067:paraphrase_2,correct_hit,correct_hit,"For the song dark as a dungeon, who wrote it?","For the song dark as a dungeon, who wrote it?",answer_accept:answer_entailment
+song-189:original,correct_hit,correct_hit,"For the song scars to your beautiful, who is credited as its writer?","For the song scars to your beautiful, who is credited as its writer?",answer_accept:answer_entailment
+song-191:paraphrase_3,correct_hit,correct_hit,"For the song what's so funny bout peace love and understanding, who wrote it?","For the song what's so funny bout peace love and understanding, who wrote it?",answer_accept:answer_entailment
+song-167:paraphrase_1,correct_hit,correct_hit,"For the song the wind cries mary, who wrote it?","For the song the wind cries mary, who wrote it?",answer_accept:answer_entailment
+song-073:original,correct_hit,correct_hit,Name the writer of the song good time charlie's got the blues.,Name the writer of the song good time charlie's got the blues.,answer_accept:answer_entailment
+song-157:hard_negative,correct_hit,correct_hit,Who wrote the song i'm proud to be an american?,Who wrote the song i'm proud to be an american?,answer_accept:answer_entailment
+song-063:original,cold_miss,correct_hit,Who wrote the song home from the wiz?,"For the song home performed by phillip, who wrote it?",answer_accept:answer_entailment
+song-151:paraphrase_2,correct_hit,correct_hit,Who wrote the song put another log on the fire?,Who wrote the song put another log on the fire?,answer_accept:answer_entailment
+song-147:paraphrase_1,correct_hit,correct_hit,"For the song isn't she lovely, who is credited as its writer?","For the song isn't she lovely, who is credited as its writer?",answer_accept:answer_entailment
+song-141:paraphrase_2,correct_hit,correct_hit,"For the song pain in my heart, who wrote it?","For the song pain in my heart, who wrote it?",answer_accept:answer_entailment
+song-064:hard_negative,incorrect_acceptance,correct_hit,Identify the person who wrote the song you really got a hold on me.,"For the song you really got me, who is credited as its writer?",answer_accept:answer_entailment
+song-052:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song you really got a hold on me.,Identify the person who wrote the song you really got a hold on me.,answer_accept:answer_entailment
+song-120:paraphrase_1,correct_hit,correct_hit,"For the song dimming of the day, who wrote it?","For the song dimming of the day, who wrote it?",answer_accept:answer_entailment
+song-194:paraphrase_2,bypass,bypass,,,volatile_query
+song-124:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song who let the dogs out.,Identify the person who wrote the song who let the dogs out.,answer_accept:answer_entailment
+song-051:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song you really got a hold on me.,Identify the person who wrote the song you really got a hold on me.,answer_accept:answer_entailment
+song-196:hard_negative,correct_hit,correct_hit,"For the song top of the world, who is credited as its writer?","For the song top of the world, who is credited as its writer?",answer_accept:answer_entailment
+song-132:paraphrase_3,verifier_false_rejection,verifier_false_rejection,"For the song that's the night when the lights went out in georgia, who wrote it?","For the song that's the night when the lights went out in georgia, who wrote it?",answer_verify:ambiguous_context
+song-087:hard_negative,correct_hit,correct_hit,"For the song the old bog road, who is credited as its writer?","For the song the old bog road, who is credited as its writer?",answer_accept:answer_entailment
+song-094:paraphrase_3,correct_hit,correct_hit,"For the song bewitched bothered and bewildered, who wrote it?","For the song bewitched bothered and bewildered, who wrote it?",answer_accept:answer_entailment
+song-007:paraphrase_2,correct_hit,correct_hit,Name the writer of the song last night i had the strangest dream.,Name the writer of the song last night i had the strangest dream.,answer_accept:answer_entailment
+song-097:paraphrase_1,correct_hit,correct_hit,"For the song rest your love on me, who is credited as its writer?","For the song rest your love on me, who is credited as its writer?",answer_accept:answer_entailment
+song-128:paraphrase_3,incorrect_acceptance,correct_hit,Name the writer of the song you light up my life.,Name the writer of the song amanda light of my life.,answer_accept:answer_entailment
+song-185:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song have i told you lately.,Identify the person who wrote the song have i told you lately.,answer_accept:answer_entailment
+song-124:hard_negative,verifier_false_rejection,verifier_false_rejection,Name the writer of the song kadam kadam badhaye ja khusi k geet gaye ja.,Name the writer of the song kadam kadam badhaye ja khusi k geet gaye ja.,answer_verify:uncertain_answer
+song-052:original,correct_hit,correct_hit,Identify the person who wrote the song you really got a hold on me.,Identify the person who wrote the song you really got a hold on me.,answer_accept:answer_entailment
+song-083:paraphrase_3,correct_hit,correct_hit,"For the song it never entered my mind, who is credited as its writer?","For the song it never entered my mind, who is credited as its writer?",answer_accept:answer_entailment
+song-011:paraphrase_3,correct_hit,correct_hit,"For the song everytime you go away, who wrote it?","For the song everytime you go away, who wrote it?",answer_accept:answer_entailment
+song-048:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song when i was 17.,Identify the person who wrote the song when i was 17.,answer_accept:answer_entailment
+song-097:paraphrase_3,correct_hit,correct_hit,"For the song rest your love on me, who is credited as its writer?","For the song rest your love on me, who is credited as its writer?",answer_accept:answer_entailment
+song-015:paraphrase_2,correct_hit,correct_hit,"For the song brandy you're a fine girl, who wrote it?","For the song brandy you're a fine girl, who wrote it?",answer_accept:answer_entailment
+song-128:original,incorrect_acceptance,correct_hit,Name the writer of the song you light up my life.,Name the writer of the song amanda light of my life.,answer_accept:answer_entailment
+song-139:paraphrase_2,incorrect_acceptance,correct_hit,"For the song blowin in the wind, who is credited as its writer?",Who wrote the song this is the air i breathe?,answer_accept:answer_entailment
+song-186:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song have i told you lately.,Identify the person who wrote the song have i told you lately.,answer_accept:answer_entailment
+song-078:paraphrase_2,correct_hit,correct_hit,"For the song when will i see you again, who wrote it?","For the song when will i see you again, who wrote it?",answer_accept:answer_entailment
+song-111:paraphrase_3,correct_hit,correct_hit,Name the writer of the song man in the box.,Name the writer of the song man in the box.,answer_accept:answer_entailment
+song-043:paraphrase_1,correct_hit,correct_hit,"For the song all i want is you, who is credited as its writer?","For the song all i want is you, who is credited as its writer?",answer_accept:answer_entailment
+song-181:paraphrase_2,correct_hit,verifier_false_rejection,Identify the person who wrote the song in spite of ourselves.,Name the writer of the song in spite of ourselves.,answer_verify:uncertain_answer
+song-105:hard_negative,cold_miss,cold_miss,"For the song where have all the flowers gone, who wrote it?","For the song where have all the flowers gone, who wrote it?",answer_reject:negation_mismatch
+song-167:original,correct_hit,correct_hit,"For the song the wind cries mary, who wrote it?","For the song the wind cries mary, who wrote it?",answer_accept:answer_entailment
+song-081:paraphrase_3,verifier_false_rejection,verifier_false_rejection,Name the writer of the song why sung by annie lennox.,Name the writer of the song why sung by annie lennox.,answer_verify:answer_mentioned_in_question
+song-149:paraphrase_2,correct_hit,correct_hit,"For the song heaven help us all, who wrote it?","For the song heaven help us all, who wrote it?",answer_accept:answer_entailment
+song-126:paraphrase_3,correct_hit,correct_hit,Who wrote the song if i were a carpenter?,Who wrote the song if i were a carpenter?,answer_accept:answer_entailment
+song-056:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song somebody loan me a dime.,Identify the person who wrote the song somebody loan me a dime.,answer_accept:answer_entailment
+song-104:paraphrase_1,correct_hit,correct_hit,"For the song all kinds of everything, who is credited as its writer?","For the song all kinds of everything, who is credited as its writer?",answer_accept:answer_entailment
+song-161:paraphrase_2,correct_hit,correct_hit,"For the song you're the one, who wrote it?","For the song you're the one, who wrote it?",answer_accept:answer_entailment
+song-099:paraphrase_2,correct_hit,correct_hit,"For the song the little drummer boy, who wrote it?","For the song the little drummer boy, who wrote it?",answer_accept:answer_entailment
+song-099:original,correct_hit,correct_hit,"For the song the little drummer boy, who wrote it?","For the song the little drummer boy, who wrote it?",answer_accept:answer_entailment
+song-044:original,correct_hit,correct_hit,Name the writer of the song carry me back to old virginny.,Name the writer of the song carry me back to old virginny.,answer_accept:answer_entailment
+song-006:hard_negative,correct_hit,correct_hit,Name the writer of the song last night i had the strangest dream.,Name the writer of the song last night i had the strangest dream.,answer_accept:answer_entailment
+song-159:original,correct_hit,correct_hit,Identify the person who wrote the song have you ever seen the rain.,Identify the person who wrote the song have you ever seen the rain.,answer_accept:answer_entailment
+song-147:original,correct_hit,correct_hit,"For the song isn't she lovely, who is credited as its writer?","For the song isn't she lovely, who is credited as its writer?",answer_accept:answer_entailment
+song-018:original,correct_hit,correct_hit,Identify the person who wrote the song if i can only imagine.,Identify the person who wrote the song if i can only imagine.,answer_accept:answer_entailment
+song-199:hard_negative,correct_hit,correct_hit,"For the song what if god was one of us, who is credited as its writer?","For the song what if god was one of us, who is credited as its writer?",answer_accept:answer_entailment
+song-048:original,correct_hit,correct_hit,"For the song always stay humble and kind, who wrote it?","For the song always stay humble and kind, who wrote it?",answer_accept:answer_entailment
+song-134:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song son of a preacher man.,Identify the person who wrote the song son of a preacher man.,answer_accept:answer_entailment
+song-117:original,correct_hit,correct_hit,"For the song don't you ever get tired of hurting me, who wrote it?","For the song don't you ever get tired of hurting me, who wrote it?",answer_accept:answer_entailment
+song-162:paraphrase_1,bypass,bypass,,,volatile_query
+song-187:original,correct_hit,correct_hit,Identify the person who wrote the song that's how i got to memphis.,Identify the person who wrote the song that's how i got to memphis.,answer_accept:answer_entailment
+song-157:original,correct_hit,correct_hit,"For the song once i was 7 years old, who is credited as its writer?","For the song once i was 7 years old, who is credited as its writer?",answer_accept:answer_entailment
+song-039:paraphrase_3,correct_hit,correct_hit,Who wrote the song ain't no mountain high enough?,Who wrote the song ain't no mountain high enough?,answer_accept:answer_entailment
+song-023:paraphrase_3,correct_hit,correct_hit,"For the song the weight by the band, who is credited as its writer?","For the song the weight by the band, who is credited as its writer?",answer_accept:answer_entailment
+song-116:paraphrase_3,correct_hit,correct_hit,Name the writer of the song two tickets to paradise.,Name the writer of the song two tickets to paradise.,answer_accept:answer_entailment
+song-170:original,correct_hit,correct_hit,Name the writer of the song life is a highway.,Name the writer of the song life is a highway.,answer_accept:answer_entailment
+song-060:hard_negative,correct_hit,correct_hit,Name the writer of the song i love rock and roll.,Name the writer of the song i love rock and roll.,answer_accept:answer_entailment
+song-098:paraphrase_2,correct_hit,correct_hit,Who wrote the song the last full measure of devotion?,Who wrote the song the last full measure of devotion?,answer_accept:answer_entailment
+song-061:original,correct_hit,correct_hit,Name the writer of the song i love rock and roll.,Name the writer of the song i love rock and roll.,answer_accept:answer_entailment
+song-063:hard_negative,correct_hit,correct_hit,"For the song go your own way, who is credited as its writer?","For the song go your own way, who is credited as its writer?",answer_accept:answer_entailment
+song-142:paraphrase_3,correct_hit,correct_hit,"For the song the dance by garth brooks, who is credited as its writer?","For the song the dance by garth brooks, who is credited as its writer?",answer_accept:answer_entailment
+song-005:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song lift every voice and sing.,Identify the person who wrote the song lift every voice and sing.,answer_accept:answer_entailment
+song-000:paraphrase_1,correct_hit,correct_hit,"For the song what if god was one of us, who is credited as its writer?","For the song what if god was one of us, who is credited as its writer?",answer_accept:answer_entailment
+song-109:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song on the eve of destruction.,Identify the person who wrote the song on the eve of destruction.,answer_accept:answer_entailment
+song-145:paraphrase_1,correct_hit,correct_hit,"For the song on eagle's wings, who wrote it?","For the song on eagle's wings, who wrote it?",answer_accept:answer_entailment
+song-108:paraphrase_2,correct_hit,correct_hit,Name the writer of the song breakfast at tiffany's.,Name the writer of the song breakfast at tiffany's.,answer_accept:answer_entailment
+song-178:paraphrase_3,correct_hit,correct_hit,Name the writer of the song try and catch the wind.,"For the song try and catch the wind, who wrote it?",answer_accept:answer_entailment
+song-100:paraphrase_1,correct_hit,correct_hit,Who wrote the song pink fluffy unicorns dancing on rainbows?,Who wrote the song pink fluffy unicorns dancing on rainbows?,answer_accept:answer_entailment
+song-110:paraphrase_1,correct_hit,correct_hit,Who wrote the song crazy little thing called love?,Who wrote the song crazy little thing called love?,answer_accept:answer_entailment
+song-003:paraphrase_3,correct_hit,correct_hit,"For the song too marvelous for words, who is credited as its writer?","For the song too marvelous for words, who is credited as its writer?",answer_accept:answer_entailment
+song-053:original,correct_hit,correct_hit,Identify the person who wrote the song hurt by nine inch nails.,Identify the person who wrote the song hurt by nine inch nails.,answer_accept:answer_entailment
+song-000:original,correct_hit,correct_hit,"For the song what if god was one of us, who is credited as its writer?","For the song what if god was one of us, who is credited as its writer?",answer_accept:answer_entailment
+song-169:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song grandpa by the judds.,Identify the person who wrote the song grandpa by the judds.,answer_accept:answer_entailment
+song-131:original,correct_hit,correct_hit,"For the song those were the days, who wrote it?","For the song those were the days, who wrote it?",answer_accept:answer_entailment
+song-016:paraphrase_3,correct_hit,correct_hit,Name the writer of the song got my mind set on you.,Name the writer of the song got my mind set on you.,answer_accept:answer_entailment
+song-096:original,correct_hit,correct_hit,"For the song save your love for me, who wrote it?",Name the writer of the song save your love for me.,answer_accept:answer_entailment
+song-170:hard_negative,correct_hit,correct_hit,Who wrote the song take a walk on the wild side?,Who wrote the song take a walk on the wild side?,answer_accept:answer_entailment
+song-184:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song wishing on a star.,Identify the person who wrote the song wishing on a star.,answer_accept:answer_entailment
+song-121:hard_negative,verifier_false_rejection,verifier_false_rejection,Name the writer of the song happy by pharrell williams.,Name the writer of the song happy by pharrell williams.,answer_verify:answer_mentioned_in_question
+song-067:paraphrase_1,correct_hit,correct_hit,"For the song dark as a dungeon, who wrote it?","For the song dark as a dungeon, who wrote it?",answer_accept:answer_entailment
+song-028:paraphrase_3,correct_hit,correct_hit,"For the song kind of a drag, who is credited as its writer?","For the song kind of a drag, who is credited as its writer?",answer_accept:answer_entailment
+song-138:paraphrase_2,cold_miss,cold_miss,"For the song shout to the lord, who is credited as its writer?","For the song shout to the lord, who is credited as its writer?",answer_reject:subject_identity_conflict
+song-095:paraphrase_1,correct_hit,correct_hit,"For the song jesus is just alright with me, who is credited as its writer?","For the song jesus is just alright with me, who is credited as its writer?",answer_accept:answer_entailment
+song-028:original,correct_hit,correct_hit,"For the song kind of a drag, who is credited as its writer?","For the song kind of a drag, who is credited as its writer?",answer_accept:answer_entailment
+song-130:paraphrase_2,correct_hit,correct_hit,Who wrote the song thank you for being a friend?,Who wrote the song thank you for being a friend?,answer_accept:answer_entailment
+song-175:paraphrase_3,correct_hit,correct_hit,"For the song if you love me really love me, who is credited as its writer?","For the song if you love me really love me, who is credited as its writer?",answer_accept:answer_entailment
+song-118:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song manic monday for the bangles.,Identify the person who wrote the song manic monday for the bangles.,answer_accept:answer_entailment
+song-152:paraphrase_3,correct_hit,correct_hit,"For the song a mighty fortress is our god, who wrote it?","For the song a mighty fortress is our god, who wrote it?",answer_accept:answer_entailment
+song-060:original,correct_hit,correct_hit,Identify the person who wrote the song lord i hope this day is good.,Identify the person who wrote the song lord i hope this day is good.,answer_accept:answer_entailment
+song-139:paraphrase_1,incorrect_acceptance,correct_hit,Name the writer of the song call me the breeze.,Who wrote the song this is the air i breathe?,answer_accept:answer_entailment
+song-072:hard_negative,correct_hit,correct_hit,Name the writer of the song good time charlie's got the blues.,Name the writer of the song good time charlie's got the blues.,answer_accept:answer_entailment
+song-019:original,correct_hit,correct_hit,Identify the person who wrote the song here comes my baby.,Name the writer of the song here comes my baby.,answer_accept:answer_entailment
+song-131:paraphrase_3,correct_hit,correct_hit,"For the song those were the days, who wrote it?","For the song those were the days, who wrote it?",answer_accept:answer_entailment
+song-039:hard_negative,correct_hit,correct_hit,Who wrote the song get here if you can?,Who wrote the song get here if you can?,answer_accept:answer_entailment
+song-106:paraphrase_2,correct_hit,correct_hit,"For the song ain't no sunshine when she's gone, who wrote it?","For the song ain't no sunshine when she's gone, who wrote it?",answer_accept:answer_entailment
+song-143:paraphrase_3,correct_hit,correct_hit,"For the song do you believe in magic, who is credited as its writer?","For the song do you believe in magic, who is credited as its writer?",answer_accept:answer_entailment
+song-001:hard_negative,incorrect_acceptance,correct_hit,Who wrote the song go light your world?,"For the song i saw the light, who is credited as its writer?",answer_accept:answer_entailment
+song-179:hard_negative,verifier_false_rejection,verifier_false_rejection,Name the writer of the song take my hand precious lord.,Name the writer of the song take my hand precious lord.,answer_verify:uncertain_answer
+song-148:paraphrase_2,correct_hit,correct_hit,Name the writer of the song drive by the cars.,Name the writer of the song drive by the cars.,answer_accept:answer_entailment
+song-083:original,correct_hit,correct_hit,"For the song it never entered my mind, who is credited as its writer?","For the song it never entered my mind, who is credited as its writer?",answer_accept:answer_entailment
+song-154:original,correct_hit,correct_hit,Identify the person who wrote the song joy to the world.,Identify the person who wrote the song joy to the world.,answer_accept:answer_entailment
+song-167:hard_negative,correct_hit,correct_hit,Who wrote the song you do something to me?,Who wrote the song you do something to me?,answer_accept:answer_entailment
+song-013:paraphrase_2,correct_hit,correct_hit,Name the writer of the song here comes the night.,Who wrote the song here comes the night?,answer_accept:answer_entailment
+song-169:hard_negative,correct_hit,correct_hit,"For the song life is a highway, who is credited as its writer?","For the song life is a highway, who is credited as its writer?",answer_accept:answer_entailment
+song-038:hard_negative,correct_hit,correct_hit,Who wrote the song ain't no mountain high enough?,Who wrote the song ain't no mountain high enough?,answer_accept:answer_entailment
+song-127:hard_negative,incorrect_acceptance,correct_hit,Name the writer of the song you light up my life.,Name the writer of the song amanda light of my life.,answer_accept:answer_entailment
+song-063:paraphrase_2,correct_hit,correct_hit,Who wrote the song home performed by phillip?,"For the song home performed by phillip, who wrote it?",answer_accept:answer_entailment
+song-153:paraphrase_3,correct_hit,correct_hit,"For the song mama i'm coming home, who wrote it?","For the song mama i'm coming home, who wrote it?",answer_accept:answer_entailment
+song-160:paraphrase_2,incorrect_acceptance,correct_hit,Who wrote the song thank you for being a friend?,Identify the person who wrote the song you got a friend.,answer_accept:answer_entailment
+song-088:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song here comes the boom.,Identify the person who wrote the song here comes the boom.,answer_accept:answer_entailment
+song-014:paraphrase_2,correct_hit,correct_hit,"For the song you're still the one, who wrote it?","For the song you're still the one, who wrote it?",answer_accept:answer_entailment
+song-062:paraphrase_3,verifier_false_rejection,verifier_false_rejection,Name the writer of the song rainy night in georgia.,Name the writer of the song rainy night in georgia.,answer_verify:ambiguous_context
+song-165:paraphrase_2,correct_hit,correct_hit,Who wrote the song pass me not oh gentle saviour?,Who wrote the song pass me not oh gentle saviour?,answer_accept:answer_entailment
+song-092:paraphrase_1,correct_hit,correct_hit,"For the song he knows my name, who wrote it?","For the song he knows my name, who wrote it?",answer_accept:answer_entailment
+song-029:paraphrase_3,correct_hit,correct_hit,Who wrote the song this i promise you?,Name the writer of the song this i promise you.,answer_accept:answer_entailment
+song-140:paraphrase_1,correct_hit,correct_hit,"For the song i fought the law, who is credited as its writer?","For the song i fought the law, who is credited as its writer?",answer_accept:answer_entailment
+song-156:hard_negative,correct_hit,correct_hit,"For the song once i was 7 years old, who is credited as its writer?","For the song once i was 7 years old, who is credited as its writer?",answer_accept:answer_entailment
+song-030:hard_negative,correct_hit,correct_hit,"For the song oh how he loves us, who is credited as its writer?","For the song oh how he loves us, who is credited as its writer?",answer_accept:answer_entailment
+song-117:paraphrase_3,correct_hit,correct_hit,"For the song don't you ever get tired of hurting me, who wrote it?","For the song don't you ever get tired of hurting me, who wrote it?",answer_accept:answer_entailment
+song-048:paraphrase_1,correct_hit,correct_hit,"For the song always stay humble and kind, who wrote it?","For the song always stay humble and kind, who wrote it?",answer_accept:answer_entailment
+song-176:paraphrase_3,correct_hit,correct_hit,Name the writer of the song still got the blues for you.,Name the writer of the song still got the blues for you.,answer_accept:answer_entailment
+song-192:hard_negative,correct_hit,correct_hit,"For the song easy like sunday morning, who is credited as its writer?","For the song easy like sunday morning, who is credited as its writer?",answer_accept:answer_entailment
+song-048:paraphrase_2,correct_hit,correct_hit,"For the song always stay humble and kind, who wrote it?","For the song always stay humble and kind, who wrote it?",answer_accept:answer_entailment
+song-139:paraphrase_3,incorrect_acceptance,correct_hit,"For the song call me the breeze, who wrote it?",Who wrote the song this is the air i breathe?,answer_accept:answer_entailment
+song-138:paraphrase_3,correct_hit,correct_hit,"For the song the king is gone, who is credited as its writer?","For the song the king is gone, who is credited as its writer?",answer_accept:answer_entailment
+song-119:paraphrase_2,correct_hit,correct_hit,Name the writer of the song here i am lord.,Who wrote the song here i am lord?,answer_accept:answer_entailment
+song-168:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song grandpa by the judds.,Identify the person who wrote the song grandpa by the judds.,answer_accept:answer_entailment
+song-097:hard_negative,correct_hit,correct_hit,Who wrote the song the last full measure of devotion?,Who wrote the song the last full measure of devotion?,answer_accept:answer_entailment
+song-135:paraphrase_3,correct_hit,correct_hit,Who wrote the song i write the song?,Who wrote the song i write the song?,answer_accept:answer_entailment
+song-038:paraphrase_3,correct_hit,correct_hit,Name the writer of the song dream on by aerosmith.,Name the writer of the song dream on by aerosmith.,answer_accept:answer_entailment
+song-103:paraphrase_3,correct_hit,correct_hit,Name the writer of the song the first time i ever saw your face.,Name the writer of the song the first time i ever saw your face.,answer_accept:answer_entailment
+song-059:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song lord i hope this day is good.,Identify the person who wrote the song lord i hope this day is good.,answer_accept:answer_entailment
+song-009:paraphrase_1,correct_hit,correct_hit,"For the song i'm going down, who wrote it?",Identify the person who wrote the song i'm going down.,answer_accept:answer_entailment
+song-056:hard_negative,correct_hit,correct_hit,Who wrote the song go light your world?,Who wrote the song go light your world?,answer_accept:answer_entailment
+song-148:paraphrase_3,correct_hit,correct_hit,Name the writer of the song drive by the cars.,Name the writer of the song drive by the cars.,answer_accept:answer_entailment
+song-027:paraphrase_1,correct_hit,correct_hit,"For the song the very thought of you, who wrote it?","For the song the very thought of you, who wrote it?",answer_accept:answer_entailment
+song-126:paraphrase_2,correct_hit,correct_hit,Who wrote the song if i were a carpenter?,Who wrote the song if i were a carpenter?,answer_accept:answer_entailment
+song-136:original,correct_hit,correct_hit,"For the song america my country tis of thee, who wrote it?","For the song america my country tis of thee, who wrote it?",answer_accept:answer_entailment
+song-160:paraphrase_1,incorrect_acceptance,correct_hit,Who wrote the song thank you for being a friend?,Identify the person who wrote the song you got a friend.,answer_accept:answer_entailment
+song-120:original,correct_hit,correct_hit,"For the song dimming of the day, who wrote it?","For the song dimming of the day, who wrote it?",answer_accept:answer_entailment
+song-051:original,correct_hit,correct_hit,Name the writer of the song till the storm passes by.,Name the writer of the song till the storm passes by.,answer_accept:answer_entailment
+song-049:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song when i was 17.,Identify the person who wrote the song when i was 17.,answer_accept:answer_entailment
+song-026:paraphrase_2,correct_hit,correct_hit,Who wrote the song the age of aquarius?,Who wrote the song the age of aquarius?,answer_accept:answer_entailment
+song-191:hard_negative,correct_hit,correct_hit,"For the song a change is going to come, who is credited as its writer?","For the song a change is going to come, who is credited as its writer?",answer_accept:answer_entailment
+song-155:paraphrase_2,correct_hit,correct_hit,Who wrote the song help me make it through the night?,Who wrote the song help me make it through the night?,answer_accept:answer_entailment
+song-080:hard_negative,verifier_false_rejection,verifier_false_rejection,Who wrote the song why sung by annie lennox?,Who wrote the song why sung by annie lennox?,answer_verify:answer_mentioned_in_question
+song-138:original,correct_hit,correct_hit,"For the song the king is gone, who is credited as its writer?","For the song the king is gone, who is credited as its writer?",answer_accept:answer_entailment
+song-001:paraphrase_2,verifier_false_rejection,verifier_false_rejection,Name the writer of the song play me the waltz of the angels.,Name the writer of the song play me the waltz of the angels.,answer_verify:uncertain_answer
+song-111:original,correct_hit,correct_hit,"For the song man in the box, who is credited as its writer?","For the song man in the box, who is credited as its writer?",answer_accept:answer_entailment
+song-057:paraphrase_2,correct_hit,correct_hit,Who wrote the song go light your world?,Who wrote the song go light your world?,answer_accept:answer_entailment
+song-126:hard_negative,correct_hit,correct_hit,Name the writer of the song angel in the morning.,Name the writer of the song angel in the morning.,answer_accept:answer_entailment
+song-086:paraphrase_2,correct_hit,correct_hit,Who wrote the song better man for little big town?,Who wrote the song better man for little big town?,answer_accept:answer_entailment
+song-075:paraphrase_1,correct_hit,correct_hit,"For the song what do you want from me, who wrote it?","For the song what do you want from me, who wrote it?",answer_accept:answer_entailment
+song-061:paraphrase_2,verifier_false_rejection,verifier_false_rejection,Name the writer of the song i love rock and roll.,Name the writer of the song i love rock and roll.,answer_verify:uncertain_answer
+song-010:paraphrase_2,bypass,bypass,,,volatile_query
+song-054:original,correct_hit,correct_hit,"For the song total eclipse of the heart, who wrote it?","For the song total eclipse of the heart, who wrote it?",answer_accept:answer_entailment
+song-065:paraphrase_3,incorrect_acceptance,correct_hit,Identify the person who wrote the song you really got a hold on me.,"For the song you really got me, who is credited as its writer?",answer_accept:answer_entailment
+song-040:paraphrase_2,correct_hit,correct_hit,Who wrote the song get here if you can?,Who wrote the song get here if you can?,answer_accept:answer_entailment
+song-064:paraphrase_1,correct_hit,correct_hit,"For the song go your own way, who is credited as its writer?","For the song go your own way, who is credited as its writer?",answer_accept:answer_entailment
+song-091:original,correct_hit,correct_hit,"For the song let's call the whole thing off, who is credited as its writer?","For the song let's call the whole thing off, who is credited as its writer?",answer_accept:answer_entailment
+song-150:hard_negative,correct_hit,correct_hit,Who wrote the song put another log on the fire?,Who wrote the song put another log on the fire?,answer_accept:answer_entailment
+song-034:original,correct_hit,correct_hit,"For the song call me the breeze, who wrote it?","For the song call me the breeze, who wrote it?",answer_accept:answer_entailment
+song-015:hard_negative,correct_hit,correct_hit,Name the writer of the song got my mind set on you.,Name the writer of the song got my mind set on you.,answer_accept:answer_entailment
+song-121:original,correct_hit,correct_hit,"For the song you're so vain, who is credited as its writer?","For the song you're so vain, who is credited as its writer?",answer_accept:answer_entailment
+song-031:original,correct_hit,correct_hit,Name the writer of the song oh how he loves us.,Name the writer of the song oh how he loves us.,answer_accept:answer_entailment
+song-189:paraphrase_1,correct_hit,correct_hit,"For the song scars to your beautiful, who is credited as its writer?","For the song scars to your beautiful, who is credited as its writer?",answer_accept:answer_entailment
+song-168:paraphrase_2,correct_hit,correct_hit,Who wrote the song you do something to me?,Who wrote the song you do something to me?,answer_accept:answer_entailment
+song-023:paraphrase_1,correct_hit,correct_hit,"For the song the weight by the band, who is credited as its writer?","For the song the weight by the band, who is credited as its writer?",answer_accept:answer_entailment
+song-034:paraphrase_2,correct_hit,correct_hit,"For the song call me the breeze, who wrote it?","For the song call me the breeze, who wrote it?",answer_accept:answer_entailment
+song-190:original,correct_hit,correct_hit,"For the song i would rather go blind, who wrote it?","For the song i would rather go blind, who wrote it?",answer_accept:answer_entailment
+song-113:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song imagine by the beatles.,Identify the person who wrote the song imagine by the beatles.,answer_accept:answer_entailment
+song-169:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song grandpa by the judds.,Identify the person who wrote the song grandpa by the judds.,answer_accept:answer_entailment
+song-107:hard_negative,correct_hit,correct_hit,Name the writer of the song breakfast at tiffany's.,Name the writer of the song breakfast at tiffany's.,answer_accept:answer_entailment
+song-123:original,verifier_false_rejection,verifier_false_rejection,"For the song call me by aretha franklin, who wrote it?","For the song call me by aretha franklin, who wrote it?",answer_verify:answer_mentioned_in_question
+song-115:original,correct_hit,correct_hit,Name the writer of the song ruby sung by kenny rogers.,Name the writer of the song ruby sung by kenny rogers.,answer_accept:answer_entailment
+song-121:paraphrase_1,correct_hit,correct_hit,"For the song you're so vain, who is credited as its writer?","For the song you're so vain, who is credited as its writer?",answer_accept:answer_entailment
+song-077:paraphrase_2,correct_hit,correct_hit,Who wrote the song come to my window?,Who wrote the song come to my window?,answer_accept:answer_entailment
+song-188:hard_negative,correct_hit,correct_hit,"For the song scars to your beautiful, who is credited as its writer?","For the song scars to your beautiful, who is credited as its writer?",answer_accept:answer_entailment
+song-002:paraphrase_1,incorrect_acceptance,correct_hit,Who wrote the song go light your world?,"For the song i saw the light, who is credited as its writer?",answer_accept:answer_entailment
+song-027:paraphrase_2,correct_hit,correct_hit,"For the song the very thought of you, who wrote it?","For the song the very thought of you, who wrote it?",answer_accept:answer_entailment
+song-047:original,correct_hit,correct_hit,"For the song i'll see you in my dreams, who is credited as its writer?","For the song i'll see you in my dreams, who is credited as its writer?",answer_accept:answer_entailment
+song-094:paraphrase_2,correct_hit,correct_hit,"For the song bewitched bothered and bewildered, who wrote it?","For the song bewitched bothered and bewildered, who wrote it?",answer_accept:answer_entailment
+song-021:paraphrase_2,correct_hit,correct_hit,Who wrote the song home from the wiz?,Who wrote the song home from the wiz?,answer_accept:answer_entailment
+song-163:paraphrase_1,correct_hit,correct_hit,Who wrote the song will you go lassie go?,Who wrote the song will you go lassie go?,answer_accept:answer_entailment
+song-089:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song here comes the boom.,Identify the person who wrote the song here comes the boom.,answer_accept:answer_entailment
+song-037:hard_negative,correct_hit,correct_hit,"For the song dream on by aerosmith, who is credited as its writer?","For the song dream on by aerosmith, who is credited as its writer?",answer_accept:answer_entailment
+song-188:paraphrase_1,correct_hit,correct_hit,"For the song take this job and shove it, who is credited as its writer?","For the song take this job and shove it, who is credited as its writer?",answer_accept:answer_entailment
+song-018:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song here comes my baby.,Name the writer of the song here comes my baby.,answer_accept:answer_entailment
+song-008:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song woman by peter and gordon.,Identify the person who wrote the song woman by peter and gordon.,answer_accept:answer_entailment
+song-040:paraphrase_1,correct_hit,correct_hit,Who wrote the song get here if you can?,Who wrote the song get here if you can?,answer_accept:answer_entailment
+song-105:original,correct_hit,correct_hit,"For the song jeremiah was a bullfrog, who is credited as its writer?","For the song jeremiah was a bullfrog, who is credited as its writer?",answer_accept:answer_entailment
+song-127:original,correct_hit,correct_hit,Name the writer of the song angel in the morning.,Name the writer of the song angel in the morning.,answer_accept:answer_entailment
+song-031:paraphrase_3,correct_hit,correct_hit,Name the writer of the song oh how he loves us.,Name the writer of the song oh how he loves us.,answer_accept:answer_entailment
+song-055:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song i've got the world on a string.,Identify the person who wrote the song i've got the world on a string.,answer_accept:answer_entailment
+song-168:paraphrase_3,correct_hit,correct_hit,Who wrote the song you do something to me?,Who wrote the song you do something to me?,answer_accept:answer_entailment
+song-138:paraphrase_1,correct_hit,correct_hit,"For the song the king is gone, who is credited as its writer?","For the song the king is gone, who is credited as its writer?",answer_accept:answer_entailment
+song-074:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song just someone i used to know.,Identify the person who wrote the song just someone i used to know.,answer_accept:answer_entailment
+song-199:paraphrase_3,verifier_false_rejection,verifier_false_rejection,Who wrote the song country boy by aaron lewis?,Who wrote the song country boy by aaron lewis?,answer_verify:answer_mentioned_in_question
+song-117:paraphrase_1,correct_hit,correct_hit,"For the song don't you ever get tired of hurting me, who wrote it?","For the song don't you ever get tired of hurting me, who wrote it?",answer_accept:answer_entailment
+song-058:paraphrase_1,correct_hit,correct_hit,"For the song kiss an angel good morning, who is credited as its writer?","For the song kiss an angel good morning, who is credited as its writer?",answer_accept:answer_entailment
+song-113:paraphrase_1,correct_hit,correct_hit,"For the song my heroes have always been cowboys, who is credited as its writer?","For the song my heroes have always been cowboys, who is credited as its writer?",answer_accept:answer_entailment
+song-141:paraphrase_3,correct_hit,correct_hit,"For the song pain in my heart, who wrote it?","For the song pain in my heart, who wrote it?",answer_accept:answer_entailment
+song-174:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song don t want to miss a thing.,Identify the person who wrote the song don t want to miss a thing.,answer_accept:answer_entailment
+song-173:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song don t want to miss a thing.,Identify the person who wrote the song don t want to miss a thing.,answer_accept:answer_entailment
+song-160:original,cold_miss,correct_hit,Who wrote the song thank you for being a friend?,Identify the person who wrote the song you got a friend.,answer_accept:answer_entailment
+song-040:paraphrase_3,correct_hit,correct_hit,Who wrote the song get here if you can?,Who wrote the song get here if you can?,answer_accept:answer_entailment
+song-034:paraphrase_3,correct_hit,correct_hit,Name the writer of the song call me the breeze.,Name the writer of the song call me the breeze.,answer_accept:answer_entailment
+song-042:paraphrase_2,correct_hit,correct_hit,Name the writer of the song a song for you.,Name the writer of the song a song for you.,answer_accept:answer_entailment
+song-188:paraphrase_3,correct_hit,correct_hit,"For the song take this job and shove it, who is credited as its writer?","For the song take this job and shove it, who is credited as its writer?",answer_accept:answer_entailment
+song-137:hard_negative,correct_hit,correct_hit,"For the song the king is gone, who is credited as its writer?","For the song the king is gone, who is credited as its writer?",answer_accept:answer_entailment
+song-007:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song woman by peter and gordon.,Identify the person who wrote the song woman by peter and gordon.,answer_accept:answer_entailment
+song-080:paraphrase_3,incorrect_acceptance,correct_hit,"For the song if you love me really love me, who is credited as its writer?",Name the writer of the song i love you truly.,answer_accept:answer_entailment
+song-163:paraphrase_3,correct_hit,correct_hit,Who wrote the song will you go lassie go?,Who wrote the song will you go lassie go?,answer_accept:answer_entailment
+song-172:original,correct_hit,correct_hit,Identify the person who wrote the song that's alright mama.,Identify the person who wrote the song that's alright mama.,answer_accept:answer_entailment
+song-030:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song send in the clowns.,Identify the person who wrote the song send in the clowns.,answer_accept:answer_entailment
+song-009:paraphrase_2,correct_hit,correct_hit,"For the song i'm going down, who wrote it?",Identify the person who wrote the song i'm going down.,answer_accept:answer_entailment
+song-173:paraphrase_3,correct_hit,correct_hit,"For the song waiting for the world to change, who wrote it?",Name the writer of the song waiting for the world to change.,answer_accept:answer_entailment
+song-118:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song manic monday for the bangles.,Identify the person who wrote the song manic monday for the bangles.,answer_accept:answer_entailment
+song-145:paraphrase_2,correct_hit,correct_hit,"For the song on eagle's wings, who wrote it?","For the song on eagle's wings, who wrote it?",answer_accept:answer_entailment
+song-100:paraphrase_2,correct_hit,correct_hit,Who wrote the song pink fluffy unicorns dancing on rainbows?,Who wrote the song pink fluffy unicorns dancing on rainbows?,answer_accept:answer_entailment
+song-035:hard_negative,correct_hit,correct_hit,"For the song keep your hands to yourself, who is credited as its writer?","For the song keep your hands to yourself, who is credited as its writer?",answer_accept:answer_entailment
+song-151:paraphrase_1,correct_hit,correct_hit,Who wrote the song put another log on the fire?,Who wrote the song put another log on the fire?,answer_accept:answer_entailment
+song-161:paraphrase_1,correct_hit,correct_hit,"For the song you're the one, who wrote it?",Identify the person who wrote the song you're the one.,answer_accept:answer_entailment
+song-163:paraphrase_2,correct_hit,correct_hit,Who wrote the song will you go lassie go?,Who wrote the song will you go lassie go?,answer_accept:answer_entailment
+song-026:paraphrase_3,correct_hit,correct_hit,Who wrote the song the age of aquarius?,Who wrote the song the age of aquarius?,answer_accept:answer_entailment
+song-001:original,correct_hit,correct_hit,"For the song play me the waltz of the angels, who is credited as its writer?","For the song play me the waltz of the angels, who is credited as its writer?",answer_accept:answer_entailment
+song-107:paraphrase_2,correct_hit,correct_hit,Who wrote the song her name was joanne?,Who wrote the song her name was joanne?,answer_accept:answer_entailment
+song-122:paraphrase_2,verifier_false_rejection,verifier_false_rejection,"For the song happy by pharrell williams, who wrote it?","For the song happy by pharrell williams, who wrote it?",answer_verify:answer_mentioned_in_question
+song-096:paraphrase_2,correct_hit,correct_hit,"For the song save your love for me, who wrote it?",Name the writer of the song save your love for me.,answer_accept:answer_entailment
+song-180:original,correct_hit,correct_hit,"For the song take my hand precious lord, who wrote it?","For the song take my hand precious lord, who wrote it?",answer_accept:answer_entailment
+song-120:hard_negative,correct_hit,correct_hit,"For the song you're so vain, who is credited as its writer?","For the song you're so vain, who is credited as its writer?",answer_accept:answer_entailment
+song-062:paraphrase_2,verifier_false_rejection,verifier_false_rejection,Name the writer of the song rainy night in georgia.,Name the writer of the song rainy night in georgia.,answer_verify:ambiguous_context
+song-132:hard_negative,verifier_false_rejection,verifier_false_rejection,Who wrote the song rise up by andra day?,Who wrote the song rise up by andra day?,answer_verify:answer_mentioned_in_question
+song-035:paraphrase_2,correct_hit,correct_hit,Name the writer of the song it's the climb.,Name the writer of the song it's the climb.,answer_accept:answer_entailment
+song-004:paraphrase_1,correct_hit,correct_hit,Who wrote the song ask the blind man he saw it all?,Who wrote the song ask the blind man he saw it all?,answer_accept:answer_entailment
+song-156:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song i go to pieces.,Identify the person who wrote the song i go to pieces.,answer_accept:answer_entailment
+song-134:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song son of a preacher man.,Identify the person who wrote the song son of a preacher man.,answer_accept:answer_entailment
+song-073:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song just someone i used to know.,Identify the person who wrote the song just someone i used to know.,answer_accept:answer_entailment
+song-109:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song on the eve of destruction.,Identify the person who wrote the song on the eve of destruction.,answer_accept:answer_entailment
+song-175:original,correct_hit,correct_hit,"For the song if you love me really love me, who is credited as its writer?","For the song if you love me really love me, who is credited as its writer?",answer_accept:answer_entailment
+song-151:paraphrase_3,correct_hit,correct_hit,Who wrote the song put another log on the fire?,Who wrote the song put another log on the fire?,answer_accept:answer_entailment
+song-183:paraphrase_2,verifier_false_rejection,verifier_false_rejection,"For the song in my time of dying, who wrote it?","For the song in my time of dying, who wrote it?",answer_verify:uncertain_answer
+song-070:paraphrase_2,verifier_false_rejection,verifier_false_rejection,Name the writer of the song you light up my life.,Name the writer of the song you light up my life.,answer_verify:uncertain_answer
+song-102:paraphrase_2,cold_miss,correct_hit,"For the song you're the one, who wrote it?",Who wrote the song you're the one that i want?,answer_accept:answer_entailment
+song-041:original,correct_hit,correct_hit,Name the writer of the song ain't it funny how time slips away.,Name the writer of the song ain't it funny how time slips away.,answer_accept:answer_entailment
+song-091:paraphrase_1,correct_hit,correct_hit,"For the song let's call the whole thing off, who is credited as its writer?","For the song let's call the whole thing off, who is credited as its writer?",answer_accept:answer_entailment
+song-020:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song am i losing you.,Identify the person who wrote the song am i losing you.,answer_accept:answer_entailment
+song-066:original,incorrect_acceptance,correct_hit,"For the song mama i'm coming home, who wrote it?","For the song bring it on home, who is credited as its writer?",answer_accept:answer_entailment
+song-079:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song it don't come easy.,Identify the person who wrote the song it don't come easy.,answer_accept:answer_entailment
+song-169:original,correct_hit,correct_hit,Identify the person who wrote the song grandpa by the judds.,Identify the person who wrote the song grandpa by the judds.,answer_accept:answer_entailment
+song-120:paraphrase_2,correct_hit,correct_hit,"For the song dimming of the day, who wrote it?","For the song dimming of the day, who wrote it?",answer_accept:answer_entailment
+song-005:original,correct_hit,correct_hit,Identify the person who wrote the song lift every voice and sing.,Identify the person who wrote the song lift every voice and sing.,answer_accept:answer_entailment
+song-182:paraphrase_3,correct_hit,correct_hit,"For the song where have all the flowers gone, who wrote it?","For the song where have all the flowers gone, who wrote it?",answer_accept:answer_entailment
+song-024:hard_negative,correct_hit,correct_hit,Name the writer of the song i let her lie.,Name the writer of the song i let her lie.,answer_accept:answer_entailment
+song-133:paraphrase_1,verifier_false_rejection,verifier_false_rejection,Identify the person who wrote the song rise up by andra day.,Identify the person who wrote the song rise up by andra day.,answer_verify:answer_mentioned_in_question
+song-152:paraphrase_2,correct_hit,correct_hit,"For the song a mighty fortress is our god, who wrote it?","For the song a mighty fortress is our god, who wrote it?",answer_accept:answer_entailment
+song-049:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song when i was 17.,Identify the person who wrote the song when i was 17.,answer_accept:answer_entailment
+song-147:paraphrase_3,correct_hit,correct_hit,"For the song isn't she lovely, who is credited as its writer?","For the song isn't she lovely, who is credited as its writer?",answer_accept:answer_entailment
+song-054:paraphrase_3,correct_hit,correct_hit,"For the song total eclipse of the heart, who wrote it?","For the song total eclipse of the heart, who wrote it?",answer_accept:answer_entailment
+song-176:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song the rose by bette midler.,Identify the person who wrote the song the rose by bette midler.,answer_accept:answer_entailment
+song-045:hard_negative,correct_hit,correct_hit,Who wrote the song back in the new york groove?,Who wrote the song back in the new york groove?,answer_accept:answer_entailment
+song-058:original,correct_hit,correct_hit,"For the song kiss an angel good morning, who is credited as its writer?","For the song kiss an angel good morning, who is credited as its writer?",answer_accept:answer_entailment
+song-059:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song the man comes around.,Identify the person who wrote the song the man comes around.,answer_accept:answer_entailment
+song-191:original,correct_hit,correct_hit,"For the song what's so funny bout peace love and understanding, who wrote it?","For the song what's so funny bout peace love and understanding, who wrote it?",answer_accept:answer_entailment
+song-093:paraphrase_3,correct_hit,correct_hit,Who wrote the song i'll remember you?,Who wrote the song i'll remember you?,answer_accept:answer_entailment
+song-123:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song who let the dogs out.,Identify the person who wrote the song who let the dogs out.,answer_accept:answer_entailment
+song-004:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song lift every voice and sing.,Identify the person who wrote the song lift every voice and sing.,answer_accept:answer_entailment
+song-038:original,correct_hit,correct_hit,"For the song dream on by aerosmith, who is credited as its writer?","For the song dream on by aerosmith, who is credited as its writer?",answer_accept:answer_entailment
+song-119:paraphrase_3,correct_hit,correct_hit,Name the writer of the song here i am lord.,Who wrote the song here i am lord?,answer_accept:answer_entailment
+song-106:paraphrase_3,correct_hit,correct_hit,"For the song ain't no sunshine when she's gone, who wrote it?","For the song ain't no sunshine when she's gone, who wrote it?",answer_accept:answer_entailment
+song-193:paraphrase_3,correct_hit,correct_hit,"For the song easy like sunday morning, who is credited as its writer?","For the song easy like sunday morning, who is credited as its writer?",answer_accept:answer_entailment
+song-043:hard_negative,correct_hit,correct_hit,"For the song carry me back to old virginny, who is credited as its writer?","For the song carry me back to old virginny, who is credited as its writer?",answer_accept:answer_entailment
+song-054:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song i've got the world on a string.,Identify the person who wrote the song i've got the world on a string.,answer_accept:answer_entailment
+song-182:paraphrase_2,correct_hit,correct_hit,"For the song where have all the flowers gone, who wrote it?","For the song where have all the flowers gone, who wrote it?",answer_accept:answer_entailment
+song-127:paraphrase_3,correct_hit,correct_hit,Name the writer of the song angel in the morning.,Name the writer of the song angel in the morning.,answer_accept:answer_entailment
+song-007:paraphrase_3,correct_hit,correct_hit,Name the writer of the song last night i had the strangest dream.,Name the writer of the song last night i had the strangest dream.,answer_accept:answer_entailment
+song-199:paraphrase_1,verifier_false_rejection,verifier_false_rejection,Identify the person who wrote the song country boy by aaron lewis.,Identify the person who wrote the song country boy by aaron lewis.,answer_verify:answer_mentioned_in_question
+song-145:hard_negative,correct_hit,correct_hit,Name the writer of the song our house is a very very fine house.,Name the writer of the song our house is a very very fine house.,answer_accept:answer_entailment
+song-136:paraphrase_1,correct_hit,correct_hit,"For the song america my country tis of thee, who wrote it?","For the song america my country tis of thee, who wrote it?",answer_accept:answer_entailment
+song-041:paraphrase_2,correct_hit,correct_hit,Name the writer of the song ain't it funny how time slips away.,Name the writer of the song ain't it funny how time slips away.,answer_accept:answer_entailment
+song-125:paraphrase_2,correct_hit,correct_hit,"For the song kadam kadam badhaye ja khusi k geet gaye ja, who wrote it?","For the song kadam kadam badhaye ja khusi k geet gaye ja, who wrote it?",answer_accept:answer_entailment
+song-134:original,correct_hit,correct_hit,Identify the person who wrote the song son of a preacher man.,Identify the person who wrote the song son of a preacher man.,answer_accept:answer_entailment
+song-106:original,correct_hit,correct_hit,"For the song ain't no sunshine when she's gone, who wrote it?","For the song ain't no sunshine when she's gone, who wrote it?",answer_accept:answer_entailment
+song-156:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song i go to pieces.,Identify the person who wrote the song i go to pieces.,answer_accept:answer_entailment
+song-012:hard_negative,correct_hit,correct_hit,Name the writer of the song here comes the night.,Who wrote the song here comes the night?,answer_accept:answer_entailment
+song-027:paraphrase_3,correct_hit,correct_hit,"For the song the very thought of you, who wrote it?","For the song the very thought of you, who wrote it?",answer_accept:answer_entailment
+song-120:paraphrase_3,correct_hit,correct_hit,"For the song dimming of the day, who wrote it?","For the song dimming of the day, who wrote it?",answer_accept:answer_entailment
+song-064:original,correct_hit,correct_hit,"For the song go your own way, who is credited as its writer?","For the song go your own way, who is credited as its writer?",answer_accept:answer_entailment
+song-197:paraphrase_3,correct_hit,correct_hit,Name the writer of the song top of the world.,Name the writer of the song top of the world.,answer_accept:answer_entailment
+song-122:original,verifier_false_rejection,verifier_false_rejection,"For the song happy by pharrell williams, who wrote it?","For the song happy by pharrell williams, who wrote it?",answer_verify:answer_mentioned_in_question
+song-019:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song here comes my baby.,Name the writer of the song here comes my baby.,answer_accept:answer_entailment
+song-144:paraphrase_3,correct_hit,correct_hit,Who wrote the song miles and miles of texas?,Who wrote the song miles and miles of texas?,answer_accept:answer_entailment
+song-173:paraphrase_2,correct_hit,verifier_false_rejection,"For the song waiting for the world to change, who wrote it?",Name the writer of the song waiting for the world to change.,answer_verify:uncertain_answer
+song-067:original,correct_hit,correct_hit,"For the song dark as a dungeon, who wrote it?","For the song dark as a dungeon, who wrote it?",answer_accept:answer_entailment
+song-158:paraphrase_2,correct_hit,correct_hit,Who wrote the song i'm proud to be an american?,Who wrote the song i'm proud to be an american?,answer_accept:answer_entailment
+song-045:paraphrase_1,correct_hit,correct_hit,"For the song grandma got run over by a reindeer, who is credited as its writer?","For the song grandma got run over by a reindeer, who is credited as its writer?",answer_accept:answer_entailment
+song-177:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song the rose by bette midler.,Identify the person who wrote the song the rose by bette midler.,answer_accept:answer_entailment
+song-015:original,correct_hit,correct_hit,"For the song brandy you're a fine girl, who wrote it?","For the song brandy you're a fine girl, who wrote it?",answer_accept:answer_entailment
+song-082:paraphrase_3,correct_hit,correct_hit,"For the song vaishnav jan to tene kahiye, who wrote it?","For the song vaishnav jan to tene kahiye, who wrote it?",answer_accept:answer_entailment
+song-073:paraphrase_2,correct_hit,correct_hit,Name the writer of the song good time charlie's got the blues.,Name the writer of the song good time charlie's got the blues.,answer_accept:answer_entailment
+song-101:hard_negative,correct_hit,correct_hit,"For the song you're the one that i want, who is credited as its writer?",Who wrote the song you're the one that i want?,answer_accept:answer_entailment
+song-046:paraphrase_1,correct_hit,correct_hit,Who wrote the song back in the new york groove?,Who wrote the song back in the new york groove?,answer_accept:answer_entailment
+song-171:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song that's alright mama.,Identify the person who wrote the song that's alright mama.,answer_accept:answer_entailment
+song-095:paraphrase_3,correct_hit,correct_hit,"For the song jesus is just alright with me, who is credited as its writer?","For the song jesus is just alright with me, who is credited as its writer?",answer_accept:answer_entailment
+song-131:paraphrase_2,correct_hit,correct_hit,"For the song those were the days, who wrote it?","For the song those were the days, who wrote it?",answer_accept:answer_entailment
+song-180:paraphrase_2,correct_hit,correct_hit,"For the song take my hand precious lord, who wrote it?","For the song take my hand precious lord, who wrote it?",answer_accept:answer_entailment
+song-070:paraphrase_3,correct_hit,correct_hit,Name the writer of the song you light up my life.,Name the writer of the song you light up my life.,answer_accept:answer_entailment
+song-187:hard_negative,correct_hit,correct_hit,"For the song take this job and shove it, who is credited as its writer?","For the song take this job and shove it, who is credited as its writer?",answer_accept:answer_entailment
+song-171:paraphrase_1,correct_hit,correct_hit,Who wrote the song take a walk on the wild side?,Who wrote the song take a walk on the wild side?,answer_accept:answer_entailment
+song-090:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song that just the way it is.,"For the song that just the way it is, who wrote it?",answer_accept:answer_entailment
+song-108:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song on the eve of destruction.,Identify the person who wrote the song on the eve of destruction.,answer_accept:answer_entailment
+song-187:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song that's how i got to memphis.,Identify the person who wrote the song that's how i got to memphis.,answer_accept:answer_entailment
+song-082:paraphrase_1,correct_hit,correct_hit,"For the song vaishnav jan to tene kahiye, who wrote it?","For the song vaishnav jan to tene kahiye, who wrote it?",answer_accept:answer_entailment
+song-069:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song jessica by the allman brothers.,Identify the person who wrote the song jessica by the allman brothers.,answer_accept:answer_entailment
+song-103:hard_negative,correct_hit,correct_hit,"For the song all kinds of everything, who is credited as its writer?","For the song all kinds of everything, who is credited as its writer?",answer_accept:answer_entailment
+song-076:paraphrase_3,correct_hit,correct_hit,Who wrote the song these boots are made for walking?,Who wrote the song these boots are made for walking?,answer_accept:answer_entailment
+song-132:paraphrase_1,verifier_false_rejection,verifier_false_rejection,"For the song that's the night when the lights went out in georgia, who wrote it?","For the song that's the night when the lights went out in georgia, who wrote it?",answer_verify:ambiguous_context
+song-102:paraphrase_1,correct_hit,correct_hit,"For the song you're the one that i want, who is credited as its writer?",Who wrote the song you're the one that i want?,answer_accept:answer_entailment
+song-021:paraphrase_1,correct_hit,correct_hit,Who wrote the song home from the wiz?,Who wrote the song home from the wiz?,answer_accept:answer_entailment
+song-085:paraphrase_1,verifier_false_rejection,verifier_false_rejection,Identify the person who wrote the song hero by mariah carey.,Identify the person who wrote the song hero by mariah carey.,answer_verify:answer_mentioned_in_question
+song-044:hard_negative,correct_hit,correct_hit,"For the song grandma got run over by a reindeer, who is credited as its writer?","For the song grandma got run over by a reindeer, who is credited as its writer?",answer_accept:answer_entailment
+song-084:paraphrase_2,correct_hit,correct_hit,Name the writer of the song the man who sold the world.,Name the writer of the song the man who sold the world.,answer_accept:answer_entailment
+song-153:paraphrase_2,correct_hit,correct_hit,"For the song mama i'm coming home, who wrote it?","For the song mama i'm coming home, who wrote it?",answer_accept:answer_entailment
+song-016:paraphrase_2,correct_hit,correct_hit,Name the writer of the song got my mind set on you.,Name the writer of the song got my mind set on you.,answer_accept:answer_entailment
+song-018:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song if i can only imagine.,Identify the person who wrote the song if i can only imagine.,answer_accept:answer_entailment
+song-143:original,correct_hit,correct_hit,"For the song do you believe in magic, who is credited as its writer?","For the song do you believe in magic, who is credited as its writer?",answer_accept:answer_entailment
+song-106:paraphrase_1,correct_hit,correct_hit,"For the song ain't no sunshine when she's gone, who wrote it?","For the song ain't no sunshine when she's gone, who wrote it?",answer_accept:answer_entailment
+song-042:original,correct_hit,correct_hit,Name the writer of the song a song for you.,Name the writer of the song a song for you.,answer_accept:answer_entailment
+song-146:paraphrase_3,correct_hit,correct_hit,Name the writer of the song our house is a very very fine house.,Name the writer of the song our house is a very very fine house.,answer_accept:answer_entailment
+song-057:hard_negative,correct_hit,correct_hit,"For the song kiss an angel good morning, who is credited as its writer?","For the song kiss an angel good morning, who is credited as its writer?",answer_accept:answer_entailment
+song-005:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song lift every voice and sing.,Identify the person who wrote the song lift every voice and sing.,answer_accept:answer_entailment
+song-188:original,correct_hit,correct_hit,"For the song take this job and shove it, who is credited as its writer?","For the song take this job and shove it, who is credited as its writer?",answer_accept:answer_entailment
+song-050:original,correct_hit,correct_hit,Identify the person who wrote the song just as i am.,Identify the person who wrote the song just as i am.,answer_accept:answer_entailment
+song-192:paraphrase_3,correct_hit,correct_hit,"For the song a change is going to come, who is credited as its writer?","For the song a change is going to come, who is credited as its writer?",answer_accept:answer_entailment
+song-029:paraphrase_2,correct_hit,correct_hit,Who wrote the song this i promise you?,Name the writer of the song this i promise you.,answer_accept:answer_entailment
+song-116:paraphrase_2,correct_hit,correct_hit,Name the writer of the song two tickets to paradise.,Name the writer of the song two tickets to paradise.,answer_accept:answer_entailment
+song-029:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song send in the clowns.,Identify the person who wrote the song send in the clowns.,answer_accept:answer_entailment
+song-000:paraphrase_3,correct_hit,correct_hit,"For the song what if god was one of us, who is credited as its writer?","For the song what if god was one of us, who is credited as its writer?",answer_accept:answer_entailment
+song-053:paraphrase_1,correct_hit,correct_hit,Identify the person who wrote the song hurt by nine inch nails.,Identify the person who wrote the song hurt by nine inch nails.,answer_accept:answer_entailment
+song-041:hard_negative,correct_hit,correct_hit,Name the writer of the song a song for you.,Name the writer of the song a song for you.,answer_accept:answer_entailment
+song-033:original,verifier_false_rejection,verifier_false_rejection,Name the writer of the song it ain't over til it's over.,Name the writer of the song it ain't over til it's over.,answer_verify:uncertain_answer
+song-059:paraphrase_2,correct_hit,correct_hit,Identify the person who wrote the song the man comes around.,Identify the person who wrote the song the man comes around.,answer_accept:answer_entailment
+song-180:hard_negative,correct_hit,correct_hit,Identify the person who wrote the song in spite of ourselves.,"For the song in spite of ourselves, who is credited as its writer?",answer_accept:answer_entailment

@@ -1,0 +1,16 @@
+seed,epsilon,threshold,calibration_n,calibration_accepted,calibration_errors,upper_bound,test_n,test_accepted,test_errors,test_risk_among_served,test_coverage,label_type
+11,0.01,inf,2896,0,0,,1739,0,0,,0.0,gold_answer_match
+11,0.02,inf,2896,0,0,,1739,0,0,,0.0,gold_answer_match
+11,0.05,inf,2896,0,0,,1739,0,0,,0.0,gold_answer_match
+23,0.01,inf,2896,0,0,,1738,0,0,,0.0,gold_answer_match
+23,0.02,inf,2896,0,0,,1738,0,0,,0.0,gold_answer_match
+23,0.05,inf,2896,0,0,,1738,0,0,,0.0,gold_answer_match
+37,0.01,inf,2896,0,0,,1738,0,0,,0.0,gold_answer_match
+37,0.02,inf,2896,0,0,,1738,0,0,,0.0,gold_answer_match
+37,0.05,inf,2896,0,0,,1738,0,0,,0.0,gold_answer_match
+53,0.01,inf,2896,0,0,,1738,0,0,,0.0,gold_answer_match
+53,0.02,inf,2896,0,0,,1738,0,0,,0.0,gold_answer_match
+53,0.05,inf,2896,0,0,,1738,0,0,,0.0,gold_answer_match
+71,0.01,inf,2896,0,0,,1739,0,0,,0.0,gold_answer_match
+71,0.02,inf,2896,0,0,,1739,0,0,,0.0,gold_answer_match
+71,0.05,inf,2896,0,0,,1739,0,0,,0.0,gold_answer_match

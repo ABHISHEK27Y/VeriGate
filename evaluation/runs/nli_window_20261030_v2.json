@@ -1,0 +1,39 @@
+{
+  "schema_version": "pinned-nli-window-v1",
+  "model": "cross-encoder/nli-deberta-v3-xsmall",
+  "revision": "a150876415327c80daeff35ca6f68f5ed8cf5c24",
+  "tokenizer_limit": 512,
+  "cases": [
+    {
+      "word": "a",
+      "assertion_bytes": 339,
+      "combined_tokens": 335,
+      "fits": true
+    },
+    {
+      "word": "q",
+      "assertion_bytes": 339,
+      "combined_tokens": 335,
+      "fits": true
+    },
+    {
+      "word": "xy",
+      "assertion_bytes": 499,
+      "combined_tokens": 655,
+      "fits": false
+    },
+    {
+      "word": "zq",
+      "assertion_bytes": 499,
+      "combined_tokens": 655,
+      "fits": false
+    },
+    {
+      "word": "123",
+      "assertion_bytes": 659,
+      "combined_tokens": 335,
+      "fits": true
+    }
+  ],
+  "source_code_sha256": "a2ec8ed1cca1ebcb0dc559451d82f8c8d6efe9eb5072fed9fe23a7550d7f7bad"
+}

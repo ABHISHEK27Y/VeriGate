@@ -1,0 +1,12 @@
+{
+  "schema": "freshness-technical-holdout-v1",
+  "source": "evaluation/dev/freshness_technical_holdout_v1.tsv",
+  "source_sha256": "7b6c84f7547c7dca6186e9915aaf5e5de53a714af34644663dc507e018213501",
+  "evaluator": "app.cache.volatility.is_volatile (no gateway run)",
+  "stable_n": 14,
+  "stable_false_bypasses": 1,
+  "volatile_n": 10,
+  "volatile_missed": 0,
+  "residual": "tstable_03 live-reload via 'what is the recommended way to' (non-how procedure) not rescued; recorded, not tuned.",
+  "note": "Phrasings disjoint from tests/test_freshness_rules.py. Reports stable false bypasses and volatile misses separately per audit F3/F17."
+}

@@ -108,7 +108,7 @@ def evaluate(threshold: float) -> dict:
         "cost_reduction": 1 - cascade_cost / baseline_cost,
         "quality_retention": hard_kept / N_HARD,  # hard-recall
         "random_retention": f,  # random routing at same rate
-        "precision": tp / (tp + fp) if (tp + fp) else 1.0,
+        "precision": tp / (tp + fp) if (tp + fp) else None,
         "recall": tp / (tp + fn) if (tp + fn) else 0.0,
         "f1": 2 * tp / (2 * tp + fp + fn) if (2 * tp + fp + fn) else 0.0,
     }
@@ -143,7 +143,7 @@ def main() -> None:
     )
 
     with (RESULTS / "cascade.csv").open("w", newline="") as fh:
-        w = csv.DictWriter(fh, fieldnames=list(rows[0].keys()))
+        w = csv.DictWriter(fh, fieldnames=list(rows[0].keys()), lineterminator="\n")
         w.writeheader()
         w.writerows(rows)
 

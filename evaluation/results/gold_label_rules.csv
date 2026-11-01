@@ -1,0 +1,11 @@
+seed,label_rule,label_type,corpus_n,corpus_positive,train_n,train_positive,val_n,val_positive,cal_n,cal_positive,test_n,test_positive
+11,strict,gold_answer_match_strict,11586,6000,5793,2947,1158,623,2896,1522,1739,908
+11,lenient,gold_answer_match_lenient,11586,6535,5793,3219,1158,677,2896,1654,1739,985
+23,strict,gold_answer_match_strict,11586,6000,5793,2994,1159,565,2896,1510,1738,931
+23,lenient,gold_answer_match_lenient,11586,6535,5793,3263,1159,633,2896,1623,1738,1016
+37,strict,gold_answer_match_strict,11586,6000,5793,2973,1159,554,2896,1559,1738,914
+37,lenient,gold_answer_match_lenient,11586,6535,5793,3234,1159,622,2896,1703,1738,976
+53,strict,gold_answer_match_strict,11586,6000,5794,3016,1158,542,2896,1515,1738,927
+53,lenient,gold_answer_match_lenient,11586,6535,5794,3287,1158,596,2896,1666,1738,986
+71,strict,gold_answer_match_strict,11586,6000,5793,2960,1158,629,2896,1531,1739,880
+71,lenient,gold_answer_match_lenient,11586,6535,5793,3217,1158,686,2896,1686,1739,946

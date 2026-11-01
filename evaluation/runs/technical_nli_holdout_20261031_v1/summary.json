@@ -1,0 +1,57 @@
+{
+  "workload_sha256": "a4772f2e8eb068de79ebbaba3a4f86963b94d6aba04938dc7749233f1fceaff2",
+  "policy_version": "4e3733ec95ca4948fd845174c70f477383d27690618bde5df0c41c0ce27bbe3f",
+  "environment": {
+    "rss_initial_bytes": 53080064,
+    "rss_after_embedding_bytes": 567824384,
+    "rss_after_nli_bytes": 794238976,
+    "embedding_load_and_encode_ms": 45607.143,
+    "nli_prewarm_ms": 1892.681
+  },
+  "variants": {
+    "current answer assertion": {
+      "valid_reuse": 6,
+      "valid_denominator": 10,
+      "missed_valid_reuse": 4,
+      "invalid_accepts": 1,
+      "invalid_denominator": 10,
+      "ambiguous_accepts": 4,
+      "ambiguous_verify": 5,
+      "ambiguous_reject": 1,
+      "ambiguous_denominator": 10,
+      "valid_retrieval_failures": 0,
+      "valid_post_retrieval_misses": 4,
+      "decision_reasons": {
+        "answer_entailment": 11,
+        "answer_contradiction_or_irrelevance": 8,
+        "uncertain_answer": 8,
+        "answer_mentioned_in_question": 1,
+        "number_mismatch": 2
+      },
+      "warm_decision_median_ms": 66.569,
+      "warm_decision_p95_ms": 80.681
+    },
+    "experimental question-only NLI input": {
+      "valid_reuse": 8,
+      "valid_denominator": 10,
+      "missed_valid_reuse": 2,
+      "invalid_accepts": 2,
+      "invalid_denominator": 10,
+      "ambiguous_accepts": 8,
+      "ambiguous_verify": 1,
+      "ambiguous_reject": 1,
+      "ambiguous_denominator": 10,
+      "valid_retrieval_failures": 0,
+      "valid_post_retrieval_misses": 2,
+      "decision_reasons": {
+        "answer_entailment": 18,
+        "answer_contradiction_or_irrelevance": 7,
+        "uncertain_answer": 2,
+        "answer_mentioned_in_question": 1,
+        "number_mismatch": 2
+      },
+      "warm_decision_median_ms": 60.098,
+      "warm_decision_p95_ms": 67.811
+    }
+  }
+}

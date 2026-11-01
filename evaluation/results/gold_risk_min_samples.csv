@@ -1,0 +1,4 @@
+epsilon,delta,grid_size,per_threshold_alpha,minimum_accepted_if_zero_errors
+0.01,0.05,10,0.005,528
+0.02,0.05,10,0.005,263
+0.05,0.05,10,0.005,104

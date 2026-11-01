@@ -110,3 +110,125 @@ async def test_existing_vector_schema_mismatch_fails_closed():
     with pytest.raises(RuntimeError, match="Incompatible"):
         await rs.validate_index(settings.embedding_dim + 1)
     assert await rs.redisearch_available()
+
+
+@pytest.mark.asyncio
+async def test_ensure_index_recreates_after_drop_and_fails_closed_on_mismatch():
+    from redis.exceptions import ResponseError  # noqa: PLC0415
+
+    from app.cache import redisearch_store as rs  # noqa: PLC0415
+
+    dim = settings.embedding_dim
+    await rs.ensure_index(dim)
+    await rs.validate_index(dim)
+    # A dropped index (e.g. after a Redis restart) is recreated by ensure_index.
+    async with rs._client() as client:
+        await client.execute_command("FT.DROPINDEX", rs._index())
+    with pytest.raises(ResponseError):
+        await rs.validate_index(dim)
+    await rs.ensure_index(dim)
+    await rs.validate_index(dim)
+    # An incompatible dimension still fails closed rather than silently recreating.
+    with pytest.raises(RuntimeError, match="Incompatible"):
+        await rs.ensure_index(dim + 1)
+
+
+@pytest.mark.asyncio
+async def test_redisearch_tenant_isolation_even_when_unauthorized_ranks_higher():
+    """A shared vector index must never surface another tenant's entry, even when
+    that entry is a closer vector match than the authorized tenant's own (F24)."""
+    from app.cache import redisearch_store as rs  # noqa: PLC0415
+    from app.embeddings import embed  # noqa: PLC0415
+
+    suffix = uuid.uuid4().hex[:12]
+    authorized = f"s_{suffix}_engineering"
+    other_org = f"s_{'0123456789ab'}_engineering"
+    other_employee = f"p_{suffix}_bob"
+    probe = "how do I reset my account password"
+    dim = len(embed(probe))
+    try:
+        await rs.ensure_index(dim)
+        # Authorized workspace holds a paraphrase (less similar); another org and
+        # another employee hold the exact probe text (a closer match) and must
+        # never leak into the authorized tenant's shortlist.
+        await rs.add(
+            "how do I reset my password",
+            "authorized-answer",
+            embed("how do I reset my password"),
+            authorized,
+        )
+        await rs.add(probe, "OTHER-ORG-SECRET", embed(probe), other_org)
+        await rs.add(probe, "OTHER-EMPLOYEE-PRIVATE", embed(probe), other_employee)
+
+        hits = await rs.knn(embed(probe), authorized, k=5, include_key=True)
+        assert hits, "authorized retrieval must still return its own entry"
+        answers = {answer for _query, answer, _sim, _key in hits}
+        assert answers == {"authorized-answer"}
+        assert "OTHER-ORG-SECRET" not in answers
+        assert "OTHER-EMPLOYEE-PRIVATE" not in answers
+        # Every returned key is tenant-scoped (TAG filter + per-row recheck).
+        for _query, _answer, _sim, key in hits:
+            assert key.startswith(f"{rs._namespace()}:entry:{authorized}:")
+
+        # The other tenants can still retrieve their own entries.
+        other_hits = {answer for _q, answer, _s in await rs.knn(embed(probe), other_org, k=5)}
+        assert other_hits == {"OTHER-ORG-SECRET"}
+    finally:
+        for tenant in (authorized, other_org, other_employee):
+            await rs.clear(tenant)
+
+
+_SCOPED_QUOTA_WORKER = """
+import asyncio, json, sys
+from app.cache import storage
+from app.redis_client import create_redis
+async def run():
+    tenant, action = sys.argv[1:]
+    r = create_redis()
+    try:
+        if action in {'a', 'b', 'c'}:
+            await storage.put(r, tenant, action, {'query': action, 'answer': action})
+        elif action == 'touch-a':
+            await storage.touch(r, tenant, 'a')
+        elif action == 'inspect':
+            _, _, prefix = storage.keys(tenant)
+            values = [bool(await r.exists(prefix + eid)) for eid in ('a', 'b', 'c')]
+            print(json.dumps({'live': values, 'occupancy': await storage.occupancy(r, tenant)}))
+        elif action == 'clear':
+            await storage.clear(r, tenant)
+    finally:
+        await r.aclose()
+asyncio.run(run())
+"""
+
+
+def test_scoped_quota_and_hit_recency_across_worker_processes():
+    tenant = "s_" + uuid.uuid4().hex[:16] + "_workers"
+    env = {
+        **os.environ,
+        "SHARED_CACHE_ENTRY_LIMIT": "2",
+        "ORGANIZATION_CACHE_ENTRY_LIMIT": "2",
+    }
+
+    def worker(action):
+        result = subprocess.run(
+            [sys.executable, "-c", _SCOPED_QUOTA_WORKER, tenant, action],
+            env=env,
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=60,
+        )
+        return json.loads(result.stdout) if action == "inspect" else None
+
+    try:
+        worker("a")
+        worker("b")
+        worker("touch-a")
+        worker("c")
+        observed = worker("inspect")
+        assert observed["live"] == [True, False, True]
+        assert observed["occupancy"]["entries"] == 2  # noqa: PLR2004
+        assert observed["occupancy"]["evictions"] == 1
+    finally:
+        worker("clear")

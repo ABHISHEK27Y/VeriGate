@@ -1,0 +1,23 @@
+{
+  "schema": "paired-family-difference-v1",
+  "run": "evaluation/runs/nq_song_stress_20261030_v3",
+  "arm_a": "static_sufficient",
+  "arm_b": "answer_aware_sufficient",
+  "note": "Difference is arm_a - arm_b over the same resampled families. Not a significance test; says nothing about authored-label error.",
+  "metrics": {
+    "suspected_incorrect_hits_per_request": {
+      "difference": 0.036,
+      "ci_low": 0.0030000000000000027,
+      "ci_high": 0.067,
+      "families": 200,
+      "resamples": 2000
+    },
+    "correct_hits_per_request": {
+      "difference": 0.029999999999999916,
+      "ci_low": -0.0040000000000000036,
+      "ci_high": 0.06399999999999995,
+      "families": 200,
+      "resamples": 2000
+    }
+  }
+}

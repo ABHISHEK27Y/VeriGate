@@ -1,0 +1,44 @@
+% Restrained print-safe palette; shapes, not colour, identify notation.
+\definecolor{vgNavy}{HTML}{24415C}
+\definecolor{vgTeal}{HTML}{18776F}
+\definecolor{vgAmber}{HTML}{AA7620}
+\definecolor{vgSlate}{HTML}{526173}
+\usepackage[T1]{fontenc}
+\usepackage{fouriernc}
+\usetikzlibrary{arrows.meta,positioning,calc,fit,shapes.geometric,backgrounds}
+\tikzset{
+  dfdprocess/.style={circle,draw=vgNavy,fill=vgNavy!18,align=center,font=\large,
+    text width=2.45cm,minimum size=3.05cm,inner sep=2pt},
+  dfdentity/.style={rectangle,draw=vgSlate,fill=vgSlate!17,align=center,font=\large,
+    text width=2.55cm,minimum height=1.2cm,inner sep=4pt},
+  dfdstore/.style={draw=none,align=center,font=\large,text width=3cm,
+    minimum height=1cm,inner sep=4pt,
+    append after command={\pgfextra{\draw[black,line width=.6pt]
+      (\tikzlastnode.north west)--(\tikzlastnode.north east)
+      (\tikzlastnode.south west)--(\tikzlastnode.south east);}}},
+  dfdflow/.style={-{Stealth[length=2.5mm]},line width=.7pt},
+  dfdlabel/.style={font=\large,align=center,fill=white,inner sep=1.5pt},
+  fcstart/.style={rectangle,rounded corners=5pt,draw=vgTeal,fill=vgTeal!24,align=center,
+    font=\normalsize,minimum height=9mm,inner sep=4pt},
+  fcstep/.style={rectangle,draw=vgNavy,fill=vgNavy!18,align=center,font=\normalsize,
+    text width=3.25cm,minimum height=10mm,inner sep=4pt},
+  fcdecision/.style={diamond,aspect=2,draw=vgAmber,fill=vgAmber!30,align=center,
+    font=\normalsize,text width=2.45cm,inner sep=1pt},
+  fcarrow/.style={-{Stealth[length=2.5mm]},line width=.7pt},
+  fclabel/.style={font=\normalsize,fill=white,inner sep=1pt},
+  sqhead/.style={rectangle,draw=vgNavy,fill=vgNavy!23,align=center,font=\normalsize,
+    minimum height=9mm,text width=2.3cm,inner sep=2pt},
+  sqlife/.style={densely dashed,draw=vgSlate!65,line width=.55pt},
+  sqcall/.style={-{Stealth[length=2.5mm]},line width=.7pt},
+  sqreply/.style={-{Stealth[length=2.5mm]},dashed,line width=.6pt},
+  sqlabel/.style={font=\normalsize,fill=white,inner sep=1pt},
+  sqframe/.style={draw=black,line width=.6pt,fill=white},
+  sqtag/.style={font=\small,anchor=north west,draw=vgSlate,fill=vgTeal!24,inner sep=2pt},
+  component/.style={rectangle,draw=vgNavy,fill=vgNavy!18,align=center,font=\normalsize,
+    minimum height=10mm,inner sep=5pt},
+  boundary/.style={rectangle,draw=vgSlate,fill=vgSlate!8,inner sep=2pt},
+  link/.style={-{Stealth[length=2.5mm]},line width=.7pt},
+  linklabel/.style={font=\normalsize,fill=white,inner sep=1pt},
+  statelabel/.style={rectangle,rounded corners=3pt,draw=vgNavy,fill=vgNavy!18,
+    align=center,font=\normalsize,minimum height=10mm,inner sep=5pt}
+}

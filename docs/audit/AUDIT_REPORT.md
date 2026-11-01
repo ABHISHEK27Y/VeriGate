@@ -1,5 +1,8 @@
 # VeriGate Production-Readiness Audit Report
 
+> Historical audit record. Dates, counts, and release status below describe the
+> checkout inspected at the time. They are not current deployment approval.
+
 ## Remediation update — 10 October 2026
 
 The sections after this update preserve the original audit evidence. Their original open
@@ -43,8 +46,8 @@ the installed CPU artifact is separately pinned and hash-verified. All installed
 packages are included; the local VeriGate project itself is reviewed as source.
 
 The missing VeriGate Git metadata was restored from its verified GitHub origin on
-10 October, preserving all working source files and keeping the parent Drecovery
-repository untouched.
+10 October, preserving the project source files and keeping unrelated repositories
+untouched.
 
 Final continuation checks: lint and formatting pass, MyPy passes 28 source modules,
 and the final vulnerability scan covers **99 packages with zero known advisories**.
@@ -52,7 +55,7 @@ The final suite reports **50 passed, 4 live Redis tests skipped**, with the prev
 recorded 81% coverage. Package inspection confirms the wheel includes the dashboard.
 
 Git metadata is restored for VeriGate at the original audited HEAD; remediation is
-committed and uploaded on `codex/production-audit-remediation`, with user authorization.
+committed and uploaded for review, with user authorization.
 [Draft PR #1](https://github.com/ABHISHEK27Y/VeriGate/pull/1) targets main.
 The earlier upload approval block has been resolved; no merge or deployment was performed.
 
@@ -86,7 +89,7 @@ Redis Stack have never been tested.
 - Latest complete regression run: **39 passed**, **81% statement coverage**; final verification and artifact results are recorded below and in `audit/evidence/`.
 - Dependency scan: initially **24 advisory records / 14 distinct package-advisory pairs across 3 packages**; updated requirements resolve **59 packages with zero reported advisories**. This is the scanner's result, not a guarantee of no vulnerabilities.
 
-Scope: working tree at `D:\miniProject\verigate`, branch `main`, HEAD `630269b771ede17afdaf1d3a1e56aa418ad7a8fa`. Eighteen paths were already modified at takeover, including core app files and benchmark outputs. Those changes were preserved and built upon; do not attribute the entire Git diff to this audit. A pre-edit snapshot is retained in `audit/evidence/pre-audit-source.zip`.
+Scope: the project checkout at HEAD `630269b771ede17afdaf1d3a1e56aa418ad7a8fa`. Several paths were already modified at takeover, including core app files and benchmark outputs. Those changes were preserved and built upon; do not attribute the entire Git diff to this audit. A pre-edit snapshot is retained in the local audit evidence directory.
 
 Work began **9 October 2026, 19:45 IST**, paused after an approval-service usage limit, and resumed **10 October 2026, 09:53 IST**. More than 30 minutes of active audit work was performed across the sessions; the overnight pause is not counted. No commits, pushes, deployment, or paid upstream calls were made. Local demos used mock providers and cached ML models.
 

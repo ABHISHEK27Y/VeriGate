@@ -1,0 +1,29 @@
+{
+  "schema_version": "answer-policy-run-v1",
+  "run_id": "answer_aware_20261029_v6",
+  "commit": "9d41d1c7d7bf7bd8ef2d14f2a18d79f1c4ea428b",
+  "source_sha256": "b2353fe45c093ddb5d5fafce1dd4c51e93110d2c3ad826472b3d00de6523f44f",
+  "artifact_sha256": "f9d2365021192fe7a78c54a0d250e1c384f416ad3c1818b084c5b89cd276b6a2",
+  "development_sha256": "d03c1fa7b92638a278f363c4a16457d4dcafa58f4335848c172c69297d79b48d",
+  "tuned_static_threshold": 0.27,
+  "artifact_version": "4e3733ec95ca4948fd845174c70f477383d27690618bde5df0c41c0ce27bbe3f",
+  "source_hashes": {
+    "app/cache/answer_policy.py": "a412947d097aec9c14957fed0374a37552eac8174368051afe800206dcc88b76",
+    "app/cache/policy.py": "0d58d431bdf0cc21883d84b8c606ddc60b17634a37798ffe1c0f51c38a887d6e",
+    "app/cache/verifier.py": "381f41d31327cfc431bd918fef015f572c81f9c84a16792ae6a7bcab34e7b415",
+    "app/embeddings.py": "8235c13f0fb91f2dd05ada9ded39adb7baebbe102161e5d69879bede0ca18a53",
+    "scripts/run_answer_policy_study.py": "02c381df08b1d70e59c354be184e0ff154c4c1d91fc5af46164bb9c569fb30ba"
+  },
+  "embedding_backend": "hash",
+  "nli_model": "cross-encoder/nli-deberta-v3-xsmall",
+  "nli_revision": "a150876415327c80daeff35ca6f68f5ed8cf5c24",
+  "cold_model_load_ms": 35823.349399957806,
+  "python": "3.13.2",
+  "machine": "AMD64",
+  "notes": "Warm candidate-decision latency; excludes embedding, retrieval and provider time.",
+  "outputs": {
+    "decisions.csv": "10a729d741ce47c480d3492b5cc8cf53632f200b1ec09939348497c4db40da7a",
+    "metrics.csv": "5f08074f1b14af056c6954fd54b2d646f2848dc8d5f944f835701e0c9ff5f027",
+    "comparison.png": "a0db524394cde2cbcb77a79600f2c9a247180e7ba17a469748d93b5ba1a1847c"
+  }
+}

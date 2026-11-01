@@ -1,0 +1,13 @@
+mode,scenario,n,hits,provider_calls,errors,nli_inference_calls,p50_http_ms,p95_http_ms
+lazy,cold_miss,30,0,30,0,0,164.049,169.511
+lazy,concurrent_identical,8,0,1,0,0,160.423,161.447
+lazy,exact_hit,30,30,0,0,1,12.648,19.735
+lazy,first_nli,1,1,0,0,1,1334.897,1334.897
+lazy,rejected_candidate,30,0,30,0,0,248.141,252.138
+lazy,valid_semantic,30,30,0,0,0,12.418,17.251
+prewarm,cold_miss,30,0,30,0,0,164.183,168.212
+prewarm,concurrent_identical,8,0,1,0,0,151.702,152.502
+prewarm,exact_hit,30,30,0,0,1,12.54,19.201
+prewarm,first_nli,1,1,0,0,1,59.196,59.196
+prewarm,rejected_candidate,30,0,30,0,0,247.514,249.161
+prewarm,valid_semantic,30,30,0,0,0,12.296,14.601

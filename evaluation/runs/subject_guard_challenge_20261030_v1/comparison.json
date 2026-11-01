@@ -1,0 +1,45 @@
+[
+  {
+    "mode": "unchanged",
+    "requests": 41,
+    "completed": 41,
+    "valid_reuse": 19,
+    "valid_denominator": 19,
+    "unnecessary_rejections": 0,
+    "invalid_accepts": 7,
+    "invalid_denominator": 11,
+    "provider_calls": 15,
+    "median_http_ms": 98.342,
+    "p95_http_ms": 167.586,
+    "median_gateway_ms": 94.39,
+    "reasons": {
+      "empty_cache": 1,
+      "answer_accept:answer_entailment": 26,
+      "answer_reject:answer_contradiction_or_irrelevance": 8,
+      "answer_verify:uncertain_answer": 1,
+      "answer_reject:below_retrieval_threshold": 4,
+      "answer_verify:scope_changed": 1
+    }
+  },
+  {
+    "mode": "guarded",
+    "requests": 41,
+    "completed": 41,
+    "valid_reuse": 18,
+    "valid_denominator": 19,
+    "unnecessary_rejections": 1,
+    "invalid_accepts": 0,
+    "invalid_denominator": 11,
+    "provider_calls": 23,
+    "median_http_ms": 79.948,
+    "p95_http_ms": 132.864,
+    "median_gateway_ms": 77.04,
+    "reasons": {
+      "empty_cache": 1,
+      "answer_accept:answer_entailment": 18,
+      "answer_reject:subject_identity_conflict": 15,
+      "answer_reject:below_retrieval_threshold": 4,
+      "answer_reject:answer_contradiction_or_irrelevance": 3
+    }
+  }
+]

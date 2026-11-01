@@ -1,0 +1,32 @@
+\documentclass[tikz,border=6pt]{standalone}
+\input{diagram_styles}
+\definecolor{vgNavy}{HTML}{88421D}\definecolor{vgTeal}{HTML}{B98420}
+\begin{document}
+\begin{tikzpicture}
+
+\node[fcstart] (b) at (0,0) {B: MISS or BYPASS};
+\node[fcstep,text width=4cm] (admit) at (0,-1.5) {Recheck principal; count admitted miss; enforce deadline};
+\node[fcdecision] (ok) at (0,-3.8) {admission valid?};
+\node[fcstart,text width=2.8cm] (error) at (5,-3.8) {Return admission error; no provider call};
+\node[fcstep,text width=4cm] (route) at (0,-6.1) {Select configured provider route; JSON MISS may join local singleflight};
+\node[fcstep,text width=4cm] (events) at (0,-8.1) {Collect provider events within deadline; validate completion};
+\node[fcdecision] (done) at (0,-10.4) {normal complete answer?};
+\node[fcstart,text width=2.8cm] (upstream) at (5,-10.4) {502 / 504; no write};
+\node[fcstep,text width=4cm] (classify) at (0,-12.7) {Classify answer; check route compatibility and storage scope};
+\node[fcdecision] (eligible) at (0,-15) {storage eligible?};
+\node[fcstart,text width=2.8cm] (nostore) at (5,-15) {Return answer + no-store status};
+\node[fcstep,text width=4cm] (write) at (0,-17.3) {Attempt scoped cache write; enforce TTL and capacity limits};
+\node[fcstart,text width=4cm] (result) at (0,-19.4) {Return completed answer + actual storage outcome};
+\draw[fcarrow] (b)--(admit); \draw[fcarrow] (admit)--(ok);
+\draw[fcarrow] (ok.east)--node[fclabel,above]{no}(error);
+\draw[fcarrow] (ok)--node[fclabel,left]{yes}(route);
+\draw[fcarrow] (route)--(events); \draw[fcarrow] (events)--(done);
+\draw[fcarrow] (done.east)--node[fclabel,above]{no}(upstream);
+\draw[fcarrow] (done)--node[fclabel,left]{yes}(classify);
+\draw[fcarrow] (classify)--(eligible);
+\draw[fcarrow] (eligible.east)--node[fclabel,above]{no}(nostore);
+\draw[fcarrow] (eligible)--node[fclabel,left]{yes}(write);
+\draw[fcarrow] (write)--node[fclabel,right]{stored / refused / failed}(result);
+
+\end{tikzpicture}
+\end{document}

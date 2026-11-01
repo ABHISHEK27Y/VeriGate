@@ -1,4 +1,4 @@
-.PHONY: test lint typecheck demo eval clean install
+.PHONY: test lint typecheck demo eval clean install reproduce reproduce-fast review-queue
 
 # Default target
 all: test
@@ -40,6 +40,22 @@ demo-live:
 # Run evaluation
 eval:
 	python -m evaluation.run
+
+reproduce:
+	python scripts/download_evaluation_data.py qqp stsb paws
+	python -m evaluation.reproduce
+	python -m evaluation.train_accept
+	python -m evaluation.stream
+	python -m evaluation.risk_guarantee
+	python scripts/summarize_v2.py
+	python scripts/summarize_experiments.py
+
+reproduce-fast:
+	python -m evaluation.reproduce --fast
+	python scripts/summarize_v2.py
+
+review-queue:
+	python -m scripts.build_answer_review_queue
 
 eval-latency:
 	python -m evaluation.latency

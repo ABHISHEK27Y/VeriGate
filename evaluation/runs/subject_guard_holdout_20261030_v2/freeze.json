@@ -1,0 +1,67 @@
+{
+  "seed": 43627,
+  "source": "https://github.com/google-research-datasets/natural-questions/tree/master/nq_open",
+  "source_license": "CC BY-SA 3.0",
+  "source_sha256": "0c93aaf13b12f855628489665e4ef85ffb8573ad444646f11f4fabdc57a0aabf",
+  "old_workload_sha256": "2ab1c4b696e7acd184278816b2fe194cd8aa3987a7c6f6e22ea9dd55d5e0158f",
+  "selected_source_lines": {
+    "song": [
+      24243,
+      978,
+      49679,
+      73140,
+      85266,
+      796,
+      46703,
+      82921
+    ],
+    "book": [
+      73656,
+      82259,
+      57207,
+      43991,
+      45275,
+      34660,
+      37341,
+      65626
+    ],
+    "film": [
+      2786,
+      19989,
+      61503
+    ],
+    "poem": [
+      740,
+      39723,
+      44080,
+      61180,
+      80212,
+      82560
+    ]
+  },
+  "families": 25,
+  "requests": 100,
+  "policy_sha256": "f9d2365021192fe7a78c54a0d250e1c384f416ad3c1818b084c5b89cd276b6a2",
+  "policy_artifact": "app/cache/artifacts/answer_policy_v1.json",
+  "comparison": {
+    "unchanged": false,
+    "guarded": true
+  },
+  "embedding_model": "all-MiniLM-L6-v2",
+  "embedding_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+  "nli_model": "cross-encoder/nli-deberta-v3-xsmall",
+  "nli_revision": "a150876415327c80daeff35ca6f68f5ed8cf5c24",
+  "settings": {
+    "unchanged": {
+      "cache_ttl_sec": 86400,
+      "max_cache_entries_per_tenant": 256
+    },
+    "guarded": {
+      "cache_ttl_sec": 86400,
+      "max_cache_entries_per_tenant": 256
+    }
+  },
+  "workload_sha256": "e21ab109f55bc8ab12b419ce22b7a0f5315e6d42c57dd25410dadedc292451d5",
+  "provider_answers_sha256": "dd29f108ce341e9f918b9e7b977c2831c0bbf987a72c5ae798b85f8d2725c08a",
+  "label_limit": "Authored transformations of NQ references; no independent review."
+}

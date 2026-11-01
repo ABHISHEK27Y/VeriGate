@@ -7,31 +7,31 @@ This scaffold runs with **only Python** — no Redis install, no API keys, no Do
 ## 1. Run it (Windows, PowerShell)
 
 ```powershell
-cd "D:\miniProject\7th sem\llm-gateway"
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+cd "D:\miniProject\verigate"
+uv venv --seed --python 3.11 .venv-project
+.\.venv-project\Scripts\python.exe -m pip install --require-hashes --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.lock
+.\.venv-project\Scripts\python.exe -m pip install --no-deps --no-build-isolation -e .
 ```
 
 Then:
 
 ```powershell
 # A) Run the automated tests (proves each guarantee)
-pytest -q
+.\.venv-project\Scripts\python.exe -m pytest -q
 
 # B) Run the human-friendly demo (see MISS/HIT/reject/bypass/429 printed)
-python demo.py
+.\.venv-project\Scripts\python.exe demo.py
 
 # B2) Run the SEMANTIC demo (real MiniLM model; first run downloads ~90MB).
 #     Shows a paraphrase with different words HITTING, and the Austria/Australia trap
 #     being avoided -- things the fast hashing embedder cannot do.
-python demo_semantic.py
+.\.venv-project\Scripts\python.exe demo_semantic.py
 
 # C) Run it as a real HTTP server
-uvicorn app.main:app --reload
+.\.venv-project\Scripts\python.exe -m uvicorn app.main:app --reload
 #   -> open http://127.0.0.1:8000/ui      (interactive DASHBOARD - test everything with clicks)
 #   -> open http://127.0.0.1:8000/health
-#   -> open http://127.0.0.1:8000/metrics
+#   -> GET /metrics with Authorization: Bearer <METRICS_TOKEN>
 #   -> open http://127.0.0.1:8000/docs    (interactive API, try requests in the browser)
 ```
 
@@ -136,7 +136,7 @@ Everything shared is centralized there so the gateway can scale to many replicas
 limiting; the adaptive + self-verifying (Tier-1 + opt-in Tier-2 NLI) + staleness-aware
 semantic cache with **real MiniLM embeddings**; **two vector backends** (in-process NumPy
 default, or `VECTOR_BACKEND=redisearch` on Redis Stack — both verified); Prometheus metrics;
-a 12-test suite; demos; and a full **evaluation harness** (accuracy + latency figures). See
+a test suite; demos; and a small candidate-pair evaluation fixture. See
 `docs/RESULTS_LOG.md` for phase-by-phase results.
 
 **Next (see `docs/IMPLEMENTATION_ROADMAP.md`):** bigger benchmark dataset, circuit breaker,

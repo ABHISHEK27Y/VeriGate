@@ -14,6 +14,7 @@ from .base import Provider
 
 class MockProvider(Provider):
     name = "mock"
+    implicit_completion_is_safe = True
     price_per_1k_input = 0.0
     price_per_1k_output = 0.0
 

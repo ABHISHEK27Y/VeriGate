@@ -1,0 +1,18 @@
+[
+  {"id":"author_valid","stored":"Who wrote Hamlet?","answer":"William Shakespeare","incoming":"Who is the author of Hamlet?","valid":true,"category":"paraphrase"},
+  {"id":"author_invalid","stored":"Who wrote Hamlet?","answer":"William Shakespeare","incoming":"Who wrote Macbeth?","valid":true,"category":"same_author"},
+  {"id":"director_swap","stored":"Who directed Titanic (1997)?","answer":"James Cameron","incoming":"Who directed Inception (2010)?","valid":false,"category":"entity"},
+  {"id":"director_paraphrase","stored":"Who directed Titanic (1997)?","answer":"James Cameron","incoming":"Name the director of the 1997 film Titanic.","valid":true,"category":"paraphrase"},
+  {"id":"date_valid","stored":"In what year did Apollo 11 land on the Moon?","answer":"1969","incoming":"What year was the Apollo 11 Moon landing?","valid":true,"category":"date"},
+  {"id":"date_invalid","stored":"In what year did Apollo 11 land on the Moon?","answer":"1969","incoming":"In what year did Apollo 13 launch?","valid":false,"category":"date"},
+  {"id":"role_invalid","stored":"Who directed The Godfather?","answer":"Francis Ford Coppola","incoming":"Who wrote the novel The Godfather?","valid":false,"category":"role"},
+  {"id":"role_valid","stored":"Who directed The Godfather?","answer":"Francis Ford Coppola","incoming":"Who was the film director of The Godfather?","valid":true,"category":"paraphrase"},
+  {"id":"tense_invalid","stored":"Who is the president of the club?","answer":"Alice","incoming":"Who was the president of the club in 2010?","valid":false,"category":"tense"},
+  {"id":"tense_valid","stored":"Who was the president of the club in 2010?","answer":"Alice","incoming":"Name the club president in 2010.","valid":true,"category":"tense"},
+  {"id":"ambiguous","stored":"What is the capital of Georgia?","answer":"Tbilisi","incoming":"What is the capital of Georgia?","valid":null,"category":"ambiguous"},
+  {"id":"state_invalid","stored":"What is the capital of Georgia the country?","answer":"Tbilisi","incoming":"What is the capital of Georgia the US state?","valid":false,"category":"ambiguous"},
+  {"id":"state_valid","stored":"What is the capital of Georgia the US state?","answer":"Atlanta","incoming":"Name the capital city of the US state of Georgia.","valid":true,"category":"paraphrase"},
+  {"id":"number_invalid","stored":"How many moons does Earth have?","answer":"One","incoming":"How many moons does Mars have?","valid":false,"category":"number"},
+  {"id":"number_valid","stored":"How many moons does Earth have?","answer":"One","incoming":"What is the number of Earth's natural moons?","valid":true,"category":"paraphrase"},
+  {"id":"actor_invalid","stored":"Who played Tom Robinson in To Kill a Mockingbird?","answer":"Brock Peters","incoming":"Who played Dill Harris in To Kill a Mockingbird?","valid":false,"category":"entity"}
+]

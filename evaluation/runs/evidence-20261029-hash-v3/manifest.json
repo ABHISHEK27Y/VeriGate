@@ -1,0 +1,43 @@
+{
+  "schema_version": "directional-replay-bundle-v1",
+  "run_id": "evidence-20261029-hash-v3",
+  "git_head_before_run": "b7e51eec9f3ad1e9d32e39e7948c3fb9f2c315ae",
+  "dirty_source_sha256": {
+    "app/cache/policy.py": "6f110fbc9d330b080930de555b5ce2c0a828d2da9c5ff84071950d48aa613c4c",
+    "app/cache/verifier.py": "cf186b88a4d31436f1c42b3c78837fab51d5a54612a2494da7cb7f1247bfc610",
+    "app/cache/namespace.py": "4571d92078647bd9e6e3bd9249dcc212849e77ce9b03ff8acd7c0a4eecc42aca",
+    "evaluation/gold_answers.py": "ef494dcd5a12dcd3e0e253eb046c009ea3c3cec941bc769b5bc43b63d5a3e79e",
+    "evaluation/stream.py": "66248059e0faad1cca8078a6458ceaf7eaa71d164e05c6780a153da2fc6602d9",
+    "evaluation/stream_gold.py": "1b2a0763dbeeb549e2ccfa89a9824a09b676f195999ce1162c737d2873cb6136",
+    "scripts/bundle_directional_replay.py": "8800aa509931e2dcbbaba42ac536acc9a88497b8891b033833cb70002de778f7"
+  },
+  "input": {
+    "path": "data/answer_pairs_directional.tsv",
+    "sha256": "452b5eb198c08eb345481dfa39649eb8bf03513114563edf88dfdfa4aee47014",
+    "label_type": "cached_answer_reference_match",
+    "source": "NQ-open historical pair selection; directional reference-string relabel"
+  },
+  "policy_version": "token-diff-v2",
+  "embedding_backend": "hash",
+  "request_count": 1500,
+  "seed": 11,
+  "capacity_per_tenant": [
+    10,
+    100
+  ],
+  "ttl_steps": 500,
+  "tenant_count": 3,
+  "command": "EMBEDDING_BACKEND=hash python -m scripts.bundle_directional_replay evidence-20261029-hash-v3",
+  "environment": {
+    "python": "3.13.2",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "processor": "AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD"
+  },
+  "elapsed_seconds_including_plot": 3.02828019997105,
+  "artifacts_sha256": {
+    "directional_stream_hash.csv": "86f1e932def8cfe5b572717dd8e5ad618772d05a27dc9479bb6e58a580a72047",
+    "directional_stream_hash.png": "2bf2775c0287be6da7126fedb336be44afe121f8b03f49c70ae9f11d3ec178f8",
+    "answer_label_audit.json": "39e06294de66ddc43efc5880dd91079231cd21a8970ff9909c116b29b2befc46"
+  },
+  "limit": "Mocked reference responses and lexical vectors; no provider cost or answer truth"
+}

@@ -1,0 +1,17 @@
+{
+  "seeds": [
+    11,
+    23,
+    37,
+    53,
+    71
+  ],
+  "datasets": {
+    "smoke_development_only": "5bd0088f9348c3590c5bb9df6d13dbab9e13827c603dc98d52e5c4a1f6c0ef5c",
+    "qqp": "16426c42644d925b1720834f9558851ccf62170d11e4ecef2b3f312a51ac479b",
+    "paws": "e3bc3eca1f53d4435b3e5a71e709661d6b7cb88df2a03f2a7e8a1ee42071f416",
+    "stsb": "54e49679bff612a71875423b3bc2e5f9a5dc172d9cec00893c1c962f86463c38"
+  },
+  "label_type": "query_pair_proxy",
+  "mode": "full"
+}

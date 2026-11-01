@@ -1,0 +1,18 @@
+\documentclass[tikz,border=6pt]{standalone}
+\input{diagram_styles}
+\begin{document}
+\begin{tikzpicture}
+\node[boundary,minimum width=10cm,minimum height=7cm] (system) at (5,0) {};
+\node[anchor=north,font=\normalsize] at (5,3.35) {VeriGate gateway};
+\node[dfdentity] (client) at (-2,1.2) {\textless\textless actor\textgreater\textgreater\\Integrated client\\application};
+\node[dfdentity] (operator) at (12,-1) {\textless\textless actor\textgreater\textgreater\\Operator / admin};
+\node[draw=vgNavy,fill=vgTeal!18,ellipse,align=center,font=\normalsize,minimum width=3.7cm] (ask) at (4,1.5) {Request technical answer};
+\node[draw=vgNavy,fill=vgTeal!18,ellipse,align=center,font=\normalsize,minimum width=3.7cm] (occupancy) at (7,-.4) {Inspect cache occupancy};
+\node[draw=vgNavy,fill=vgTeal!18,ellipse,align=center,font=\normalsize,minimum width=3.7cm] (clear) at (3,-1.7) {Clear own private cache};
+\node[draw=vgNavy,fill=vgTeal!18,ellipse,align=center,font=\normalsize,minimum width=3.7cm] (health) at (7,-2.7) {Inspect health / metrics};
+\draw[-,line width=.7pt] (client)--(ask);
+\draw[-,line width=.7pt] (operator)--(occupancy);
+\draw[-,line width=.7pt] (operator)--(clear);
+\draw[-,line width=.7pt] (operator)--(health);
+\end{tikzpicture}
+\end{document}

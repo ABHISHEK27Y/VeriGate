@@ -1,0 +1,97 @@
+{
+  "run_id": "86fcff4b7cfc61ef",
+  "kind": "generated_capacity_fixture_not_answer_evidence",
+  "environment": {
+    "platform": "Windows-11-10.0.26300-SP0",
+    "python": "3.13.2"
+  },
+  "redis_version": "7.4.7",
+  "dimension": 384,
+  "answer_bytes": 184,
+  "sample_payload_bytes": 1810,
+  "ttl_seconds": 3600,
+  "write_failures": 0,
+  "write_error": null,
+  "script_sha256": "233a60fa9ee02883f92b6e1d74d5f984e6c13ed3c65c6724ad66a9b46b017c90",
+  "rows": [
+    {
+      "entries_requested": 0,
+      "entries_live": 0,
+      "redis_used_memory_bytes": 4262368,
+      "tenant_hash_memory_bytes": 0,
+      "index_vector_memory_bytes": 0,
+      "index_documents": 0,
+      "lookup_samples": 0,
+      "lookup_median_ms": null,
+      "lookup_p95_ms": null,
+      "evictions": 0,
+      "write_failures": 0
+    },
+    {
+      "entries_requested": 100,
+      "entries_live": 100,
+      "redis_used_memory_bytes": 6735312,
+      "tenant_hash_memory_bytes": 246400,
+      "index_vector_memory_bytes": 1812348,
+      "index_documents": 100,
+      "lookup_samples": 20,
+      "lookup_median_ms": 13.728,
+      "lookup_p95_ms": 17.419,
+      "evictions": 0,
+      "write_failures": 0
+    },
+    {
+      "entries_requested": 500,
+      "entries_live": 500,
+      "redis_used_memory_bytes": 8472072,
+      "tenant_hash_memory_bytes": 1232000,
+      "index_vector_memory_bytes": 1882856,
+      "index_documents": 500,
+      "lookup_samples": 20,
+      "lookup_median_ms": 18.375,
+      "lookup_p95_ms": 22.591,
+      "evictions": 0,
+      "write_failures": 0
+    },
+    {
+      "entries_requested": 1000,
+      "entries_live": 1000,
+      "redis_used_memory_bytes": 10599680,
+      "tenant_hash_memory_bytes": 2464000,
+      "index_vector_memory_bytes": 1974672,
+      "index_documents": 1000,
+      "lookup_samples": 20,
+      "lookup_median_ms": 13.85,
+      "lookup_p95_ms": 17.036,
+      "evictions": 0,
+      "write_failures": 0
+    },
+    {
+      "entries_requested": 2500,
+      "entries_live": 2500,
+      "redis_used_memory_bytes": 21343424,
+      "tenant_hash_memory_bytes": 6160000,
+      "index_vector_memory_bytes": 5834968,
+      "index_documents": 2500,
+      "lookup_samples": 20,
+      "lookup_median_ms": 14.607,
+      "lookup_p95_ms": 15.858,
+      "evictions": 0,
+      "write_failures": 0
+    },
+    {
+      "entries_requested": 5000,
+      "entries_live": 5000,
+      "redis_used_memory_bytes": 36288000,
+      "tenant_hash_memory_bytes": 12320000,
+      "index_vector_memory_bytes": 9827032,
+      "index_documents": 5000,
+      "lookup_samples": 20,
+      "lookup_median_ms": 15.365,
+      "lookup_p95_ms": 17.086,
+      "evictions": 0,
+      "write_failures": 0
+    }
+  ],
+  "note": "Redis total memory includes pre-existing data and index overhead; compare deltas within this run. Payload bytes exclude Redis keys, quota metadata, and index overhead. Lookup times are 20 warm queries per nonzero checkpoint."
+}

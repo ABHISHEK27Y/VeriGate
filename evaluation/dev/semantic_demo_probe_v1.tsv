@@ -1,0 +1,13 @@
+case_id	seed	incoming_query	expected_reuse	category
+valid_author_1	Pride and Prejudice	Who was the author of Pride and Prejudice, the novel?	true	paraphrase
+valid_author_2	Pride and Prejudice	Name the novelist who wrote Pride and Prejudice.	true	paraphrase
+valid_apollo_1	Apollo 11	What was the year when Apollo 11 landed on the Moon?	true	paraphrase
+valid_apollo_2	Apollo 11	Which year did Apollo 11 make its Moon landing?	true	paraphrase
+valid_planet_1	Red Planet	What planet is called the Red Planet?	true	paraphrase
+valid_planet_2	Red Planet	Name the planet referred to as the Red Planet.	true	paraphrase
+unsafe_author_1	Pride and Prejudice	Who wrote the novel Jane Eyre?	false	changed_entity
+unsafe_author_2	Pride and Prejudice	Who wrote the screenplay of the Pride and Prejudice film?	false	changed_role
+unsafe_apollo_1	Apollo 11	In what year did Apollo 17 land on the Moon?	false	changed_number
+unsafe_apollo_2	Apollo 11	In which year did Apollo 15 make a Moon landing?	false	changed_number
+unsafe_planet_1	Red Planet	Which planet is called the Morning Star?	false	changed_attribute
+unsafe_planet_2	Red Planet	Name the planet known as the Blue Planet.	false	changed_attribute

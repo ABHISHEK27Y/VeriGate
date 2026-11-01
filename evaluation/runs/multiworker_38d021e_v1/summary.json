@@ -1,0 +1,14 @@
+{
+  "same_tenant_hit": "HIT",
+  "other_tenant_miss": "MISS",
+  "invalidation_miss": "MISS",
+  "rate_denied_status": 429,
+  "budget_denied_status": 429,
+  "duplicate_trials": 3,
+  "duplicate_provider_calls": [
+    2,
+    2,
+    2
+  ],
+  "errors": 0
+}

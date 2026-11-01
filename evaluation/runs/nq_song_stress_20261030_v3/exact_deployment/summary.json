@@ -1,0 +1,17 @@
+{
+  "policy": "exact",
+  "capacity": "deployment",
+  "requests": 1000,
+  "completed": 1000,
+  "failed": 0,
+  "outcomes": {
+    "cold_miss": 197,
+    "retrieval_miss": 599,
+    "bypass": 15,
+    "expiry_or_eviction_miss": 189
+  },
+  "reuse_opportunities": 599,
+  "successful_reuse_per_opportunity": 0.0,
+  "provider_calls": 1000,
+  "startup_ms": 5049.921
+}

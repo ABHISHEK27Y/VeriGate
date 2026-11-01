@@ -1,0 +1,16 @@
+{
+  "schema_version": "close-neighbor-freeze-v1",
+  "source": "NQ-Open original dev split",
+  "source_sha256": "f15567f38099f3615f5b8a685c0aef449c11ad90d3da3735e8d1b98115b40616",
+  "license": "CC BY-SA 3.0",
+  "minimum_minilm_cosine": 0.7,
+  "proxy_positive_pairs": 20,
+  "proxy_negative_pairs": 20,
+  "selection_seed": "close-pilot-v1",
+  "question_exclusions": "authored development and held-out cases, mined NQ train pairs, and random NQ dev pilot v1",
+  "embedding_model": "all-MiniLM-L6-v2",
+  "embedding_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+  "answer_policy_artifact_sha256": "f9d2365021192fe7a78c54a0d250e1c384f416ad3c1818b084c5b89cd276b6a2",
+  "label_type": "nq_directional_reference_proxy",
+  "limitations": "Reference-answer membership is not a human judgment of the specific cached answer; selected balance is not deployment prevalence. Diagnostic only; no final-test claim."
+}

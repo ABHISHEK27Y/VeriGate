@@ -1,0 +1,1679 @@
+[
+  {
+    "variant": "applicability_on",
+    "family": "gitlab_release",
+    "query": "What is the way to deploy the GitLab pipeline to staging?",
+    "label": "valid",
+    "suitable_queries": [
+      "How do I deploy the GitLab pipeline to staging?"
+    ],
+    "retrieved_suitable_ranks": [
+      1
+    ],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": "How do I deploy the GitLab pipeline to staging?",
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_verify:uncertain_answer",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.9891,
+        "action": "VERIFY",
+        "reason": "uncertain_answer",
+        "verifier_status": "scored",
+        "nli_score": 0.8868414759635925,
+        "elapsed_ms": 76.888
+      },
+      {
+        "rank": 2,
+        "similarity": 0.914,
+        "action": "REJECT",
+        "reason": "applicability_environment_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.55
+      },
+      {
+        "rank": 3,
+        "similarity": 0.8454,
+        "action": "REJECT",
+        "reason": "applicability_action_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.422
+      }
+    ],
+    "similarity": 0.989086151123,
+    "stage_latency_ms": {
+      "exact_lookup": 0.815,
+      "embedding_queue": 0.005,
+      "embedding_execution": 14.112,
+      "embedding": 14.173,
+      "retrieval": 4.794,
+      "verifier_queue": 0.013,
+      "verifier_execution": 77.624,
+      "policy_decision": 77.888,
+      "cache_lookup": 98.006,
+      "admission": 0.071,
+      "provider": 7.428,
+      "cache_write": 21.974
+    },
+    "gateway_latency_ms": 127.98,
+    "http_latency_ms": 134.904
+  },
+  {
+    "variant": "applicability_on",
+    "family": "gitlab_release",
+    "query": "How can I release the GitLab pipeline to stage?",
+    "label": "valid",
+    "suitable_queries": [
+      "How do I deploy the GitLab pipeline to staging?"
+    ],
+    "retrieved_suitable_ranks": [
+      2
+    ],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": "How do I deploy the GitLab pipeline to production?",
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_reject:applicability_environment_conflict",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.8457,
+        "action": "REJECT",
+        "reason": "applicability_environment_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.591
+      },
+      {
+        "rank": 2,
+        "similarity": 0.823,
+        "action": "REJECT",
+        "reason": "answer_contradiction_or_irrelevance",
+        "verifier_status": "scored",
+        "nli_score": 0.01609872281551361,
+        "elapsed_ms": 71.343
+      },
+      {
+        "rank": 3,
+        "similarity": 0.7869,
+        "action": "REJECT",
+        "reason": "applicability_action_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.536
+      }
+    ],
+    "similarity": 0.845709085464,
+    "stage_latency_ms": {
+      "exact_lookup": 0.824,
+      "embedding_queue": 0.004,
+      "embedding_execution": 15.201,
+      "embedding": 15.243,
+      "retrieval": 5.056,
+      "verifier_queue": 0.009,
+      "verifier_execution": 72.28,
+      "policy_decision": 72.499,
+      "cache_lookup": 93.804,
+      "admission": 0.07,
+      "provider": 7.649,
+      "cache_write": 22.371
+    },
+    "gateway_latency_ms": 124.32,
+    "http_latency_ms": 128.536
+  },
+  {
+    "variant": "applicability_on",
+    "family": "gitlab_release",
+    "query": "How do I preview the GitLab pipeline in staging?",
+    "label": "valid",
+    "suitable_queries": [
+      "How do I preview the GitLab pipeline for staging?"
+    ],
+    "retrieved_suitable_ranks": [
+      1
+    ],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "HIT",
+    "selected_cached_query": "How do I preview the GitLab pipeline for staging?",
+    "valid_reuse": true,
+    "incorrect_accept": false,
+    "provider_invoked": false,
+    "provider": "cache",
+    "reason": "answer_accept:answer_entailment",
+    "candidate_count": 3,
+    "selected_rank": 1,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.9965,
+        "action": "ACCEPT",
+        "reason": "answer_entailment",
+        "verifier_status": "scored",
+        "nli_score": 0.9835442900657654,
+        "elapsed_ms": 72.149
+      },
+      {
+        "rank": 2,
+        "similarity": 0.8409,
+        "action": "REJECT",
+        "reason": "applicability_action_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.544
+      },
+      {
+        "rank": 3,
+        "similarity": 0.7616,
+        "action": "REJECT",
+        "reason": "applicability_environment_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.442
+      }
+    ],
+    "similarity": 0.99648839235306,
+    "stage_latency_ms": {
+      "exact_lookup": 0.963,
+      "embedding_queue": 0.004,
+      "embedding_execution": 16.211,
+      "embedding": 16.258,
+      "retrieval": 5.573,
+      "verifier_queue": 0.01,
+      "verifier_execution": 72.915,
+      "policy_decision": 73.158,
+      "candidate_identity": 1.451,
+      "cache_lookup": 98.735
+    },
+    "gateway_latency_ms": 99.27,
+    "http_latency_ms": 103.798
+  },
+  {
+    "variant": "applicability_on",
+    "family": "gitlab_release",
+    "query": "How do I deploy the GitLab pipeline to QA?",
+    "label": "invalid",
+    "suitable_queries": [],
+    "retrieved_suitable_ranks": [],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": "How do I deploy the GitLab pipeline to production?",
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_reject:applicability_environment_conflict",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.8592,
+        "action": "REJECT",
+        "reason": "applicability_environment_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.588
+      },
+      {
+        "rank": 2,
+        "similarity": 0.8152,
+        "action": "REJECT",
+        "reason": "applicability_environment_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.504
+      },
+      {
+        "rank": 3,
+        "similarity": 0.6777,
+        "action": "REJECT",
+        "reason": "applicability_environment_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.478
+      }
+    ],
+    "similarity": 0.8591964840890001,
+    "stage_latency_ms": {
+      "exact_lookup": 0.912,
+      "embedding_queue": 0.003,
+      "embedding_execution": 43.491,
+      "embedding": 43.532,
+      "retrieval": 5.914,
+      "verifier_queue": 0.009,
+      "verifier_execution": 1.408,
+      "policy_decision": 1.59,
+      "cache_lookup": 52.098,
+      "admission": 0.097,
+      "provider": 6.629,
+      "cache_write": 64.346
+    },
+    "gateway_latency_ms": 123.72,
+    "http_latency_ms": 127.954
+  },
+  {
+    "variant": "applicability_on",
+    "family": "gitlab_release",
+    "query": "How do I deploy the GitLab pipeline?",
+    "label": "ambiguous",
+    "suitable_queries": [],
+    "retrieved_suitable_ranks": [],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": "How do I deploy the GitLab pipeline to production?",
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_verify:applicability_environment_missing",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.9623,
+        "action": "VERIFY",
+        "reason": "applicability_environment_missing",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.627
+      },
+      {
+        "rank": 2,
+        "similarity": 0.9059,
+        "action": "VERIFY",
+        "reason": "applicability_environment_missing",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.448
+      },
+      {
+        "rank": 3,
+        "similarity": 0.7497,
+        "action": "VERIFY",
+        "reason": "applicability_environment_missing",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.438
+      }
+    ],
+    "similarity": 0.9622785449028,
+    "stage_latency_ms": {
+      "exact_lookup": 0.921,
+      "embedding_queue": 0.004,
+      "embedding_execution": 16.214,
+      "embedding": 16.256,
+      "retrieval": 6.528,
+      "verifier_queue": 0.009,
+      "verifier_execution": 1.343,
+      "policy_decision": 1.533,
+      "cache_lookup": 25.385,
+      "admission": 0.069,
+      "provider": 6.998,
+      "cache_write": 22.57
+    },
+    "gateway_latency_ms": 55.45,
+    "http_latency_ms": 59.83
+  },
+  {
+    "variant": "applicability_on",
+    "family": "postgresql_restore",
+    "query": "What is the process to restore the PostgreSQL database in stage?",
+    "label": "valid",
+    "suitable_queries": [
+      "How do I restore the PostgreSQL database in staging?"
+    ],
+    "retrieved_suitable_ranks": [
+      2
+    ],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": "How do I restore the PostgreSQL database in production?",
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_reject:applicability_environment_conflict",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.8808,
+        "action": "REJECT",
+        "reason": "applicability_environment_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.649
+      },
+      {
+        "rank": 2,
+        "similarity": 0.8272,
+        "action": "VERIFY",
+        "reason": "uncertain_answer",
+        "verifier_status": "scored",
+        "nli_score": 0.4994366466999054,
+        "elapsed_ms": 79.672
+      },
+      {
+        "rank": 3,
+        "similarity": 0.7006,
+        "action": "REJECT",
+        "reason": "applicability_action_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.566
+      }
+    ],
+    "similarity": 0.880814313889,
+    "stage_latency_ms": {
+      "exact_lookup": 1.155,
+      "embedding_queue": 0.004,
+      "embedding_execution": 18.128,
+      "embedding": 18.171,
+      "retrieval": 4.947,
+      "verifier_queue": 0.011,
+      "verifier_execution": 80.69,
+      "policy_decision": 80.909,
+      "cache_lookup": 105.336,
+      "admission": 0.069,
+      "provider": 7.638,
+      "cache_write": 34.642
+    },
+    "gateway_latency_ms": 148.2,
+    "http_latency_ms": 152.771
+  },
+  {
+    "variant": "applicability_on",
+    "family": "postgresql_restore",
+    "query": "How can I recover the PostgreSQL database in staging?",
+    "label": "valid",
+    "suitable_queries": [
+      "How do I restore the PostgreSQL database in staging?"
+    ],
+    "retrieved_suitable_ranks": [
+      1
+    ],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "HIT",
+    "selected_cached_query": "How do I restore the PostgreSQL database in staging?",
+    "valid_reuse": true,
+    "incorrect_accept": false,
+    "provider_invoked": false,
+    "provider": "cache",
+    "reason": "answer_accept:answer_entailment",
+    "candidate_count": 3,
+    "selected_rank": 1,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.9448,
+        "action": "ACCEPT",
+        "reason": "answer_entailment",
+        "verifier_status": "scored",
+        "nli_score": 0.916978657245636,
+        "elapsed_ms": 77.595
+      },
+      {
+        "rank": 2,
+        "similarity": 0.8608,
+        "action": "REJECT",
+        "reason": "applicability_action_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.57
+      },
+      {
+        "rank": 3,
+        "similarity": 0.7774,
+        "action": "REJECT",
+        "reason": "applicability_environment_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.491
+      }
+    ],
+    "similarity": 0.9447857141495,
+    "stage_latency_ms": {
+      "exact_lookup": 0.872,
+      "embedding_queue": 0.004,
+      "embedding_execution": 16.987,
+      "embedding": 17.028,
+      "retrieval": 4.933,
+      "verifier_queue": 0.009,
+      "verifier_execution": 78.455,
+      "policy_decision": 78.682,
+      "candidate_identity": 1.883,
+      "cache_lookup": 105.032
+    },
+    "gateway_latency_ms": 105.49,
+    "http_latency_ms": 109.906
+  },
+  {
+    "variant": "applicability_on",
+    "family": "postgresql_restore",
+    "query": "How do I backup the PostgreSQL database in staging safely?",
+    "label": "valid",
+    "suitable_queries": [
+      "How do I backup the PostgreSQL database in staging?"
+    ],
+    "retrieved_suitable_ranks": [
+      1
+    ],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": "How do I backup the PostgreSQL database in staging?",
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_reject:answer_contradiction_or_irrelevance",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.9422,
+        "action": "REJECT",
+        "reason": "answer_contradiction_or_irrelevance",
+        "verifier_status": "scored",
+        "nli_score": 0.0041797650046646595,
+        "elapsed_ms": 80.771
+      },
+      {
+        "rank": 2,
+        "similarity": 0.8448,
+        "action": "REJECT",
+        "reason": "answer_contradiction_or_irrelevance",
+        "verifier_status": "scored",
+        "nli_score": 0.004293899517506361,
+        "elapsed_ms": 78.083
+      },
+      {
+        "rank": 3,
+        "similarity": 0.6986,
+        "action": "REJECT",
+        "reason": "applicability_environment_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.498
+      }
+    ],
+    "similarity": 0.9421562552452,
+    "stage_latency_ms": {
+      "exact_lookup": 0.961,
+      "embedding_queue": 0.004,
+      "embedding_execution": 16.772,
+      "embedding": 16.814,
+      "retrieval": 5.373,
+      "verifier_queue": 0.009,
+      "verifier_execution": 159.141,
+      "policy_decision": 159.372,
+      "cache_lookup": 182.666,
+      "admission": 0.073,
+      "provider": 7.853,
+      "cache_write": 22.322
+    },
+    "gateway_latency_ms": 213.34,
+    "http_latency_ms": 217.61
+  },
+  {
+    "variant": "applicability_on",
+    "family": "postgresql_restore",
+    "query": "How do I restore the PostgreSQL database in development?",
+    "label": "invalid",
+    "suitable_queries": [],
+    "retrieved_suitable_ranks": [],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": "How do I restore the PostgreSQL database in production?",
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_reject:applicability_environment_conflict",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.9369,
+        "action": "REJECT",
+        "reason": "applicability_environment_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.623
+      },
+      {
+        "rank": 2,
+        "similarity": 0.7901,
+        "action": "REJECT",
+        "reason": "applicability_environment_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.504
+      },
+      {
+        "rank": 3,
+        "similarity": 0.6682,
+        "action": "REJECT",
+        "reason": "applicability_environment_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.508
+      }
+    ],
+    "similarity": 0.9368914961815,
+    "stage_latency_ms": {
+      "exact_lookup": 0.913,
+      "embedding_queue": 0.003,
+      "embedding_execution": 16.012,
+      "embedding": 16.053,
+      "retrieval": 4.934,
+      "verifier_queue": 0.008,
+      "verifier_execution": 1.483,
+      "policy_decision": 1.653,
+      "cache_lookup": 23.701,
+      "admission": 0.08,
+      "provider": 6.542,
+      "cache_write": 38.111
+    },
+    "gateway_latency_ms": 68.96,
+    "http_latency_ms": 73.553
+  },
+  {
+    "variant": "applicability_on",
+    "family": "postgresql_restore",
+    "query": "How do I restore the PostgreSQL database?",
+    "label": "ambiguous",
+    "suitable_queries": [],
+    "retrieved_suitable_ranks": [],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": "How do I restore the PostgreSQL database in production?",
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_verify:applicability_environment_missing",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.9061,
+        "action": "VERIFY",
+        "reason": "applicability_environment_missing",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.648
+      },
+      {
+        "rank": 2,
+        "similarity": 0.7894,
+        "action": "VERIFY",
+        "reason": "applicability_environment_missing",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.527
+      },
+      {
+        "rank": 3,
+        "similarity": 0.6382,
+        "action": "VERIFY",
+        "reason": "applicability_environment_missing",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.476
+      }
+    ],
+    "similarity": 0.9061323404312001,
+    "stage_latency_ms": {
+      "exact_lookup": 0.913,
+      "embedding_queue": 0.004,
+      "embedding_execution": 28.43,
+      "embedding": 28.471,
+      "retrieval": 6.55,
+      "verifier_queue": 0.009,
+      "verifier_execution": 1.468,
+      "policy_decision": 1.671,
+      "cache_lookup": 37.76,
+      "admission": 0.095,
+      "provider": 12.294,
+      "cache_write": 52.832
+    },
+    "gateway_latency_ms": 103.48,
+    "http_latency_ms": 108.216
+  },
+  {
+    "variant": "applicability_on",
+    "family": "kafka_topics",
+    "query": "What is the way to create Kafka topic invoices?",
+    "label": "valid",
+    "suitable_queries": [
+      "How do I create Kafka topic invoices?"
+    ],
+    "retrieved_suitable_ranks": [
+      1
+    ],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": "How do I create Kafka topic invoices?",
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_verify:uncertain_answer",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.9928,
+        "action": "VERIFY",
+        "reason": "uncertain_answer",
+        "verifier_status": "scored",
+        "nli_score": 0.733937680721283,
+        "elapsed_ms": 85.534
+      },
+      {
+        "rank": 2,
+        "similarity": 0.8129,
+        "action": "REJECT",
+        "reason": "answer_contradiction_or_irrelevance",
+        "verifier_status": "scored",
+        "nli_score": 0.01864440366625786,
+        "elapsed_ms": 78.002
+      },
+      {
+        "rank": 3,
+        "similarity": 0.7608,
+        "action": "REJECT",
+        "reason": "applicability_action_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.656
+      }
+    ],
+    "similarity": 0.99278223514557,
+    "stage_latency_ms": {
+      "exact_lookup": 1.024,
+      "embedding_queue": 0.004,
+      "embedding_execution": 17.903,
+      "embedding": 17.95,
+      "retrieval": 6.872,
+      "verifier_queue": 0.011,
+      "verifier_execution": 163.938,
+      "policy_decision": 164.216,
+      "cache_lookup": 190.239,
+      "admission": 0.068,
+      "provider": 7.868,
+      "cache_write": 22.908
+    },
+    "gateway_latency_ms": 221.5,
+    "http_latency_ms": 226.225
+  },
+  {
+    "variant": "applicability_on",
+    "family": "kafka_topics",
+    "query": "How can I add Kafka topic invoices?",
+    "label": "valid",
+    "suitable_queries": [
+      "How do I create Kafka topic invoices?"
+    ],
+    "retrieved_suitable_ranks": [
+      1
+    ],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "HIT",
+    "selected_cached_query": "How do I create Kafka topic invoices?",
+    "valid_reuse": true,
+    "incorrect_accept": false,
+    "provider_invoked": false,
+    "provider": "cache",
+    "reason": "answer_accept:answer_entailment",
+    "candidate_count": 3,
+    "selected_rank": 1,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.9494,
+        "action": "ACCEPT",
+        "reason": "answer_entailment",
+        "verifier_status": "scored",
+        "nli_score": 0.9338142275810242,
+        "elapsed_ms": 69.95
+      },
+      {
+        "rank": 2,
+        "similarity": 0.7984,
+        "action": "REJECT",
+        "reason": "answer_contradiction_or_irrelevance",
+        "verifier_status": "scored",
+        "nli_score": 0.00945648830384016,
+        "elapsed_ms": 88.529
+      },
+      {
+        "rank": 3,
+        "similarity": 0.7815,
+        "action": "REJECT",
+        "reason": "applicability_action_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.587
+      }
+    ],
+    "similarity": 0.9493962526321,
+    "stage_latency_ms": {
+      "exact_lookup": 0.904,
+      "embedding_queue": 0.003,
+      "embedding_execution": 15.056,
+      "embedding": 15.099,
+      "retrieval": 4.488,
+      "verifier_queue": 0.011,
+      "verifier_execution": 158.85,
+      "policy_decision": 159.089,
+      "candidate_identity": 1.819,
+      "cache_lookup": 182.996
+    },
+    "gateway_latency_ms": 183.42,
+    "http_latency_ms": 187.673
+  },
+  {
+    "variant": "applicability_on",
+    "family": "kafka_topics",
+    "query": "How do I delete Kafka topic invoices safely?",
+    "label": "valid",
+    "suitable_queries": [
+      "How do I delete Kafka topic invoices?"
+    ],
+    "retrieved_suitable_ranks": [
+      1
+    ],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": "How do I delete Kafka topic invoices?",
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_reject:answer_contradiction_or_irrelevance",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.9661,
+        "action": "REJECT",
+        "reason": "answer_contradiction_or_irrelevance",
+        "verifier_status": "scored",
+        "nli_score": 0.004687232431024313,
+        "elapsed_ms": 79.037
+      },
+      {
+        "rank": 2,
+        "similarity": 0.7386,
+        "action": "REJECT",
+        "reason": "applicability_action_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.595
+      },
+      {
+        "rank": 3,
+        "similarity": 0.6148,
+        "action": "REJECT",
+        "reason": "applicability_action_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.532
+      }
+    ],
+    "similarity": 0.9661145210266,
+    "stage_latency_ms": {
+      "exact_lookup": 1.034,
+      "embedding_queue": 0.004,
+      "embedding_execution": 17.53,
+      "embedding": 17.579,
+      "retrieval": 5.65,
+      "verifier_queue": 0.024,
+      "verifier_execution": 79.933,
+      "policy_decision": 80.187,
+      "cache_lookup": 104.608,
+      "admission": 0.079,
+      "provider": 8.264,
+      "cache_write": 25.927
+    },
+    "gateway_latency_ms": 139.37,
+    "http_latency_ms": 144.174
+  },
+  {
+    "variant": "applicability_on",
+    "family": "kafka_topics",
+    "query": "How do I create Kafka topic refunds?",
+    "label": "invalid",
+    "suitable_queries": [],
+    "retrieved_suitable_ranks": [],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": "How do I create Kafka topic payments?",
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_reject:answer_contradiction_or_irrelevance",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.7479,
+        "action": "REJECT",
+        "reason": "answer_contradiction_or_irrelevance",
+        "verifier_status": "scored",
+        "nli_score": 0.0015596121083945036,
+        "elapsed_ms": 82.5
+      },
+      {
+        "rank": 2,
+        "similarity": 0.6493,
+        "action": "REJECT",
+        "reason": "answer_contradiction_or_irrelevance",
+        "verifier_status": "scored",
+        "nli_score": 0.0011832426534965634,
+        "elapsed_ms": 126.925
+      },
+      {
+        "rank": 3,
+        "similarity": 0.594,
+        "action": "REJECT",
+        "reason": "applicability_named_topic_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.634
+      }
+    ],
+    "similarity": 0.747918725014,
+    "stage_latency_ms": {
+      "exact_lookup": 1.116,
+      "embedding_queue": 0.004,
+      "embedding_execution": 18.156,
+      "embedding": 18.203,
+      "retrieval": 5.108,
+      "verifier_queue": 0.012,
+      "verifier_execution": 209.822,
+      "policy_decision": 210.084,
+      "cache_lookup": 234.663,
+      "admission": 0.065,
+      "provider": 12.836,
+      "cache_write": 34.446
+    },
+    "gateway_latency_ms": 282.55,
+    "http_latency_ms": 288.374
+  },
+  {
+    "variant": "applicability_on",
+    "family": "kafka_topics",
+    "query": "How do I create a Kafka topic?",
+    "label": "ambiguous",
+    "suitable_queries": [],
+    "retrieved_suitable_ranks": [],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": "How do I create Kafka topic invoices?",
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "conflicting_accepted_answers",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.7667,
+        "action": "ACCEPT",
+        "reason": "answer_entailment",
+        "verifier_status": "scored",
+        "nli_score": 0.9224740266799927,
+        "elapsed_ms": 80.408
+      },
+      {
+        "rank": 2,
+        "similarity": 0.7612,
+        "action": "ACCEPT",
+        "reason": "answer_entailment",
+        "verifier_status": "scored",
+        "nli_score": 0.9335439205169678,
+        "elapsed_ms": 78.514
+      },
+      {
+        "rank": 3,
+        "similarity": 0.555,
+        "action": "VERIFY",
+        "reason": "applicability_named_topic_missing",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.572
+      }
+    ],
+    "similarity": 0.766690731049,
+    "stage_latency_ms": {
+      "exact_lookup": 0.895,
+      "embedding_queue": 0.004,
+      "embedding_execution": 15.593,
+      "embedding": 15.634,
+      "retrieval": 5.128,
+      "verifier_queue": 0.011,
+      "verifier_execution": 159.243,
+      "policy_decision": 159.519,
+      "cache_lookup": 181.32,
+      "admission": 0.079,
+      "provider": 7.632,
+      "cache_write": 26.074
+    },
+    "gateway_latency_ms": 215.59,
+    "http_latency_ms": 219.743
+  },
+  {
+    "variant": "applicability_on",
+    "family": "argo_namespace",
+    "query": "What steps deploy the Argo CD application to namespace amber?",
+    "label": "valid",
+    "suitable_queries": [
+      "How do I deploy the Argo CD application to namespace amber?"
+    ],
+    "retrieved_suitable_ranks": [
+      1
+    ],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": "How do I deploy the Argo CD application to namespace amber?",
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_verify:uncertain_answer",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.9724,
+        "action": "VERIFY",
+        "reason": "uncertain_answer",
+        "verifier_status": "scored",
+        "nli_score": 0.4890701174736023,
+        "elapsed_ms": 88.515
+      },
+      {
+        "rank": 2,
+        "similarity": 0.8238,
+        "action": "REJECT",
+        "reason": "applicability_action_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.662
+      },
+      {
+        "rank": 3,
+        "similarity": 0.7936,
+        "action": "REJECT",
+        "reason": "applicability_named_namespace_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.53
+      }
+    ],
+    "similarity": 0.9724138975143,
+    "stage_latency_ms": {
+      "exact_lookup": 1.48,
+      "embedding_queue": 0.004,
+      "embedding_execution": 16.713,
+      "embedding": 16.763,
+      "retrieval": 4.573,
+      "verifier_queue": 0.01,
+      "verifier_execution": 89.499,
+      "policy_decision": 89.73,
+      "cache_lookup": 112.711,
+      "admission": 0.086,
+      "provider": 9.479,
+      "cache_write": 29.818
+    },
+    "gateway_latency_ms": 152.6,
+    "http_latency_ms": 157.851
+  },
+  {
+    "variant": "applicability_on",
+    "family": "argo_namespace",
+    "query": "How can I release the Argo CD application to namespace amber?",
+    "label": "valid",
+    "suitable_queries": [
+      "How do I deploy the Argo CD application to namespace amber?"
+    ],
+    "retrieved_suitable_ranks": [
+      1
+    ],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": "How do I deploy the Argo CD application to namespace amber?",
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_reject:answer_contradiction_or_irrelevance",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.9357,
+        "action": "REJECT",
+        "reason": "answer_contradiction_or_irrelevance",
+        "verifier_status": "scored",
+        "nli_score": 0.016734465956687927,
+        "elapsed_ms": 84.129
+      },
+      {
+        "rank": 2,
+        "similarity": 0.8662,
+        "action": "REJECT",
+        "reason": "applicability_action_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.612
+      },
+      {
+        "rank": 3,
+        "similarity": 0.7668,
+        "action": "REJECT",
+        "reason": "applicability_named_namespace_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 1.399
+      }
+    ],
+    "similarity": 0.9356986284256,
+    "stage_latency_ms": {
+      "exact_lookup": 0.934,
+      "embedding_queue": 0.003,
+      "embedding_execution": 17.968,
+      "embedding": 18.009,
+      "retrieval": 4.5,
+      "verifier_queue": 0.01,
+      "verifier_execution": 85.927,
+      "policy_decision": 86.162,
+      "cache_lookup": 109.765,
+      "admission": 0.08,
+      "provider": 10.618,
+      "cache_write": 25.468
+    },
+    "gateway_latency_ms": 146.48,
+    "http_latency_ms": 151.064
+  },
+  {
+    "variant": "applicability_on",
+    "family": "argo_namespace",
+    "query": "How do I preview the Argo CD application in namespace amber safely?",
+    "label": "valid",
+    "suitable_queries": [
+      "How do I preview the Argo CD application in namespace amber?"
+    ],
+    "retrieved_suitable_ranks": [
+      1
+    ],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": "How do I preview the Argo CD application in namespace amber?",
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_reject:answer_contradiction_or_irrelevance",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.9597,
+        "action": "REJECT",
+        "reason": "answer_contradiction_or_irrelevance",
+        "verifier_status": "scored",
+        "nli_score": 0.0035155443474650383,
+        "elapsed_ms": 88.859
+      },
+      {
+        "rank": 2,
+        "similarity": 0.8247,
+        "action": "REJECT",
+        "reason": "applicability_action_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.77
+      },
+      {
+        "rank": 3,
+        "similarity": 0.6772,
+        "action": "REJECT",
+        "reason": "applicability_named_namespace_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.591
+      }
+    ],
+    "similarity": 0.9596687555313,
+    "stage_latency_ms": {
+      "exact_lookup": 0.944,
+      "embedding_queue": 0.004,
+      "embedding_execution": 24.406,
+      "embedding": 24.448,
+      "retrieval": 5.811,
+      "verifier_queue": 0.011,
+      "verifier_execution": 90.016,
+      "policy_decision": 90.242,
+      "cache_lookup": 121.595,
+      "admission": 0.07,
+      "provider": 8.188,
+      "cache_write": 26.132
+    },
+    "gateway_latency_ms": 156.43,
+    "http_latency_ms": 160.843
+  },
+  {
+    "variant": "applicability_on",
+    "family": "argo_namespace",
+    "query": "How do I deploy the Argo CD application to namespace crimson?",
+    "label": "invalid",
+    "suitable_queries": [],
+    "retrieved_suitable_ranks": [],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": "How do I deploy the Argo CD application to namespace violet?",
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_reject:applicability_named_namespace_conflict",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.848,
+        "action": "REJECT",
+        "reason": "applicability_named_namespace_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.691
+      },
+      {
+        "rank": 2,
+        "similarity": 0.812,
+        "action": "REJECT",
+        "reason": "applicability_named_namespace_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.551
+      },
+      {
+        "rank": 3,
+        "similarity": 0.6964,
+        "action": "REJECT",
+        "reason": "applicability_named_namespace_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.509
+      }
+    ],
+    "similarity": 0.848005831242,
+    "stage_latency_ms": {
+      "exact_lookup": 1.202,
+      "embedding_queue": 0.003,
+      "embedding_execution": 21.48,
+      "embedding": 21.526,
+      "retrieval": 5.12,
+      "verifier_queue": 0.009,
+      "verifier_execution": 1.577,
+      "policy_decision": 1.771,
+      "cache_lookup": 29.776,
+      "admission": 0.085,
+      "provider": 6.856,
+      "cache_write": 25.361
+    },
+    "gateway_latency_ms": 62.52,
+    "http_latency_ms": 67.474
+  },
+  {
+    "variant": "applicability_on",
+    "family": "argo_namespace",
+    "query": "How do I deploy the Argo CD application?",
+    "label": "ambiguous",
+    "suitable_queries": [],
+    "retrieved_suitable_ranks": [],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": "How do I deploy the Argo CD application to namespace violet?",
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_verify:applicability_named_namespace_missing",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.7515,
+        "action": "VERIFY",
+        "reason": "applicability_named_namespace_missing",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.687
+      },
+      {
+        "rank": 2,
+        "similarity": 0.745,
+        "action": "VERIFY",
+        "reason": "applicability_named_namespace_missing",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.516
+      },
+      {
+        "rank": 3,
+        "similarity": 0.6129,
+        "action": "VERIFY",
+        "reason": "applicability_named_namespace_missing",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.503
+      }
+    ],
+    "similarity": 0.7515280246730001,
+    "stage_latency_ms": {
+      "exact_lookup": 1.134,
+      "embedding_queue": 0.004,
+      "embedding_execution": 17.401,
+      "embedding": 17.449,
+      "retrieval": 6.952,
+      "verifier_queue": 0.008,
+      "verifier_execution": 1.528,
+      "policy_decision": 1.728,
+      "cache_lookup": 27.436,
+      "admission": 0.072,
+      "provider": 7.104,
+      "cache_write": 29.336
+    },
+    "gateway_latency_ms": 64.38,
+    "http_latency_ms": 69.373
+  },
+  {
+    "variant": "applicability_on",
+    "family": "docker_generic_scan",
+    "query": "How can I scan a Docker image in stage?",
+    "label": "valid",
+    "suitable_queries": [
+      "How do I scan a Docker image in staging?"
+    ],
+    "retrieved_suitable_ranks": [
+      1
+    ],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "HIT",
+    "selected_cached_query": "How do I scan a Docker image in staging?",
+    "valid_reuse": true,
+    "incorrect_accept": false,
+    "provider_invoked": false,
+    "provider": "cache",
+    "reason": "answer_accept:answer_entailment",
+    "candidate_count": 3,
+    "selected_rank": 1,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.908,
+        "action": "ACCEPT",
+        "reason": "answer_entailment",
+        "verifier_status": "scored",
+        "nli_score": 0.9877767562866211,
+        "elapsed_ms": 156.137
+      },
+      {
+        "rank": 2,
+        "similarity": 0.5965,
+        "action": "VERIFY",
+        "reason": "applicability_action_missing",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.619
+      },
+      {
+        "rank": 3,
+        "similarity": 0.5604,
+        "action": "REJECT",
+        "reason": "applicability_environment_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.574
+      }
+    ],
+    "similarity": 0.9080347418785,
+    "stage_latency_ms": {
+      "exact_lookup": 1.144,
+      "embedding_queue": 0.004,
+      "embedding_execution": 22.279,
+      "embedding": 22.331,
+      "retrieval": 6.943,
+      "verifier_queue": 0.011,
+      "verifier_execution": 157.029,
+      "policy_decision": 157.354,
+      "candidate_identity": 5.2,
+      "cache_lookup": 198.566
+    },
+    "gateway_latency_ms": 199.04,
+    "http_latency_ms": 204.337
+  },
+  {
+    "variant": "applicability_on",
+    "family": "docker_generic_scan",
+    "query": "How do I scan a Docker image?",
+    "label": "valid",
+    "suitable_queries": [
+      "How do I scan a Docker image in staging?"
+    ],
+    "retrieved_suitable_ranks": [
+      1
+    ],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": "How do I scan a Docker image in staging?",
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_verify:uncertain_answer",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.8676,
+        "action": "VERIFY",
+        "reason": "uncertain_answer",
+        "verifier_status": "scored",
+        "nli_score": 0.8910864591598511,
+        "elapsed_ms": 101.938
+      },
+      {
+        "rank": 2,
+        "similarity": 0.5541,
+        "action": "VERIFY",
+        "reason": "applicability_environment_missing",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.581
+      },
+      {
+        "rank": 3,
+        "similarity": 0.5308,
+        "action": "VERIFY",
+        "reason": "applicability_environment_missing",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.495
+      }
+    ],
+    "similarity": 0.867633879185,
+    "stage_latency_ms": {
+      "exact_lookup": 0.96,
+      "embedding_queue": 0.004,
+      "embedding_execution": 19.01,
+      "embedding": 19.055,
+      "retrieval": 9.47,
+      "verifier_queue": 0.01,
+      "verifier_execution": 102.799,
+      "policy_decision": 103.036,
+      "cache_lookup": 132.673,
+      "admission": 0.07,
+      "provider": 8.817,
+      "cache_write": 27.387
+    },
+    "gateway_latency_ms": 169.4,
+    "http_latency_ms": 174.066
+  },
+  {
+    "variant": "applicability_on",
+    "family": "docker_generic_scan",
+    "query": "How do I release a Docker image to staging?",
+    "label": "valid",
+    "suitable_queries": [
+      "How do I deploy a Docker image in staging?"
+    ],
+    "retrieved_suitable_ranks": [
+      1
+    ],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": "How do I deploy a Docker image in staging?",
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_reject:answer_contradiction_or_irrelevance",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.8959,
+        "action": "REJECT",
+        "reason": "answer_contradiction_or_irrelevance",
+        "verifier_status": "scored",
+        "nli_score": 0.029195765033364296,
+        "elapsed_ms": 119.798
+      },
+      {
+        "rank": 2,
+        "similarity": 0.8015,
+        "action": "REJECT",
+        "reason": "applicability_environment_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.685
+      },
+      {
+        "rank": 3,
+        "similarity": 0.7614,
+        "action": "REJECT",
+        "reason": "answer_contradiction_or_irrelevance",
+        "verifier_status": "scored",
+        "nli_score": 0.026233509182929993,
+        "elapsed_ms": 114.667
+      }
+    ],
+    "similarity": 0.895874023438,
+    "stage_latency_ms": {
+      "exact_lookup": 1.233,
+      "embedding_queue": 0.004,
+      "embedding_execution": 16.695,
+      "embedding": 16.739,
+      "retrieval": 5.355,
+      "verifier_queue": 0.011,
+      "verifier_execution": 234.911,
+      "policy_decision": 235.175,
+      "cache_lookup": 258.7,
+      "admission": 0.082,
+      "provider": 9.172,
+      "cache_write": 36.879
+    },
+    "gateway_latency_ms": 305.36,
+    "http_latency_ms": 310.943
+  },
+  {
+    "variant": "applicability_on",
+    "family": "docker_generic_scan",
+    "query": "How do I deploy a Docker image to development?",
+    "label": "invalid",
+    "suitable_queries": [],
+    "retrieved_suitable_ranks": [],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": "How do I deploy a Docker image in production?",
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_reject:applicability_environment_conflict",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.9487,
+        "action": "REJECT",
+        "reason": "applicability_environment_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.639
+      },
+      {
+        "rank": 2,
+        "similarity": 0.8437,
+        "action": "REJECT",
+        "reason": "applicability_environment_conflict",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.533
+      },
+      {
+        "rank": 3,
+        "similarity": 0.5996,
+        "action": "REJECT",
+        "reason": "answer_contradiction_or_irrelevance",
+        "verifier_status": "scored",
+        "nli_score": 0.009841015562415123,
+        "elapsed_ms": 91.287
+      }
+    ],
+    "similarity": 0.9487449526787,
+    "stage_latency_ms": {
+      "exact_lookup": 1.733,
+      "embedding_queue": 0.004,
+      "embedding_execution": 26.944,
+      "embedding": 26.994,
+      "retrieval": 5.728,
+      "verifier_queue": 0.009,
+      "verifier_execution": 92.247,
+      "policy_decision": 92.482,
+      "cache_lookup": 127.134,
+      "admission": 0.074,
+      "provider": 8.173,
+      "cache_write": 27.354
+    },
+    "gateway_latency_ms": 163.31,
+    "http_latency_ms": 171.112
+  },
+  {
+    "variant": "applicability_on",
+    "family": "docker_generic_scan",
+    "query": "How do I deploy a Docker image?",
+    "label": "ambiguous",
+    "suitable_queries": [],
+    "retrieved_suitable_ranks": [],
+    "retrieval_failure": false,
+    "http_status": 200,
+    "cache": "MISS",
+    "selected_cached_query": "How do I deploy a Docker image in production?",
+    "valid_reuse": false,
+    "incorrect_accept": false,
+    "provider_invoked": true,
+    "provider": "controlled-eval",
+    "reason": "answer_verify:applicability_environment_missing",
+    "candidate_count": 3,
+    "selected_rank": null,
+    "candidate_trace": [
+      {
+        "rank": 1,
+        "similarity": 0.9436,
+        "action": "VERIFY",
+        "reason": "applicability_environment_missing",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.63
+      },
+      {
+        "rank": 2,
+        "similarity": 0.8586,
+        "action": "VERIFY",
+        "reason": "applicability_environment_missing",
+        "verifier_status": "not_called",
+        "nli_score": null,
+        "elapsed_ms": 0.532
+      },
+      {
+        "rank": 3,
+        "similarity": 0.6092,
+        "action": "REJECT",
+        "reason": "answer_contradiction_or_irrelevance",
+        "verifier_status": "scored",
+        "nli_score": 0.16422228515148163,
+        "elapsed_ms": 136.188
+      }
+    ],
+    "similarity": 0.9435682296753,
+    "stage_latency_ms": {
+      "exact_lookup": 0.988,
+      "embedding_queue": 0.004,
+      "embedding_execution": 15.238,
+      "embedding": 15.28,
+      "retrieval": 4.841,
+      "verifier_queue": 0.008,
+      "verifier_execution": 137.176,
+      "policy_decision": 137.371,
+      "cache_lookup": 158.628,
+      "admission": 0.079,
+      "provider": 8.24,
+      "cache_write": 27.526
+    },
+    "gateway_latency_ms": 194.97,
+    "http_latency_ms": 199.489
+  }
+]

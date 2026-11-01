@@ -1,0 +1,48 @@
+{
+  "schema_version": "automated-judge-v1",
+  "source_sha256": "d03c1fa7b92638a278f363c4a16457d4dcafa58f4335848c172c69297d79b48d",
+  "queue_sha256": "9950f93e7c4e8bb74d9aa0517b3cf3f35eb79844bd8d21a7f6d8bee27a67cbda",
+  "controlled_n": 15,
+  "queue_counts": {
+    "diagnostic": 200,
+    "random": 150
+  },
+  "raw_output": "data/automated_answer_judges.tsv",
+  "run_config": {
+    "batch_size": 16,
+    "nli_low": 0.2,
+    "nli_high": 0.8,
+    "flan_model": "google/flan-t5-small",
+    "flan_revision": "0fc9ddf78a1e988dac52e2dac162b0ede4fd74ab",
+    "nli_model": "cross-encoder/nli-deberta-v3-xsmall",
+    "nli_revision": "a150876415327c80daeff35ca6f68f5ed8cf5c24"
+  },
+  "elapsed_seconds": {
+    "flan": 43.81220860010944,
+    "nli": 10.594521099934354
+  },
+  "flan": {
+    "correct": 7,
+    "abstained": 0,
+    "n": 15,
+    "true_positive": 0,
+    "false_positive": 0,
+    "false_negative": 8,
+    "precision": null,
+    "recall": 0.0
+  },
+  "nli": {
+    "correct": 13,
+    "abstained": 0,
+    "n": 15,
+    "true_positive": 6,
+    "false_positive": 0,
+    "false_negative": 2,
+    "precision": 1.0,
+    "recall": 0.75
+  },
+  "queue_disagreements": {
+    "diagnostic": 95,
+    "random": 73
+  }
+}

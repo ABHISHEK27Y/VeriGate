@@ -53,6 +53,14 @@ nav a.link:hover{color:var(--text)}
   letter-spacing:-.03em;margin:20px 0 22px;max-width:15ch}
 .hero h1 em{font-style:normal;color:var(--muted)}
 .hero p{color:var(--muted);font-size:17px;max-width:56ch;margin:0 0 32px}
+.mode-banner{display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  margin:0 0 28px;padding:15px 18px;border:1px solid var(--line2);
+  border-radius:var(--r);background:var(--surface)}
+.mode-banner.semantic{border-color:rgba(87,217,138,.55);background:var(--accent-soft)}
+.mode-banner .label{font:11px 'JetBrains Mono',monospace;color:var(--muted);
+  letter-spacing:.12em;text-transform:uppercase}
+.mode-banner strong{font-size:16px;color:var(--text)}
+.mode-banner .detail{color:var(--muted);font-size:13px}
 .actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
 .btn{cursor:pointer;font-family:inherit;font-size:14px;font-weight:500;border-radius:8px;
   padding:11px 18px;transition:.15s;border:1px solid transparent}
@@ -114,9 +122,9 @@ section{padding:74px 0}
 @media(max-width:820px){.play{grid-template-columns:1fr}}
 .panel{border:1px solid var(--line);border-radius:var(--r);background:var(--surface);padding:22px}
 label{display:block;font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px}
-input,textarea{width:100%;background:var(--bg);color:var(--text);border:1px solid var(--line2);
+input,textarea,select{width:100%;background:var(--bg);color:var(--text);border:1px solid var(--line2);
   border-radius:8px;padding:11px 12px;font-size:14.5px;font-family:inherit;transition:border-color .15s}
-input:focus,textarea:focus{outline:none;border-color:var(--accent)}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--accent)}
 textarea{resize:vertical;min-height:56px;line-height:1.5}
 .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 .chip{cursor:pointer;font-size:12.5px;color:var(--muted);background:var(--bg);
@@ -124,6 +132,9 @@ textarea{resize:vertical;min-height:56px;line-height:1.5}
 .chip:hover{border-color:var(--accent);color:var(--text)}
 .chip small{color:var(--faint);margin-left:2px}
 .result{margin-top:18px;border-top:1px solid var(--line);padding-top:18px;display:none}
+.request-details{margin-top:14px;border:1px solid var(--line2);border-radius:8px;padding:10px 12px}
+.request-details summary{cursor:pointer;color:var(--muted);font-size:13px}
+.request-details .meta{margin-top:12px}
 .rbadge{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:500;border-radius:6px;
   padding:5px 10px;letter-spacing:.03em}
 .b-HIT{background:var(--accent-soft);color:var(--hit);border:1px solid rgba(87,217,138,.3)}
@@ -164,6 +175,20 @@ td.c{font-family:'JetBrains Mono',monospace;color:var(--muted)}
 .tech{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);
   border:1px solid var(--line);border-radius:6px;padding:6px 10px}
 footer{border-top:1px solid var(--line);padding:34px 0 60px;color:var(--faint);font-size:12.5px}
+
+/* Glass workspace: legible contrast, responsive evidence panels. */
+:root{--bg:#08121c;--surface:rgba(20,38,54,.92);--surface2:#20384b;--line:rgba(174,210,232,.18);--line2:rgba(174,210,232,.32);--text:#edf5fa;--muted:#b2c5d3;--faint:#91a9ba;--accent:#72dfd0;--r:18px}
+body{background:radial-gradient(ellipse at 10% 0%,#174458,transparent 45%),radial-gradient(ellipse at 95% 40%,#212c4e,transparent 45%),#08121c;background-attachment:fixed}
+.wrap{max-width:1320px}.hero{padding:48px 0 24px}.hero h1{max-width:24ch;font-size:44px}.hero p{max-width:76ch;font-size:16px}nav{background:rgba(8,18,28,.8);backdrop-filter:blur(20px)}
+.panel,.mode-banner,.cfg,.cmp{background:linear-gradient(135deg,rgba(37,61,79,.85),rgba(14,30,44,.9));backdrop-filter:blur(18px);box-shadow:0 12px 35px rgba(0,0,0,.14),inset 0 1px rgba(255,255,255,.07)}
+section{padding:38px 0}.play{grid-template-columns:minmax(0,1fr) 300px}.play>*{min-width:0}.reveal{opacity:1;transform:none}textarea{min-height:105px}input,textarea,select{background:rgba(5,17,27,.65)}.answer{font-size:16px;line-height:1.8;background:rgba(6,20,31,.6);padding:22px}
+.meta{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}.meta b{font-size:12px;overflow-wrap:anywhere}.meta div{background:rgba(15,33,47,.95)}
+.request-journey{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:20px 0}.journey-step{border:1px solid var(--line2);border-radius:12px;padding:13px;background:rgba(9,23,35,.6)}.journey-step strong{display:block;font-size:13px;color:var(--accent)}.journey-step p{font-size:12px;color:var(--muted);margin:6px 0 0}
+.evidence-heading{font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin:20px 0 8px;color:var(--muted)}.trace-scroll{overflow:auto}.trace-scroll table{min-width:620px}.trace-scroll td{vertical-align:top}.stage-row{display:grid;grid-template-columns:180px 1fr 75px;gap:10px;align-items:center;font-size:12px;margin:8px 0}.stage-track{height:7px;background:rgba(255,255,255,.08);border-radius:5px}.stage-fill{height:100%;background:linear-gradient(90deg,#57caba,#8fa8ee);border-radius:5px}.empty-state{color:var(--muted);font-size:13px}
+button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:4px}.btn:disabled{opacity:.55;cursor:wait}.hint{line-height:1.6}#contribution,#results{padding:24px 0}.metrics .num{font-size:25px}
+@media(max-width:900px){.play{grid-template-columns:1fr}.request-journey{grid-template-columns:repeat(2,1fr)}nav .in{gap:12px}.hero h1{font-size:34px}}
+@media(max-width:550px){.wrap{padding:0 16px}nav a.link{display:none}.request-journey{grid-template-columns:1fr}.stage-row{grid-template-columns:120px 1fr 65px}}
+
 </style>
 </head>
 <body>
@@ -182,10 +207,12 @@ footer{border-top:1px solid var(--line);padding:34px 0 60px;color:var(--faint);f
 
 <header class="hero"><div class="wrap">
   <div class="eyebrow">B.Tech Major Project — LLM Gateway</div>
-  <h1>A semantic cache that verifies every hit <em>before it answers.</em></h1>
-  <p>VeriGate reuses answers for reworded questions to cut LLM cost and latency — but a two-tier
-     verifier rejects look-alike matches, so a query like “capital of Australia” never receives
-     the cached answer for “capital of Austria.”</p>
+  <h1>One gateway.<br><em>Every reuse decision, visible.</em></h1>
+  <p>Inspect how an authorized request moves through retrieval, answer assessment and provider generation. Shared workspace answers stay within their access boundaries. The active configuration below identifies the policy actually running.</p>
+  <div class="mode-banner" id="mode-banner" role="status" aria-live="polite">
+    <span class="label">Running now</span><strong id="mode-label">Checking gateway…</strong>
+    <span class="detail" id="mode-detail"></span>
+  </div>
   <div class="actions">
     <a class="btn pri" href="#playground">Open playground</a>
     <a class="btn sec" href="#results">View results</a>
@@ -195,89 +222,83 @@ footer{border-top:1px solid var(--line);padding:34px 0 60px;color:var(--faint);f
 
 <div class="divider"></div>
 
-<section id="contribution"><div class="wrap reveal">
-  <div class="shead"><span class="no">01</span><h2>The contribution</h2></div>
-  <div class="contrib">
-    <div class="item"><div class="n">A</div><h3>Adaptive threshold</h3>
-      <p>Match strictness is computed per query from entities, numbers, length and neighbourhood
-         density — not one global constant.</p></div>
-    <div class="item"><div class="n">B</div><h3>Self-verifier</h3>
-      <p>Two tiers — structural checks (numbers, negation, entities) then NLI equivalence —
-         reject false hits similarity alone would accept.</p></div>
-    <div class="item"><div class="n">C</div><h3>Staleness detection</h3>
-      <p>Time-sensitive queries are detected and never cached, so a cached answer can’t go
-         stale.</p></div>
-  </div>
-</div></section>
-
-<div class="divider"></div>
-
-<section id="results"><div class="wrap reveal">
-  <div class="shead"><span class="no">02</span><h2>Measured results</h2></div>
-  <div class="metrics">
-    <div class="m"><div class="num" data-to="0" data-suffix="%">0%</div>
-      <div class="lbl">false-hit rate<br><b>baseline: 46.7%</b></div></div>
-    <div class="m"><div class="num" data-to="100" data-suffix="%">100%</div>
-      <div class="lbl">cache precision<br><b>baseline: 46%</b></div></div>
-    <div class="m"><div class="num" data-to="1000" data-prefix="~" data-suffix="×">~1000×</div>
-      <div class="lbl">faster on a hit<br><b>Gemini 23s → 22ms</b></div></div>
-    <div class="m"><div class="num" data-to="7000" data-prefix="~" data-suffix="×">~7000×</div>
-      <div class="lbl">faster KNN lookup<br><b>293ms → 0.04ms</b></div></div>
-  </div>
-  <div class="cmp">
-    <div class="t">False-hit rate — wrong answers served (lower is better)</div>
-    <div class="cmprow"><div class="nm">Static baseline</div>
-      <div class="track"><i data-w="93" style="background:var(--block)"></i></div><div class="pct">46.7%</div></div>
-    <div class="cmprow"><div class="nm">VeriGate</div>
-      <div class="track"><i data-w="1.5" style="background:var(--accent)"></i></div><div class="pct">0.0%</div></div>
-    <div class="foot">Also verified: staleness detector 5/5 volatile caught · 12/12 tests ·
-      two vector backends (in-process NumPy + RediSearch/HNSW) · real Gemini integration ·
-      13 documented build phases.</div>
-  </div>
-</div></section>
-
-<div class="divider"></div>
-
 <section id="playground"><div class="wrap reveal">
-  <div class="shead"><span class="no">03</span><h2>Playground</h2></div>
+  <div class="shead"><span class="no">03</span><h2>Request workspace</h2></div>
   <div class="play">
     <div class="panel">
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px">
-        <div style="flex:1;min-width:160px"><label>API key</label><input id="apikey" value="demo-key-123"></div>
+        <div style="flex:1;min-width:160px"><label>VeriGate access key</label><input id="apikey" type="password" placeholder="Enter your API key" autocomplete="off"></div>
       </div>
-      <label>Query</label>
+      <label for="query">Question</label>
       <textarea id="query" placeholder="how do I reset my password"></textarea>
+      <details id="dev-overrides" hidden><summary>Developer scope override</summary>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px">
+          <div><label for="scope">Requested scope</label><select id="scope"><option value="auto">Automatic</option><option value="private">Private</option><option value="workspace">Authorized workspace</option><option value="none">No store</option></select></div>
+          <div><label for="workspace">Workspace</label><input id="workspace" placeholder="engineering" autocomplete="off"></div>
+        </div>
+        <label style="margin-top:12px"><input id="stream-response" type="checkbox" style="width:auto"> Exercise streaming API</label>
+      </details>
       <div class="actions" style="margin-top:12px">
-        <button class="btn pri sm" id="ask">Ask</button>
+        <button class="btn pri sm" id="ask">Send</button>
         <button class="btn sec sm" id="clear">Clear cache</button>
+        <button class="btn sec sm" id="restore" hidden>Restore demo fixtures</button>
         <button class="btn sec sm" id="reset">Reset stats</button>
       </div>
       <div class="chips" id="chips"></div>
+      <div class="hint" id="demo-note" hidden>Local factual fixtures: Jane Austen, 1969, and Mars.
+        These examples demonstrate decisions with seeded answers; they are not an accuracy study.
+        A MISS response from the mock provider is normally cached, so repeating that question
+        may HIT its mock placeholder. Restore fixtures to reset this demo tenant; Clear cache
+        removes all fixtures without restoring them.</div>
+      <div class="hint" id="org-demo-note" hidden>Organization mock demo: the Python decorator answer is a labelled factual fixture,
+        not mock generation. Authorized employees share the engineering workspace automatically. Mock MISS responses are placeholders and may be cached;
+        repeating a MISS can therefore HIT that placeholder. The legacy Restore fixtures button does not reset this workspace.</div>
       <div class="err" id="err"></div>
       <div class="result" id="result">
         <span class="rbadge" id="rbadge">—</span>
-        <div class="answer" id="ranswer"></div>
+        <div class="answer" id="ranswer"></div><div id="request-journey" class="request-journey" aria-label="Observed request path"></div><div class="evidence-heading">Candidate evidence</div><div id="candidate-evidence" class="trace-scroll"></div><div class="evidence-heading">Measured stages</div><div id="stage-evidence"></div><p class="hint">Stages may overlap or nest; these durations are not additive portions of total request time.</p>
+        <div class="meta">
+          <div><span id="rlat-label">gateway decision + generation time</span><b id="rlat">—</b></div>
+          <div><span>answer source</span><b id="rsource">—</b></div>
+        </div>
+        <details class="request-details"><summary>How this request was handled</summary>
         <div class="meta">
           <div><span>provider</span><b id="rprov">—</b></div>
-          <div><span>latency</span><b id="rlat">—</b></div>
-          <div><span>similarity</span><b id="rsim">—</b></div>
+          <div><span>upstream call</span><b id="rupstream">—</b></div>
+          <div><span>intended route</span><b id="rintended">—</b></div>
+          <div><span>fallback used</span><b id="rfallback">—</b></div>
+          <div><span>browser HTTP time</span><b id="rhttp">—</b></div>
+          <div><span>top retrieved similarity</span><b id="rtopsim">—</b></div>
+          <div><span>explained candidate similarity</span><b id="rsim">—</b></div>
           <div><span>threshold</span><b id="rthr">—</b></div>
+          <div><span>authenticated identity</span><b id="ridentity">—</b></div>
+          <div><span>actual lookup scope</span><b id="rscope">—</b></div>
+          <div><span>provider profile</span><b id="rprofile">—</b></div>
+          <div><span>candidates / selected rank / explanation rank</span><b id="rcandidates">—</b></div>
+          <div><span>candidate decisions</span><b id="rstructure">—</b></div>
+          <div><span>NLI model evidence</span><b id="rnli">—</b></div>
+          <div><span>storage outcome</span><b id="rstorage">—</b></div>
+          <div><span>storage scope / explanation</span><b id="rstoragewhy">—</b></div>
+          <div><span>configured TTL</span><b id="rttl">—</b></div>
+          <div style="grid-column:1/-1"><span>measured stages</span><b id="rstages">—</b></div>
           <div style="grid-column:1/-1"><span>reason</span><b id="rreason">—</b></div>
         </div>
+        </details>
       </div>
     </div>
     <div>
       <div class="panel">
-        <label>Session</label>
+        <label>Browser session counters</label>
         <div class="stats">
           <div class="stat"><span>requests</span><b id="s-total">0</b></div>
           <div class="stat"><span>hit rate</span><b id="s-rate">0%</b></div>
           <div class="stat"><span><span class="dot" style="background:var(--hit)"></span>hits</span><b id="s-hits">0</b></div>
           <div class="stat"><span><span class="dot" style="background:var(--miss)"></span>miss</span><b id="s-miss">0</b></div>
           <div class="stat"><span><span class="dot" style="background:var(--bypass)"></span>bypass</span><b id="s-bypass">0</b></div>
-          <div class="stat"><span><span class="dot" style="background:var(--block)"></span>blocked</span><b id="s-block">0</b></div>
+          <div class="stat"><span><span class="dot" style="background:var(--block)"></span>declined candidates</span><b id="s-declined">0</b></div>
+          <div class="stat"><span>request errors</span><b id="s-errors">0</b></div>
         </div>
-        <div class="hint">“blocked” = the verifier caught a look-alike and refused the wrong cached answer.</div>
+        <div class="hint">“Declined” means VERIFY or REJECT called the provider. It does not prove the cached answer was wrong. These counts include only requests made in this browser tab; restoring fixtures resets the counters.</div>
       </div>
       <div class="panel" style="margin-top:16px">
         <label>History</label>
@@ -289,13 +310,51 @@ footer{border-top:1px solid var(--line);padding:34px 0 60px;color:var(--faint);f
 
 <div class="divider"></div>
 
+<section id="contribution"><div class="wrap reveal">
+  <div class="shead"><span class="no">01</span><h2>The contribution</h2></div>
+  <div class="contrib">
+    <div class="item"><div class="n">A</div><h3>Authorized answer sharing</h3><p>The server resolves organization, workspace and provider compatibility before reuse. Private responses retain a restricted scope.</p></div>
+    <div class="item"><div class="n">B</div><h3>Self-verifier</h3>
+      <p>Structural checks filter some changed numbers, roles, scope and tense.
+         The opt-in answer-aware policy evaluates the cached answer with pinned NLI,
+         while uncertain candidates go to the provider.</p></div>
+    <div class="item"><div class="n">C</div><h3>Staleness detection</h3>
+      <p>Context-aware rules bypass some time-sensitive queries. Coverage is incomplete,
+         so other cached answers can become stale.</p></div>
+  </div>
+</div></section>
+
+<div class="divider"></div>
+
+<section id="results"><div class="wrap reveal">
+  <div class="shead"><span class="no">02</span><h2>Current evidence</h2></div>
+  <div class="metrics">
+    <div class="m"><div class="num">Exact</div><div class="lbl">default matching mode</div></div>
+    <div class="m"><div class="num">NQ</div><div class="lbl">mined factoid pairs<br><b>historical reference proxy</b></div></div>
+    <div class="m"><div class="num">Review</div><div class="lbl">specific-answer discrepancies<br><b>unreviewed, counts in audit file</b></div></div>
+    <div class="m"><div class="num">0</div><div class="lbl">independently reviewed answer labels<br><b>quality claim pending</b></div></div>
+  </div>
+  <div class="cmp">
+    <div class="t">What the experiments establish</div>
+    <div class="foot">Five overlapping splits of a mined factoid-reference proxy show a
+      risk–coverage trade-off. The conservative token-diff verifier rejects many valid
+      paraphrases; risk selection chose reject-all at 1%, 2% and 5% targets. These
+      results do not measure generated-answer correctness or cloud cost savings.
+      See the repository's experimental results and dataset documentation for run IDs,
+      counts and limitations. The playground uses the configured provider; “mock” means
+      a deterministic local demo answer.</div>
+  </div>
+</div></section>
+
+<div class="divider"></div>
+
 <section id="pipeline"><div class="wrap reveal">
   <div class="shead"><span class="no">04</span><h2>Request pipeline</h2></div>
   <div class="flow">
     <div class="step"><div class="n">01</div><h4>Auth · rate limit</h4><p>API key + Redis token bucket.</p></div>
     <div class="step"><div class="n">02</div><h4>Staleness</h4><p>Volatile query → skip cache.</p></div>
     <div class="step"><div class="n">03</div><h4>Embed · KNN</h4><p>MiniLM vector → nearest match.</p></div>
-    <div class="step"><div class="n">04</div><h4>Adapt · verify</h4><p>Per-query threshold, then verifier.</p></div>
+    <div class="step"><div class="n">04</div><h4>Decide · verify</h4><p>Configured policy checks each candidate.</p></div>
     <div class="step"><div class="n">05</div><h4>Hit or LLM</h4><p>Serve cache, else provider + failover.</p></div>
   </div>
   <div class="stack">
@@ -310,48 +369,124 @@ footer{border-top:1px solid var(--line);padding:34px 0 60px;color:var(--faint);f
 
 <script>
 const $=id=>document.getElementById(id);
-let s={total:0,hits:0,miss:0,bypass:0,block:0};
+let s={total:0,hits:0,miss:0,bypass:0,declined:0,errors:0};
+let configuredTtl=null;
+let developmentDemoAvailable=false;
+const DEMO_ANSWERS=new Set(["Jane Austen","1969","Mars","A Python decorator wraps a function to add behavior without changing its source."]);
 const EX=[
   {t:"how do I reset my password",d:"MISS"},
-  {t:"what is the process to recover my account password",d:"→ HIT"},
+  {t:"what is the process to recover my account password",d:"paraphrase test"},
   {t:"what is the capital of Austria",d:"MISS"},
   {t:"what is the capital of Australia",d:"look-alike"},
   {t:"what is the weather today",d:"→ BYPASS"},
 ];
-$("chips").innerHTML="";EX.forEach(e=>{const c=document.createElement("div");c.className="chip";
+const SEMANTIC_EX=[
+  {t:"Who is the author of the novel Pride and Prejudice?",d:"valid paraphrase"},
+  {t:"Who wrote the screenplay for the film Pride and Prejudice?",d:"different role"},
+  {t:"What year did Apollo 11 land on the Moon?",d:"valid paraphrase"},
+  {t:"In what year did Apollo 12 land on the Moon?",d:"different mission"},
+  {t:"Which planet is nicknamed the Red Planet?",d:"valid paraphrase"},
+  {t:"Which planet is known as the Blue Planet?",d:"different planet"},
+];
+const ORG_EX=[
+  {t:"Explain how Python decorators work.",d:"shared factual fixture"},
+  {t:"How do Python generators work?",d:"misleading near-match"},
+];
+function showChips(examples){$("chips").innerHTML="";examples.forEach(e=>{const c=document.createElement("div");c.className="chip";
   c.innerHTML=`${e.t}<small>${e.d}</small>`;c.onclick=()=>{$("query").value=e.t;ask();};$("chips").appendChild(c);});
+}
+showChips(EX);
 
-async function health(){try{const r=await fetch("/health");if(!r.ok)throw new Error("Unavailable");const h=await r.json();
-  $("cfg").innerHTML=[["redis",h.redis],["vector index",h.vector_backend],["embeddings",h.embedding_backend],
+async function health(){try{const r=await fetch("/health");if(!r.ok)throw new Error("Unavailable");let h=await r.json();
+  if(!h.cache_match_mode&&$("apikey").value){const detail=await fetch("/admin/config",{headers:{"x-api-key":$("apikey").value}});if(detail.ok)h=await detail.json();}
+  if(!h.cache_match_mode){$("cfg").textContent="Enter an API key to view configuration.";$("stat").textContent="ready · configuration private";$("mode-label").textContent="Configuration private";return;}
+  const answerAware=h.cache_match_mode==="semantic"&&Boolean(h.answer_policy_version);
+  configuredTtl=h.cache_ttl_sec??null;
+  developmentDemoAvailable=Boolean(h.organization_demo_available||h.demo_restore_available);
+  $("restore").hidden=!h.demo_restore_available;
+  $("dev-overrides").hidden=!(developmentDemoAvailable&&new URLSearchParams(location.search).get("developer")==="1");
+  showChips(h.organization_demo_available?ORG_EX:h.demo_restore_available?SEMANTIC_EX:EX);
+  $("demo-note").hidden=!h.demo_restore_available;
+  $("org-demo-note").hidden=!h.organization_demo_available;
+  $("mode-banner").classList.toggle("semantic",answerAware);
+  $("mode-label").textContent=answerAware?"Answer-aware semantic cache":h.cache_match_mode==="semantic"?"Semantic cache (Tier-1 structural)":"Exact cache";
+  $("mode-detail").textContent=answerAware?h.embedding_backend+" embeddings + "+(h.answer_verifier_kind==="task_reuse_experimental"?"experimental task reuse verifier":"NLI")+" · applicability "+(h.answer_policy_applicability_guard?"experimental ON":"off")+" · "+(h.answer_policy_prewarm?"prewarmed":"lazy verifier")+" · "+(h.organization_demo_available?"mock organization profiles":"provider: "+(h.providers||[]).join(", ")):(h.active_semantic_policy==="tier1_structural"?"Tier-1 structural policy (no answer artifact; rejects most paraphrases) · ":"")+"Provider: "+(h.providers||[]).join(", ");
+  $("cfg").innerHTML=[["matching",h.cache_match_mode],["policy",h.answer_policy_version||h.cache_policy_version],
+    ["answer verifier",answerAware?h.answer_verifier_kind:"off"],["applicability guard",h.answer_policy_applicability_guard?"experimental ON":"off"],["verifier prewarm",h.answer_policy_prewarm?"ready":"off"],["redis",h.redis],["vector index",h.vector_backend],["embeddings",h.embedding_backend],
     ["provider",(h.providers||[]).join(", ")]].map(([k,v])=>`<div class="c"><div class="k">${k}</div><div class="v">${v}</div></div>`).join("");
-  $("stat").textContent=h.vector_backend+" · "+(h.providers||[]).join(",");
-}catch(e){$("stat").textContent="offline";}}
+  $("stat").textContent=h.cache_match_mode+" · "+(h.providers||[]).join(",");
+}catch(e){$("stat").textContent="offline";$("mode-label").textContent="Gateway offline";}}
+
+
+function textNode(tag,text,cls){const el=document.createElement(tag);el.textContent=text;if(cls)el.className=cls;return el;}
+function renderEvidence(d,trace){
+ const journey=$("request-journey");journey.replaceChildren();
+ const steps=[['01 · Scope',d.organization_id?`${d.organization_id} / ${d.lookup_scope||d.cache_scope||'not reported'}`:'Identity not reported'],['02 · Retrieval',d.candidate_count!=null?`${d.candidate_count} candidate${d.candidate_count===1?'':'s'} reported`:'Candidate count not reported'],['03 · Decision',d.cache==='HIT'?'Cached answer served':d.cache==='BYPASS'?'Cache bypassed':'No cached answer served'],['04 · Delivery',d.provider==='cache'?'No upstream generation':d.provider_invoked===true?'Provider invoked':d.provider_invoked===false?'No separate invocation':'Invocation not reported']];
+ steps.forEach(([title,detail])=>{const card=textNode('div','','journey-step');card.append(textNode('strong',title),textNode('p',detail));journey.append(card);});
+ const target=$("candidate-evidence");target.replaceChildren();
+ if(!trace.length)target.append(textNode('p','No candidate assessments returned for this request. Check the decision reason below: retrieval may be empty, or lookup may have used a shortcut or bypass.','empty-state'));
+ else{const table=document.createElement('table'),head=document.createElement('thead'),hr=document.createElement('tr');['Rank','Similarity','Action','Reason','NLI score','Verifier','Tokens','Time'].forEach(t=>hr.append(textNode('th',t)));head.append(hr);table.append(head);const body=document.createElement('tbody');trace.forEach(c=>{const row=document.createElement('tr');[c.rank,c.similarity,c.action,c.reason,typeof c.nli_score==='number'?c.nli_score.toFixed(3):'not reported',c.verifier_status,c.input_tokens??'not reported',c.elapsed_ms!=null?c.elapsed_ms+' ms':'not reported'].forEach(t=>row.append(textNode('td',String(t??'not reported'))));body.append(row);});table.append(body);target.append(table);}
+ const stages=$("stage-evidence");stages.replaceChildren();const entries=Object.entries(d.stage_latency_ms||{}).filter(([,v])=>typeof v==='number'&&Number.isFinite(v)&&v>=0),max=Math.max(1,...entries.map(([,v])=>v));
+ if(!entries.length)stages.append(textNode('p','Stage timings not reported.','empty-state'));
+ entries.forEach(([name,value])=>{const row=textNode('div','','stage-row'),track=textNode('div','','stage-track'),fill=textNode('div','','stage-fill');fill.style.width=(100*value/max)+'%';track.append(fill);row.append(textNode('span',name.replaceAll('_',' ')),track,textNode('span',value.toFixed(2)+' ms'));stages.append(row);});
+}
 
 function setS(){$("s-total").textContent=s.total;const d=s.hits+s.miss;
   $("s-rate").textContent=d?Math.round(100*s.hits/d)+"%":"0%";
-  $("s-hits").textContent=s.hits;$("s-miss").textContent=s.miss;$("s-bypass").textContent=s.bypass;$("s-block").textContent=s.block;}
+  $("s-hits").textContent=s.hits;$("s-miss").textContent=s.miss;$("s-bypass").textContent=s.bypass;$("s-declined").textContent=s.declined;$("s-errors").textContent=s.errors;}
 
-async function ask(){const q=$("query").value.trim();if(!q)return;$("ask").disabled=true;$("err").textContent="";
-  try{const r=await fetch("/v1/chat",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":$("apikey").value},body:JSON.stringify({prompt:q})});
-    if(r.status===429){$("err").textContent="Rate limited (429).";return;}
-    if(r.status===401){$("err").textContent="Invalid API key (401).";return;}
+async function ask(){const q=$("query").value.trim();if(!q)return;$("ask").disabled=true;$("result").style.display="none";$("err").textContent="";s.total++;const started=performance.now();
+  try{const payload={prompt:q};const devOpen=!$("dev-overrides").hidden&&$("dev-overrides").open;if(devOpen&&$("scope").value!=="auto"){payload.cache_scope=$("scope").value;if(payload.cache_scope==="workspace")payload.workspace=$("workspace").value.trim();}const streamMode=devOpen&&$("stream-response").checked;const r=await fetch(streamMode?"/v1/chat/stream":"/v1/chat",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":$("apikey").value},body:JSON.stringify(payload)});
+    if(r.status===429){s.errors++;$("err").textContent="Rate limited (429).";return;}
+    if(r.status===401){s.errors++;$("err").textContent="Invalid API key (401).";return;}
     if(!r.ok)throw new Error("Gateway returned HTTP "+r.status);
-    const d=await r.json();const rej=d.note&&d.note.startsWith("verify_rejected");
-    const b=$("rbadge");b.textContent=(rej?"BLOCKED · ":"")+d.cache;b.className="rbadge b-"+(rej?"REJECT":d.cache);
-    $("ranswer").textContent=d.answer;$("rprov").textContent=d.provider;$("rlat").textContent=(d.latency_ms??0)+" ms";
+    let d;
+    if(streamMode){
+      const raw=await r.text(),chunks=[];let meta=null,event="message",finished=false;
+      for(const line of raw.split(/\r?\n/)){
+        if(line.startsWith("event: ")){event=line.slice(7);continue;}
+        if(!line.startsWith("data: "))continue;
+        const value=line.slice(6);
+        if(event==="error")throw new Error("Stream failed: "+(JSON.parse(value).error||"upstream error"));
+        if(event==="meta"){meta=JSON.parse(value);event="message";continue;}
+        if(value==="[DONE]"){finished=true;continue;}
+        chunks.push(JSON.parse(value));
+      }
+      if(!finished||!meta)throw new Error("Stream ended without complete metadata");
+      d={...meta,answer:chunks.join(""),cache:meta.cache_decision,provider:r.headers.get("x-provider"),intended_provider:r.headers.get("x-intended-provider"),scope_reason:r.headers.get("x-scope-reason"),lookup_scope:meta.lookup_scope,fallback_used:r.headers.get("x-provider")!==r.headers.get("x-intended-provider")&&r.headers.get("x-provider")!=="cache"};
+    }else d=await r.json();
+    const browserMs=(performance.now()-started).toFixed(2);const trace=d.candidate_trace||[];
+    const selected=trace.find(c=>c.rank===d.selected_rank);
+    const decision=selected?selected.action:"";
+    const declined=d.cache!=="HIT"&&trace.some(c=>c.action==="VERIFY"||c.action==="REJECT");
+    const b=$("rbadge");b.textContent=(decision?decision+" · ":declined?"DECLINED · ":"")+d.cache;b.className="rbadge b-"+(declined?"REJECT":d.cache);
+    $("ranswer").textContent=d.answer;$("rprov").textContent=d.provider;
+    $("rsource").textContent=d.provider==="cache"?(String(d.answer||"").startsWith("[mock:")?"cached text marked mock":DEMO_ANSWERS.has(d.answer)?"matches known demo answer text":"cached answer"):(String(d.provider||"").startsWith("mock")?"mock placeholder":"generated answer");
+    $("rupstream").textContent=d.provider==="cache"?"no":d.provider_invoked===true?"yes":d.provider_invoked===false?"no separate invocation":"not reported";
+    $("rintended").textContent=d.intended_provider||"—";$("rfallback").textContent=d.fallback_used?"yes":"no";$("rlat-label").textContent=streamMode?"stream gateway time (after handler entry)":"gateway time (after admission)";$("rlat").textContent=d.latency_ms!=null?d.latency_ms+" ms":"not reported";$("rhttp").textContent=browserMs+" ms";
+    $("rtopsim").textContent=d.top_retrieved_similarity!=null?d.top_retrieved_similarity.toFixed(3):"—";
     $("rsim").textContent=d.similarity!=null?d.similarity.toFixed(3):"—";$("rthr").textContent=d.threshold!=null?d.threshold.toFixed(3):"—";
-    $("rreason").textContent=d.note||"—";$("result").style.display="block";
-    s.total++;if(d.cache==="HIT")s.hits++;else if(d.cache==="BYPASS")s.bypass++;else s.miss++;if(rej)s.block++;setS();
-    const col=rej?"var(--block)":d.cache==="HIT"?"var(--hit)":d.cache==="BYPASS"?"var(--bypass)":"var(--miss)";
+    $("ridentity").textContent=d.organization_id&&d.subject_id?d.organization_id+" / "+d.subject_id:"legacy private key";
+    $("rscope").textContent=d.lookup_scope||d.cache_scope||"—";$("rprofile").textContent=d.provider_profile||d.intended_provider||"—";
+    $("rcandidates").textContent=(d.candidate_count??"—")+" / "+(d.selected_rank??"—")+" / "+(d.explanation_rank??"—");
+    $("rstructure").textContent=trace.map(c=>`#${c.rank} ${c.action} (${c.reason}; ${c.verifier_status}; ${c.elapsed_ms} ms)`).join(" · ")||"—";
+    $("rnli").textContent=d.nli_score!=null?d.nli_score.toFixed(3)+" (model evidence)":d.verifier_invoked?"invoked; score unavailable":"not invoked";
+    $("rstorage").textContent=d.storage_outcome||"—";$("rstoragewhy").textContent=(d.storage_scope||"not stored")+" · "+(d.storage_reason||d.scope_reason||"no explanation supplied");$("rttl").textContent=configuredTtl!=null?configuredTtl+" s configured (not remaining TTL)":"—";
+    $("rstages").textContent=Object.entries(d.stage_latency_ms||{}).map(([name,ms])=>name+" "+ms+" ms").join(" · ")||"—";
+    renderEvidence(d,trace);$("rreason").textContent=d.note||"—";$("result").style.display="block";
+    if(d.cache==="HIT")s.hits++;else if(d.cache==="BYPASS")s.bypass++;else s.miss++;if(declined)s.declined++;setS();
+    const col=declined?"var(--block)":d.cache==="HIT"?"var(--hit)":d.cache==="BYPASS"?"var(--bypass)":"var(--miss)";
     const tr=document.createElement("tr");
-    tr.innerHTML=`<td><span class="dot" style="background:${col}"></span>${rej?"BLOCK":d.cache}</td>
-      <td>${q.replace(/</g,"&lt;")}</td><td class="c">${d.similarity!=null?d.similarity.toFixed(2):"—"}</td><td class="c">${d.latency_ms??"—"}</td>`;
+    tr.innerHTML=`<td><span class="dot" style="background:${col}"></span>${declined?"DECLINED":d.cache}</td><td></td><td class="c">${d.similarity!=null?d.similarity.toFixed(2):"—"}</td><td class="c">${d.latency_ms??"—"}</td>`;
+    tr.children[1].textContent=q;
     $("log").prepend(tr);while($("log").children.length>100)$("log").lastElementChild.remove();
-  }catch(e){$("err").textContent="Request failed: "+e.message;}finally{$("ask").disabled=false;}}
+  }catch(e){s.errors++;$("err").textContent="Request failed: "+e.message;}finally{$("ask").disabled=false;setS();}}
 
-$("ask").onclick=ask;
+$("ask").onclick=()=>ask();
+$("apikey").addEventListener("change",health);
 $("clear").onclick=async()=>{try{const r=await fetch("/admin/cache/clear",{method:"POST",headers:{"x-api-key":$("apikey").value}});if(!r.ok)throw new Error("HTTP "+r.status);$("err").textContent="Cache cleared.";}catch(e){$("err").textContent="Clear failed.";}};
-$("reset").onclick=()=>{s={total:0,hits:0,miss:0,bypass:0,block:0};$("log").innerHTML="";setS();};
+$("restore").onclick=async()=>{try{const r=await fetch("/admin/demo/restore",{method:"POST",headers:{"x-api-key":$("apikey").value}});if(!r.ok)throw new Error("HTTP "+r.status);const d=await r.json();$("reset").click();$("result").style.display="none";$("err").textContent=d.fixtures+" labelled factual fixtures restored for the demo tenant. Earlier MISS responses were removed.";}catch(e){$("err").textContent="Restore failed: "+e.message;}};
+$("reset").onclick=()=>{s={total:0,hits:0,miss:0,bypass:0,declined:0,errors:0};$("log").innerHTML="";setS();};
 $("query").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();ask();}});
 
 const io=new IntersectionObserver(es=>es.forEach(en=>{if(en.isIntersecting){en.target.classList.add("in");

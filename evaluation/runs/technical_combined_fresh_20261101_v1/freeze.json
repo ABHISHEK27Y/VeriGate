@@ -1,0 +1,21 @@
+{
+  "schema": "technical-combined-fresh-v1",
+  "workload_sha256": "54fa89246316b51345608aa27d9542757649d6877b35513a75eee046c904a492",
+  "families": 5,
+  "probes": 25,
+  "labels": {"valid": 15, "invalid": 5, "ambiguous": 5},
+  "policy_variants": ["baseline", "combined"],
+  "baseline": "pinned NLI answer policy; technical and applicability guards off",
+  "combined": "same pinned NLI answer policy; technical and applicability guards on",
+  "retrieval": "MiniLM and RedisSearch top-k=5, same candidates, thresholds and request order",
+  "promotion_gate": {
+    "valid_reuse": "at least 3 additional valid HITs out of 15",
+    "incorrect_acceptance": "no increase among 5 invalid and 5 ambiguous probes",
+    "latency": "warm median HTTP latency no more than 25% worse on balanced repeated runs",
+    "isolation": "existing organization, private, credential and candidate-identity regressions pass",
+    "note": "Small authored sample cannot establish a production error bound"
+  },
+  "label_provenance": "Human-authored task suitability rationale in workload.json; no model judgment used as truth",
+  "development_overlap": "No named work, subject, or question family copied from earlier GitLab/PostgreSQL/Kafka/Argo/Docker, Ansible/Vault/Systemd/Playwright technical examples",
+  "status": "frozen before first evaluation run"
+}

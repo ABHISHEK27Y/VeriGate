@@ -1,0 +1,25 @@
+case_id	volatile	query
+stable_01	false	What is a credit score?
+stable_02	false	How is a credit score calculated in principle?
+stable_03	false	What does current account mean in banking?
+stable_04	false	Explain the current account in the balance of payments.
+stable_05	false	Define price elasticity of demand.
+stable_06	false	What is the price mechanism in economics?
+stable_07	false	How is a movie score composed?
+stable_08	false	What is the score of a musical composition?
+stable_09	false	What is the difference between stock and flow variables?
+stable_10	false	Explain time complexity of binary search.
+stable_11	false	What is the current in an electrical circuit?
+stable_12	false	How does a temperature sensor work?
+volatile_01	true	What is my credit score right now?
+volatile_02	true	What is the current balance of my account?
+volatile_03	true	What is the price of gold today?
+volatile_04	true	What is the live cricket score?
+volatile_05	true	What is the latest stock price?
+volatile_06	true	What is the weather tomorrow?
+volatile_07	true	What is the current temperature in Delhi?
+volatile_08	true	What are today's exchange rates?
+volatile_09	true	What news broke this week?
+volatile_10	true	What time is it in Delhi now?
+volatile_11	true	Who is the current CEO of the company?
+volatile_12	true	What are the prices of flights this month?

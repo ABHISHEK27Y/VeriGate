@@ -1,0 +1,14 @@
+{
+  "schema": "live-technical-applicability-v1",
+  "workload_sha256": "2e171d3a9efbe428612bc8493ea1965905f2deb2d2c28a34757abcae2c12aaf9",
+  "families": 5,
+  "probes": 25,
+  "candidate_count_per_probe": 3,
+  "variants": ["applicability_off", "applicability_on"],
+  "policy_artifact": "app/cache/artifacts/answer_policy_v1.json",
+  "embedding_backend": "minilm",
+  "vector_backend": "redisearch",
+  "provider": "controlled-eval",
+  "prewarm": true,
+  "selection": "Clear the isolated evaluation tenant and seed the same three candidates before each probe. Keep request order identical. No threshold changes."
+}

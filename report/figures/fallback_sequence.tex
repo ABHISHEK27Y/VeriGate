@@ -1,0 +1,28 @@
+\documentclass[tikz,border=6pt]{standalone}
+\input{diagram_styles}
+\definecolor{vgNavy}{HTML}{88421D}\definecolor{vgTeal}{HTML}{52B788}
+\begin{document}
+\begin{tikzpicture}
+\tikzset{sqhead/.append style={text width=2.5cm},sqlabel/.append style={font=\small}}
+\node[sqhead] at (0,0) {Client};\draw[sqlife] (0,-.6)--(0,-21);
+\node[sqhead] at (4,0) {Gateway +\\admission};\draw[sqlife] (4,-.6)--(4,-21);
+\node[sqhead] at (8,0) {Cache coordinator};\draw[sqlife] (8,-.6)--(8,-21);
+\node[sqhead] at (12,0) {Registry +\\provider adapter};\draw[sqlife] (12,-.6)--(12,-21);
+\draw[sqcall] (0,-1.5)--node[sqlabel,above,align=center]{JSON request + credential}(4,-1.5);
+\draw[sqcall] (4,-3.5)--node[sqlabel,above,align=center]{authorized lookup}(8,-3.5);
+\draw[sqreply] (8,-4.7)--node[sqlabel,above,align=center]{MISS / BYPASS + reason}(4,-4.7);
+\draw[sqcall] (4,-9)--node[sqlabel,above,align=center]{configured route request}(12,-9);
+\draw[sqreply] (12,-10.3)--node[sqlabel,above,align=center]{selected route + event stream}(4,-10.3);
+\draw[sqcall] (4,-14.8)--node[sqlabel,above,align=center]{[eligible] scoped write}(8,-14.8);
+\draw[sqreply] (8,-16)--node[sqlabel,above,align=center]{storage outcome}(4,-16);
+\draw[sqreply] (4,-20.2)--node[sqlabel,above,align=center]{answer + outcome metadata}(0,-20.2);
+\node[draw=vgSlate,fill=vgTeal!10,align=center,text width=10cm,font=\small] at (8,-2.5) {Gateway: authenticate; rate check; resolve scope and route};
+\node[draw=vgSlate,fill=vgTeal!10,align=center,text width=10cm,font=\small] at (8,-6) {Gateway: recheck principal; count admitted miss; enforce deadline};
+\node[draw=vgSlate,fill=vgTeal!10,align=center,text width=10cm,font=\small] at (8,-7.4) {[admission rejected] return error without provider call};
+\node[draw=vgSlate,fill=vgTeal!10,align=center,text width=10cm,font=\small] at (8,-11.8) {Gateway: validate normal completion and bounded nonempty answer; [provider error] return error without cache write};
+\node[draw=vgSlate,fill=vgTeal!10,align=center,text width=10cm,font=\small] at (8,-13.4) {[normal completion] classify response and route compatibility};
+\node[draw=vgSlate,fill=vgTeal!10,align=center,text width=10cm,font=\small] at (8,-17.4) {[no-store / BYPASS / fallback] skip storage; [write failure] retain completed answer};
+\node[draw=vgSlate,fill=vgTeal!10,align=center,text width=10cm,font=\small] at (8,-18.8) {JSON MISS follower may share leader result; BYPASS generates directly};
+
+\end{tikzpicture}
+\end{document}

@@ -1,0 +1,7 @@
+{
+  "n": 24,
+  "stable_n": 12,
+  "volatile_n": 12,
+  "stable_bypassed": 6,
+  "volatile_bypassed": 12
+}

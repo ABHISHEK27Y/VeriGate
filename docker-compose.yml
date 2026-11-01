@@ -3,7 +3,7 @@
 # Gateway on http://localhost:8000, Redis Stack on 6379 (RedisInsight UI on 8001).
 #
 # Secrets come from your shell / .env (never baked into the image):
-#   LLM_PROVIDER=gemini GEMINI_API_KEY=... docker compose up --build
+#   VERIGATE_COMPOSE_PROVIDER=gemini GEMINI_API_KEY=... docker compose up --build
 services:
   redis:
     image: redis/redis-stack@sha256:5d5154123426693540ea6c1d9e638eae2bf2024879c839db6fcfdd7717e817c7
@@ -28,7 +28,11 @@ services:
       REDIS_URL: redis://redis:6379/0
       VECTOR_BACKEND: redisearch
       EMBEDDING_BACKEND: minilm
-      LLM_PROVIDER: ${LLM_PROVIDER:-mock}
+      # Explicit opt-in: a local .env LLM_PROVIDER must not turn the free demo into paid calls.
+      LLM_PROVIDER: ${VERIGATE_COMPOSE_PROVIDER:-mock}
+      CACHE_MATCH_MODE: ${VERIGATE_COMPOSE_CACHE_MATCH_MODE:-exact}
+      ANSWER_POLICY_ARTIFACT: ${VERIGATE_COMPOSE_ANSWER_POLICY_ARTIFACT:-}
+      ANSWER_POLICY_PREWARM: ${VERIGATE_COMPOSE_ANSWER_POLICY_PREWARM:-false}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
     depends_on:

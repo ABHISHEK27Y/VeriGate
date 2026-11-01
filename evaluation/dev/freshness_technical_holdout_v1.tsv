@@ -1,0 +1,25 @@
+case_id	volatile	query	rationale
+tstable_01	false	How do I retrieve the currently authenticated user in Flask?	procedure
+tstable_02	false	How do I check out the latest tag in a git repository?	procedure
+tstable_03	false	What is the recommended way to live-reload a Django development server?	procedure
+tstable_04	false	How do I read the most recent log lines with journalctl?	procedure
+tstable_05	false	How do I define a price column with a numeric type in MySQL?	procedure
+tstable_06	false	How do I expose a Prometheus temperature gauge metric?	procedure
+tstable_07	false	How do I keep npm packages up to date automatically?	procedure
+tstable_08	false	How do I compute a BLEU score for a translation model?	procedure
+tstable_09	false	What is a current limiting resistor in a circuit design?	concept
+tstable_10	false	Explain how the score function works in scikit-learn estimators.	concept
+tstable_11	false	What is the difference between a stock and a flow in accounting?	concept
+tstable_12	false	How do I set a rate limit field in an nginx config?	procedure
+tstable_13	false	How do I get the latest commit SHA in a GitHub Actions workflow?	procedure
+tstable_14	false	How do I reference the current timestamp column default in Postgres?	construct
+tvolatile_01	true	What is the latest stable version of Kubernetes right now?	absolute_time
+tvolatile_02	true	What is the current price of AWS on-demand compute today?	absolute_time
+tvolatile_03	true	Who is the current maintainer of the project?	recency_value
+tvolatile_04	true	What are the latest security advisories this week?	absolute_time
+tvolatile_05	true	What is the live status of the GitHub API?	recency_value
+tvolatile_06	true	What is the most recent release of Python?	recency_value
+tvolatile_07	true	What is the exchange rate for USD to EUR now?	absolute_time
+tvolatile_08	true	What is the price of a t3.micro instance?	value_request
+tvolatile_09	true	What is the current weather in the datacenter region?	recency_value
+tvolatile_10	true	What are today's trending repositories on GitHub?	absolute_time

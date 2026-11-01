@@ -1,0 +1,23 @@
+{
+  "How do I restart Nginx in staging?": "Use the staging service restart command.",
+  "How can I reboot Nginx in stage?": "Use the staging service restart command.",
+  "How do I restart Nginx in production?": "Use the production service restart command.",
+  "How do I backup MySQL?": "Run a backup command.",
+  "What is the way to make a MySQL backup?": "Run a backup command.",
+  "How do I restore MySQL?": "Run a restore command.",
+  "How do I update `USER_OUT` in FastAPI?": "Change the output schema.",
+  "How can I modify `USER_OUT` in FastAPI?": "Change the output schema.",
+  "How do I update `USER_IN` in FastAPI?": "Change the input schema.",
+  "How do I enable a public S3 policy?": "Enable the public policy.",
+  "How can I activate a public S3 policy?": "Enable the public policy.",
+  "How do I disable a public S3 policy?": "Disable the public policy.",
+  "How do I create a Git branch?": "Create a branch.",
+  "How can I add a Git branch?": "Create a branch.",
+  "How do I delete a Git branch?": "Delete a branch.",
+  "How do I restart a Linux service?": "Restart the service.",
+  "How can I reboot a Linux service?": "Restart the service.",
+  "How do I stop a Linux service?": "Stop the service.",
+  "How do I deploy Node.js 18?": "Deploy version 18.",
+  "How can I release Node.js 18?": "Deploy version 18.",
+  "How do I deploy Node.js 20?": "Deploy version 20."
+}

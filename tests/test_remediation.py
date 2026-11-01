@@ -51,7 +51,11 @@ def test_safe_mode_rejects_reordered_roles(client):
 
 
 def test_body_limit_and_bearer_metrics(client):
-    response = client.post("/v1/chat", content=b" " * (settings.max_request_bytes + 1))
+    response = client.post(
+        "/v1/chat",
+        content=b" " * (settings.max_request_bytes + 1),
+        headers={"x-api-key": "demo-key-123"},
+    )
     assert response.status_code == 413
     assert (
         client.get("/metrics", headers={"authorization": "Bearer test-metrics-token"}).status_code
@@ -208,3 +212,60 @@ def test_multiprocess_metrics_aggregate_workers(tmp_path):
         timeout=30,
     )
     assert 'verigate_requests_total{outcome="multiprocess_test"} 3.0' in result.stdout
+
+
+@pytest.mark.asyncio
+async def test_store_reuses_lookup_embedding(monkeypatch):
+    monkeypatch.setattr(settings, "cache_match_mode", "semantic")
+    monkeypatch.setattr(settings, "vector_backend", "inproc")
+    monkeypatch.setattr(settings, "embedding_backend", "hash")
+    cache = SemanticCache()
+    calls = {"n": 0}
+    real = cache.embedder.embed
+
+    def counting(text):
+        calls["n"] += 1
+        return real(text)
+
+    cache.embedder.embed = counting
+    try:
+        result = await cache.lookup("how do I reset my password", "t_reuse")
+        assert result.status == "MISS"
+        after_lookup = calls["n"]
+        assert after_lookup == 1
+        # A store that reuses the lookup vector does not embed again.
+        assert await cache.store(
+            "how do I reset my password", "Go to settings", "t_reuse", vec=result.query_vector
+        )
+        assert calls["n"] == after_lookup
+        # A store without a supplied vector still embeds once.
+        assert await cache.store("a different question", "answer", "t_reuse")
+        assert calls["n"] == after_lookup + 1
+    finally:
+        await cache.redis.aclose()
+
+
+@pytest.mark.asyncio
+async def test_early_stream_close_releases_half_open_probe(monkeypatch):
+    """A client disconnect mid-stream must release a half-open breaker probe lease
+    instead of leaving it held until TTL (audit F14)."""
+    import time as _time  # noqa: PLC0415
+
+    from app.providers.mock import MockProvider  # noqa: PLC0415
+    from app.providers.registry import ProviderRegistry  # noqa: PLC0415
+
+    monkeypatch.setattr(settings, "cache_match_mode", "exact")
+    r = fakeredis.aioredis.FakeRedis(decode_responses=True)
+    registry = ProviderRegistry(providers=(MockProvider(delay=0.0),), redis=r)
+    opened_key, _fails_key, probe_key, _gen_key = breaker._keys("mock")
+    # Force the half-open state: the breaker was open and its cooldown has elapsed,
+    # so routing acquires a probe lease.
+    await r.set(opened_key, str(_time.time() - 1))
+    try:
+        _name, source = await registry.route_events("hello world")
+        assert await r.get(probe_key) is not None, "routing should hold a probe lease"
+        await source.__anext__()  # consume the first streamed token
+        await source.aclose()  # simulate the client disconnecting mid-stream
+        assert await r.get(probe_key) is None, "probe lease must be released on early close"
+    finally:
+        await r.aclose()

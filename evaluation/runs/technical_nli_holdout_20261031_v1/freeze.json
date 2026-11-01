@@ -1,0 +1,23 @@
+{
+  "status": "frozen_before_model_execution",
+  "workload_sha256": "a4772f2e8eb068de79ebbaba3a4f86963b94d6aba04938dc7749233f1fceaff2",
+  "rows": 30,
+  "families": 10,
+  "split": "heldout technical families; no FastAPI, S3, Linux, Nginx, MySQL, Git, or Node.js families from development runs",
+  "label_provenance": "authored stipulated procedural controls; no independent vendor-documentation review",
+  "valid_definition": "the same stipulated answer responds to the incoming question",
+  "invalid_definition": "the incoming question has a deliberately changed action, entity, permission, environment, or quantity and a different stipulated answer",
+  "abstain_definition": "incoming question omits a required action, entity, permission, environment, method, or quantity; exclude from valid/invalid accuracy",
+  "candidate_protocol": "one fixed eligible stored candidate per isolated family; same candidate and MiniLM similarity for both verifier inputs; no cross-family retrieval competition",
+  "model": "cross-encoder/nli-deberta-v3-xsmall",
+  "revision": "a150876415327c80daeff35ca6f68f5ed8cf5c24",
+  "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+  "embedding_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+  "policy_artifact": "app/cache/artifacts/answer_policy_v1.json",
+  "accept_at": 0.9,
+  "reject_below": 0.2,
+  "min_similarity": 0.35,
+  "comparison": ["current answer assertion", "experimental question-only NLI input"],
+  "decision_rule": "unchanged policy and thresholds; question-only variant replaces only the NLI pair text",
+  "limitations": "Pairwise fixed-candidate evaluation; not a full live top-k or real-provider benchmark. Authored labels test stipulated reuse consistency, not technical factual truth."
+}

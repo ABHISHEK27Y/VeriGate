@@ -1,0 +1,5 @@
+system,n,proxy_positive_n,proxy_negative_n,accept,verify,reject,accepted_reference_match,accepted_reference_mismatch,decision_p50_ms,decision_p95_ms,label_type
+exact,40,20,20,0,0,40,0,0,0.0016,0.002505,nq_directional_reference_proxy
+static_0.72,40,20,20,34,0,6,16,18,0.005549999999999999,0.007115,nq_directional_reference_proxy
+adaptive_tier1,40,20,20,1,0,39,1,0,0.04965,0.13216499999999998,nq_directional_reference_proxy
+answer_aware_v1,40,20,20,6,10,24,6,0,48.41705,53.9192,nq_directional_reference_proxy

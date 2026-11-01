@@ -1,0 +1,14 @@
+{
+  "schema_version": "answer-policy-v1",
+  "model": "cross-encoder/nli-deberta-v3-xsmall",
+  "revision": "a150876415327c80daeff35ca6f68f5ed8cf5c24",
+  "accept_at": 0.9,
+  "reject_below": 0.2,
+  "min_similarity": 0.35,
+  "ambiguity_terms": [
+    "georgia",
+    "congo",
+    "springfield"
+  ],
+  "version": "4e3733ec95ca4948fd845174c70f477383d27690618bde5df0c41c0ce27bbe3f"
+}

@@ -2,6 +2,8 @@
 
 from conftest import HEADERS, METRICS_HEADERS
 
+from app.config import settings
+
 HTTP_OK = 200
 HTTP_UNAUTHORIZED = 401
 HTTP_TOO_MANY_REQUESTS = 429
@@ -15,6 +17,9 @@ def test_health(client):
     r = client.get("/health")
     assert r.status_code == HTTP_OK
     assert r.json()["status"] == "ok"
+    assert r.json()["cache_match_mode"] == settings.cache_match_mode
+    assert r.json()["cache_policy_version"]
+    assert r.json()["verifier_nli_enabled"] is False
 
 
 def test_auth_required(client):

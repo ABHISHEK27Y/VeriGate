@@ -1,0 +1,21 @@
+pair_id	category	reuse_ok	cached_query	cached_answer	incoming_query
+mention_valid_1	answer_mentioned	true	Who authored Hamlet?	William Shakespeare	Which playwright authored Hamlet, William Shakespeare or Christopher Marlowe?
+mention_valid_2	answer_mentioned	true	What city contains the Eiffel Tower?	Paris	Which city contains the Eiffel Tower, Paris or London?
+mention_valid_3	answer_mentioned	true	Which planet is called the Red Planet?	Mars	Which planet is called the Red Planet, Mars or Venus?
+mention_valid_4	answer_mentioned	true	Who discovered penicillin?	Alexander Fleming	Which scientist discovered penicillin, Alexander Fleming or Louis Pasteur?
+mention_unsafe_1	answer_mentioned	false	Does Archie end up with Betty or Veronica in Riverdale?	Betty	Who does Betty end up with on Riverdale?
+mention_unsafe_2	answer_mentioned	false	Who married Alice in the story?	Bob	Who did Bob marry in the story?
+mention_unsafe_3	answer_mentioned	false	Who founded Acme in the story?	Clara	Who did Clara hire at Acme in the story?
+mention_unsafe_4	answer_mentioned	false	What city is the capital of France?	Paris	Which country has Paris as its capital?
+scope_valid_1	scope_change	true	Who was the first person to reach the South Pole?	Roald Amundsen	Who was the earliest person to reach the South Pole?
+scope_valid_2	scope_change	true	Who was the last king of Greece?	Constantine II	Who was the final king of Greece?
+scope_valid_3	scope_change	true	Who was the only author of the fictional Oak ledger?	Mira	Who was the sole author of the fictional Oak ledger?
+scope_valid_4	scope_change	true	Who scored the most goals in the fictional Oak league?	Mira	Who scored the maximum goals in the fictional Oak league?
+scope_unsafe_1	scope_change	false	Who was the first person to walk on the Moon?	Neil Armstrong	Who was the last person to walk on the Moon?
+scope_unsafe_2	scope_change	false	Which team scored the most goals in the fictional Oak league?	Owls	Which team scored the least goals in the fictional Oak league?
+scope_unsafe_3	scope_change	false	Who was the first king of the fictional Oak realm?	Arun	Who was the last king of the fictional Oak realm?
+scope_unsafe_4	scope_change	false	Who was the only winner of the fictional Oak prize?	Mira	Who was the first winner of the fictional Oak prize?
+exact_mention_1	exact_repeat	true	Which planet is called Mars in the classroom chart?	Mars	Which planet is called Mars in the classroom chart?
+exact_mention_2	exact_repeat	true	Who is Bob in the fictional Oak story?	Bob	Who is Bob in the fictional Oak story?
+neutral_valid_1	paraphrase	true	Who wrote Hamlet?	William Shakespeare	Name the author of Hamlet.
+neutral_valid_2	paraphrase	true	What is the capital of France?	Paris	Name France's capital city.

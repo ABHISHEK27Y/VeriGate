@@ -1,0 +1,36 @@
+[
+  {
+    "mode": "unchanged",
+    "requests": 21,
+    "completed": 21,
+    "valid_reuse": 4,
+    "valid_denominator": 7,
+    "incorrect_accepts": 0,
+    "invalid_denominator": 7,
+    "provider_calls": 17,
+    "median_http_ms": 127.354,
+    "p95_http_ms": 1107.025,
+    "outcomes": {
+      "cold_miss": 14,
+      "correct_hit": 4,
+      "verifier_false_rejection": 3
+    }
+  },
+  {
+    "mode": "technical_guard",
+    "requests": 21,
+    "completed": 21,
+    "valid_reuse": 4,
+    "valid_denominator": 7,
+    "incorrect_accepts": 0,
+    "invalid_denominator": 7,
+    "provider_calls": 17,
+    "median_http_ms": 94.46,
+    "p95_http_ms": 625.445,
+    "outcomes": {
+      "cold_miss": 14,
+      "correct_hit": 4,
+      "verifier_false_rejection": 3
+    }
+  }
+]

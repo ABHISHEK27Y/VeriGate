@@ -1,0 +1,7 @@
+capacity_per_tenant,system,requests,accepted_known,accepted_unknown,accepted_known_false,upstream_calls,intended_retrieval_opportunities,intended_retrieval_successes,positive_density_lookups,mean_density,max_resident_entries
+10,exact,1500,706,0,0,794,728,727,628,0.13665134501807794,30
+10,static_0.72,1500,722,2,88,776,729,728,603,0.13338343353373364,30
+10,adaptive_tier1,1500,717,0,87,783,729,728,604,0.13363844090296947,30
+100,exact,1500,925,0,0,575,1022,1014,522,0.03272063204574508,242
+100,static_0.72,1500,980,1,145,519,1016,1008,372,0.031136883932589707,204
+100,adaptive_tier1,1500,954,0,99,546,1020,1012,393,0.029677966792993237,222

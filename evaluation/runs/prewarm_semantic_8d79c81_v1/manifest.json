@@ -1,0 +1,27 @@
+{
+  "schema_version": "prewarm-live-v1",
+  "input_sha256": "14af42ab9121674462e02eb4049e1cd7b41ab153bcb627a9200e116d344f0636",
+  "policy_artifact_sha256": "f9d2365021192fe7a78c54a0d250e1c384f416ad3c1818b084c5b89cd276b6a2",
+  "source_code_sha256": "f82d8235a676959f3dc0b5e08d5c0e56a5736e89b755ced6c6e1e83cf805f955",
+  "model_revisions": {
+    "minilm": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+    "nli": "a150876415327c80daeff35ca6f68f5ed8cf5c24"
+  },
+  "trials_per_warm_scenario": 30,
+  "startup_ms": {
+    "lazy": 5031.857184000018,
+    "prewarm": 6025.790084000022
+  },
+  "startup_nli_model_load_ms": {
+    "lazy": 0.0,
+    "prewarm": 1209.470596999978
+  },
+  "python": "3.11.17",
+  "platform": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+  "provider": "delayed deterministic mock",
+  "outputs": {
+    "requests.csv": "8dc10b6ea7083aad65ec605fc9c92a3b86f606b2fcda5faaa9b0d5e288f044f8",
+    "summary.csv": "439e80833b0523a189f303334c76c6ab7f3dfd3af2c4871e5392a7ece3501c4b"
+  },
+  "limitations": "One runner, two sequential processes, authored selected NQ references; descriptive latency only"
+}

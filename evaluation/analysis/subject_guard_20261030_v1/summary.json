@@ -1,0 +1,14 @@
+{
+  "source_sha256": "447e436b469dfeb3d2c834ecfaf98df1ac5ead385a1eb090683208e2544b3182",
+  "policy_sha256": "f9d2365021192fe7a78c54a0d250e1c384f416ad3c1818b084c5b89cd276b6a2",
+  "audit_sha256": "782c0c5fd3fd4c62100941a20e43dc5ff0bae0871f4332acda49d48e481d2bdf",
+  "rows": 54,
+  "overlapping_cause_counts": {
+    "different_explicit_subject": 54,
+    "retrieval_confusion": 54,
+    "structural_checks_passed": 54,
+    "nli_accepted_conflict": 54,
+    "possible_title_ambiguity": 1
+  },
+  "unresolved_factual_labels": 54
+}

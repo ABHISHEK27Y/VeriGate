@@ -1,0 +1,51 @@
+{
+  "schema": "final-http-probe-v1",
+  "source_commit": "a1a7eb24bb8088db42c2011d63b7fcf5c78a10be",
+  "gateway": "isolated uvicorn app.main:app :8777, disposable Redis Stack db0, CACHE_EPOCH=probefinal",
+  "config": {
+    "cache_match_mode": "semantic",
+    "vector_backend": "redisearch",
+    "embedding_backend": "minilm",
+    "llm_provider": "mock",
+    "answer_policy_artifact": "app/cache/artifacts/answer_policy_v1.json",
+    "answer_policy_prewarm": true
+  },
+  "ready": {
+    "status": "ok",
+    "active_semantic_policy": "answer_aware",
+    "answer_verifier_state": "loaded",
+    "answer_verifier_failure": null,
+    "answer_policy_prewarm": true
+  },
+  "observations": {
+    "volatile_query_bypasses": "What is the current time now? -> BYPASS (F3)",
+    "technical_current_not_bypassed": "How do I get the current user in a Django request? -> cached (F3)",
+    "json_miss_stages": [
+      "admission",
+      "cache_lookup",
+      "cache_write",
+      "embedding",
+      "exact_lookup",
+      "policy_decision",
+      "provider",
+      "retrieval",
+      "structural_check"
+    ],
+    "stream_miss_stages": [
+      "admission",
+      "cache_write",
+      "embedding",
+      "exact_lookup",
+      "policy_decision",
+      "provider",
+      "provider_first_token",
+      "retrieval",
+      "structural_check",
+      "verifier_execution",
+      "verifier_queue"
+    ],
+    "candidate_trace_has_input_tokens": true,
+    "stream_storage_outcome": "stored"
+  },
+  "note": "Isolated probe against the final code on real Redis Stack. Mock provider; no paid calls. Not an answer-quality or latency-distribution claim."
+}

@@ -1,0 +1,19 @@
+# Requires config/organizations-live.json with real-provider profiles and a private
+# API_KEY_SALT/METRICS_TOKEN in the shell or .env. No mock fallback is configured.
+services:
+  gateway:
+    environment:
+      ENVIRONMENT: production
+      API_KEYS: ""
+      ORGANIZATION_CONFIG_PATH: /app/config/organizations-live.json
+      LLM_PROVIDER: ${VERIGATE_COMPOSE_PROVIDER:-openai}
+      CACHE_MATCH_MODE: semantic
+      ANSWER_POLICY_ARTIFACT: app/cache/artifacts/answer_policy_v1.json
+      ANSWER_POLICY_PREWARM: "true"
+      API_KEY_SALT: ${API_KEY_SALT:?Set a private salt of at least 32 characters}
+      METRICS_TOKEN: ${METRICS_TOKEN:?Set a private metrics token}
+    volumes:
+      - ./config:/app/config:ro
+      - model-cache:/home/appuser/.cache/huggingface
+volumes:
+  model-cache:

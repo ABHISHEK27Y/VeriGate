@@ -1,0 +1,14 @@
+{
+  "applicability_off": {
+    "request_abstentions": 10,
+    "misses_after_candidate_assessment": 21,
+    "candidate_nli_scores": 74,
+    "candidate_applicability_decisions": 0
+  },
+  "applicability_on": {
+    "request_abstentions": 10,
+    "misses_after_candidate_assessment": 21,
+    "candidate_nli_scores": 25,
+    "candidate_applicability_decisions": 50
+  }
+}

@@ -1,0 +1,1 @@
+NQ-Open train source questions and short answers: CC BY-SA 3.0. Derived questions are authored transformations. Source lines and URL are recorded in workload.csv. No independently reviewed answer labels.

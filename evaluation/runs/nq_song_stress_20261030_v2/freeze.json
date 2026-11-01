@@ -1,0 +1,28 @@
+{
+  "seed": 90210,
+  "families": 200,
+  "requests": 1000,
+  "source": "https://github.com/google-research-datasets/natural-questions/tree/master/nq_open",
+  "source_license": "CC BY-SA 3.0",
+  "source_sha256": "0c93aaf13b12f855628489665e4ef85ffb8573ad444646f11f4fabdc57a0aabf",
+  "policy_sha256": "f9d2365021192fe7a78c54a0d250e1c384f416ad3c1818b084c5b89cd276b6a2",
+  "policy_artifact": "app\\cache\\artifacts\\answer_policy_v1.json",
+  "embedding_model": "all-MiniLM-L6-v2",
+  "embedding_revision": "1110a243fdf4706b3f48f1d95db1a4f5529b4d41",
+  "nli_model": "cross-encoder/nli-deberta-v3-xsmall",
+  "nli_revision": "a150876415327c80daeff35ca6f68f5ed8cf5c24",
+  "static_similarity_base": 0.72,
+  "settings": {
+    "sufficient": {
+      "cache_ttl_sec": 86400,
+      "max_cache_entries_per_tenant": 1200
+    },
+    "deployment": {
+      "cache_ttl_sec": 3600,
+      "max_cache_entries_per_tenant": 256
+    }
+  },
+  "workload_sha256": "2ab1c4b696e7acd184278816b2fe194cd8aa3987a7c6f6e22ea9dd55d5e0158f",
+  "provider_answers_sha256": "7ffe73d01e5244e8fc8da8c9d6dcc38fb6759bbc170d1c826cbc2bd22d0413b5",
+  "label_limit": "Authored transformations of NQ references; no independent review. Co-writers may be missing."
+}
