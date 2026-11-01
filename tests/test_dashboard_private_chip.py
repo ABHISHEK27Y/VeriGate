@@ -48,6 +48,8 @@ def test_normal_dashboard_omits_scope_and_developer_override_is_explicit(  # noq
                     observed_stream.append(request.post_data_json)
                 path_and_query = request.url.removeprefix("http://verigate.test")
                 headers = {"x-api-key": request.headers.get("x-api-key", "")}
+                if "content-type" in request.headers:
+                    headers["content-type"] = request.headers["content-type"]
                 response = client.request(
                     request.method,
                     path_and_query,

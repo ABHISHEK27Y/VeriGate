@@ -175,6 +175,20 @@ td.c{font-family:'JetBrains Mono',monospace;color:var(--muted)}
 .tech{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);
   border:1px solid var(--line);border-radius:6px;padding:6px 10px}
 footer{border-top:1px solid var(--line);padding:34px 0 60px;color:var(--faint);font-size:12.5px}
+
+/* Glass workspace: legible contrast, responsive evidence panels. */
+:root{--bg:#08121c;--surface:rgba(20,38,54,.92);--surface2:#20384b;--line:rgba(174,210,232,.18);--line2:rgba(174,210,232,.32);--text:#edf5fa;--muted:#b2c5d3;--faint:#91a9ba;--accent:#72dfd0;--r:18px}
+body{background:radial-gradient(ellipse at 10% 0%,#174458,transparent 45%),radial-gradient(ellipse at 95% 40%,#212c4e,transparent 45%),#08121c;background-attachment:fixed}
+.wrap{max-width:1320px}.hero{padding:48px 0 24px}.hero h1{max-width:24ch;font-size:44px}.hero p{max-width:76ch;font-size:16px}nav{background:rgba(8,18,28,.8);backdrop-filter:blur(20px)}
+.panel,.mode-banner,.cfg,.cmp{background:linear-gradient(135deg,rgba(37,61,79,.85),rgba(14,30,44,.9));backdrop-filter:blur(18px);box-shadow:0 12px 35px rgba(0,0,0,.14),inset 0 1px rgba(255,255,255,.07)}
+section{padding:38px 0}.play{grid-template-columns:minmax(0,1fr) 300px}.play>*{min-width:0}.reveal{opacity:1;transform:none}textarea{min-height:105px}input,textarea,select{background:rgba(5,17,27,.65)}.answer{font-size:16px;line-height:1.8;background:rgba(6,20,31,.6);padding:22px}
+.meta{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}.meta b{font-size:12px;overflow-wrap:anywhere}.meta div{background:rgba(15,33,47,.95)}
+.request-journey{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:20px 0}.journey-step{border:1px solid var(--line2);border-radius:12px;padding:13px;background:rgba(9,23,35,.6)}.journey-step strong{display:block;font-size:13px;color:var(--accent)}.journey-step p{font-size:12px;color:var(--muted);margin:6px 0 0}
+.evidence-heading{font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin:20px 0 8px;color:var(--muted)}.trace-scroll{overflow:auto}.trace-scroll table{min-width:620px}.trace-scroll td{vertical-align:top}.stage-row{display:grid;grid-template-columns:180px 1fr 75px;gap:10px;align-items:center;font-size:12px;margin:8px 0}.stage-track{height:7px;background:rgba(255,255,255,.08);border-radius:5px}.stage-fill{height:100%;background:linear-gradient(90deg,#57caba,#8fa8ee);border-radius:5px}.empty-state{color:var(--muted);font-size:13px}
+button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:4px}.btn:disabled{opacity:.55;cursor:wait}.hint{line-height:1.6}#contribution,#results{padding:24px 0}.metrics .num{font-size:25px}
+@media(max-width:900px){.play{grid-template-columns:1fr}.request-journey{grid-template-columns:repeat(2,1fr)}nav .in{gap:12px}.hero h1{font-size:34px}}
+@media(max-width:550px){.wrap{padding:0 16px}nav a.link{display:none}.request-journey{grid-template-columns:1fr}.stage-row{grid-template-columns:120px 1fr 65px}}
+
 </style>
 </head>
 <body>
@@ -193,10 +207,8 @@ footer{border-top:1px solid var(--line);padding:34px 0 60px;color:var(--faint);f
 
 <header class="hero"><div class="wrap">
   <div class="eyebrow">B.Tech Major Project — LLM Gateway</div>
-  <h1>An LLM gateway with an <em>experimental answer cache.</em></h1>
-  <p>Exact-prompt reuse is the default. Opt-in answer-aware semantic matching examines
-     a nearby question and its specific cached answer before reuse. It can still accept
-     a wrong answer or reject a valid paraphrase. Each request shows its decision reason.</p>
+  <h1>One gateway.<br><em>Every reuse decision, visible.</em></h1>
+  <p>Inspect how an authorized request moves through retrieval, answer assessment and provider generation. Shared workspace answers stay within their access boundaries. The active configuration below identifies the policy actually running.</p>
   <div class="mode-banner" id="mode-banner" role="status" aria-live="polite">
     <span class="label">Running now</span><strong id="mode-label">Checking gateway…</strong>
     <span class="detail" id="mode-detail"></span>
@@ -210,52 +222,12 @@ footer{border-top:1px solid var(--line);padding:34px 0 60px;color:var(--faint);f
 
 <div class="divider"></div>
 
-<section id="contribution"><div class="wrap reveal">
-  <div class="shead"><span class="no">01</span><h2>The contribution</h2></div>
-  <div class="contrib">
-    <div class="item"><div class="n">A</div><h3>Adaptive threshold</h3>
-      <p>Match strictness is computed per query from entities, numbers, length and neighbourhood
-         density — not one global constant.</p></div>
-    <div class="item"><div class="n">B</div><h3>Self-verifier</h3>
-      <p>Structural checks filter some changed numbers, roles, scope and tense.
-         The opt-in answer-aware policy evaluates the cached answer with pinned NLI,
-         while uncertain candidates go to the provider.</p></div>
-    <div class="item"><div class="n">C</div><h3>Staleness detection</h3>
-      <p>A keyword rule bypasses some time-sensitive queries. Coverage is incomplete,
-         so other cached answers can become stale.</p></div>
-  </div>
-</div></section>
-
-<div class="divider"></div>
-
-<section id="results"><div class="wrap reveal">
-  <div class="shead"><span class="no">02</span><h2>Current evidence</h2></div>
-  <div class="metrics">
-    <div class="m"><div class="num">Exact</div><div class="lbl">default matching mode</div></div>
-    <div class="m"><div class="num">NQ</div><div class="lbl">mined factoid pairs<br><b>historical reference proxy</b></div></div>
-    <div class="m"><div class="num">Review</div><div class="lbl">specific-answer discrepancies<br><b>unreviewed, counts in audit file</b></div></div>
-    <div class="m"><div class="num">0</div><div class="lbl">independently reviewed answer labels<br><b>quality claim pending</b></div></div>
-  </div>
-  <div class="cmp">
-    <div class="t">What the experiments establish</div>
-    <div class="foot">Five overlapping splits of a mined factoid-reference proxy show a
-      risk–coverage trade-off. The conservative token-diff verifier rejects many valid
-      paraphrases; risk selection chose reject-all at 1%, 2% and 5% targets. These
-      results do not measure generated-answer correctness or cloud cost savings.
-      See the repository's experimental results and dataset documentation for run IDs,
-      counts and limitations. The playground uses the configured provider; “mock” means
-      a deterministic local demo answer.</div>
-  </div>
-</div></section>
-
-<div class="divider"></div>
-
 <section id="playground"><div class="wrap reveal">
-  <div class="shead"><span class="no">03</span><h2>Playground</h2></div>
+  <div class="shead"><span class="no">03</span><h2>Request workspace</h2></div>
   <div class="play">
     <div class="panel">
       <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px">
-        <div style="flex:1;min-width:160px"><label>API key</label><input id="apikey" type="password" placeholder="Enter your API key" autocomplete="off"></div>
+        <div style="flex:1;min-width:160px"><label>VeriGate access key</label><input id="apikey" type="password" placeholder="Enter your API key" autocomplete="off"></div>
       </div>
       <label for="query">Question</label>
       <textarea id="query" placeholder="how do I reset my password"></textarea>
@@ -284,7 +256,7 @@ footer{border-top:1px solid var(--line);padding:34px 0 60px;color:var(--faint);f
       <div class="err" id="err"></div>
       <div class="result" id="result">
         <span class="rbadge" id="rbadge">—</span>
-        <div class="answer" id="ranswer"></div>
+        <div class="answer" id="ranswer"></div><div id="request-journey" class="request-journey" aria-label="Observed request path"></div><div class="evidence-heading">Candidate evidence</div><div id="candidate-evidence" class="trace-scroll"></div><div class="evidence-heading">Measured stages</div><div id="stage-evidence"></div><p class="hint">Stages may overlap or nest; these durations are not additive portions of total request time.</p>
         <div class="meta">
           <div><span id="rlat-label">gateway decision + generation time</span><b id="rlat">—</b></div>
           <div><span>answer source</span><b id="rsource">—</b></div>
@@ -333,6 +305,44 @@ footer{border-top:1px solid var(--line);padding:34px 0 60px;color:var(--faint);f
         <table><thead><tr><th>cache</th><th>query</th><th>sim</th><th>ms</th></tr></thead><tbody id="log"></tbody></table>
       </div>
     </div>
+  </div>
+</div></section>
+
+<div class="divider"></div>
+
+<section id="contribution"><div class="wrap reveal">
+  <div class="shead"><span class="no">01</span><h2>The contribution</h2></div>
+  <div class="contrib">
+    <div class="item"><div class="n">A</div><h3>Authorized answer sharing</h3><p>The server resolves organization, workspace and provider compatibility before reuse. Private responses retain a restricted scope.</p></div>
+    <div class="item"><div class="n">B</div><h3>Self-verifier</h3>
+      <p>Structural checks filter some changed numbers, roles, scope and tense.
+         The opt-in answer-aware policy evaluates the cached answer with pinned NLI,
+         while uncertain candidates go to the provider.</p></div>
+    <div class="item"><div class="n">C</div><h3>Staleness detection</h3>
+      <p>Context-aware rules bypass some time-sensitive queries. Coverage is incomplete,
+         so other cached answers can become stale.</p></div>
+  </div>
+</div></section>
+
+<div class="divider"></div>
+
+<section id="results"><div class="wrap reveal">
+  <div class="shead"><span class="no">02</span><h2>Current evidence</h2></div>
+  <div class="metrics">
+    <div class="m"><div class="num">Exact</div><div class="lbl">default matching mode</div></div>
+    <div class="m"><div class="num">NQ</div><div class="lbl">mined factoid pairs<br><b>historical reference proxy</b></div></div>
+    <div class="m"><div class="num">Review</div><div class="lbl">specific-answer discrepancies<br><b>unreviewed, counts in audit file</b></div></div>
+    <div class="m"><div class="num">0</div><div class="lbl">independently reviewed answer labels<br><b>quality claim pending</b></div></div>
+  </div>
+  <div class="cmp">
+    <div class="t">What the experiments establish</div>
+    <div class="foot">Five overlapping splits of a mined factoid-reference proxy show a
+      risk–coverage trade-off. The conservative token-diff verifier rejects many valid
+      paraphrases; risk selection chose reject-all at 1%, 2% and 5% targets. These
+      results do not measure generated-answer correctness or cloud cost savings.
+      See the repository's experimental results and dataset documentation for run IDs,
+      counts and limitations. The playground uses the configured provider; “mock” means
+      a deterministic local demo answer.</div>
   </div>
 </div></section>
 
@@ -407,11 +417,25 @@ async function health(){try{const r=await fetch("/health");if(!r.ok)throw new Er
   $("stat").textContent=h.cache_match_mode+" · "+(h.providers||[]).join(",");
 }catch(e){$("stat").textContent="offline";$("mode-label").textContent="Gateway offline";}}
 
+
+function textNode(tag,text,cls){const el=document.createElement(tag);el.textContent=text;if(cls)el.className=cls;return el;}
+function renderEvidence(d,trace){
+ const journey=$("request-journey");journey.replaceChildren();
+ const steps=[['01 · Scope',d.organization_id?`${d.organization_id} / ${d.lookup_scope||d.cache_scope||'not reported'}`:'Identity not reported'],['02 · Retrieval',d.candidate_count!=null?`${d.candidate_count} candidate${d.candidate_count===1?'':'s'} reported`:'Candidate count not reported'],['03 · Decision',d.cache==='HIT'?'Cached answer served':d.cache==='BYPASS'?'Cache bypassed':'No cached answer served'],['04 · Delivery',d.provider==='cache'?'No upstream generation':d.provider_invoked===true?'Provider invoked':d.provider_invoked===false?'No separate invocation':'Invocation not reported']];
+ steps.forEach(([title,detail])=>{const card=textNode('div','','journey-step');card.append(textNode('strong',title),textNode('p',detail));journey.append(card);});
+ const target=$("candidate-evidence");target.replaceChildren();
+ if(!trace.length)target.append(textNode('p','No candidate assessments returned for this request. Check the decision reason below: retrieval may be empty, or lookup may have used a shortcut or bypass.','empty-state'));
+ else{const table=document.createElement('table'),head=document.createElement('thead'),hr=document.createElement('tr');['Rank','Similarity','Action','Reason','NLI score','Verifier','Tokens','Time'].forEach(t=>hr.append(textNode('th',t)));head.append(hr);table.append(head);const body=document.createElement('tbody');trace.forEach(c=>{const row=document.createElement('tr');[c.rank,c.similarity,c.action,c.reason,typeof c.nli_score==='number'?c.nli_score.toFixed(3):'not reported',c.verifier_status,c.input_tokens??'not reported',c.elapsed_ms!=null?c.elapsed_ms+' ms':'not reported'].forEach(t=>row.append(textNode('td',String(t??'not reported'))));body.append(row);});table.append(body);target.append(table);}
+ const stages=$("stage-evidence");stages.replaceChildren();const entries=Object.entries(d.stage_latency_ms||{}).filter(([,v])=>typeof v==='number'&&Number.isFinite(v)&&v>=0),max=Math.max(1,...entries.map(([,v])=>v));
+ if(!entries.length)stages.append(textNode('p','Stage timings not reported.','empty-state'));
+ entries.forEach(([name,value])=>{const row=textNode('div','','stage-row'),track=textNode('div','','stage-track'),fill=textNode('div','','stage-fill');fill.style.width=(100*value/max)+'%';track.append(fill);row.append(textNode('span',name.replaceAll('_',' ')),track,textNode('span',value.toFixed(2)+' ms'));stages.append(row);});
+}
+
 function setS(){$("s-total").textContent=s.total;const d=s.hits+s.miss;
   $("s-rate").textContent=d?Math.round(100*s.hits/d)+"%":"0%";
   $("s-hits").textContent=s.hits;$("s-miss").textContent=s.miss;$("s-bypass").textContent=s.bypass;$("s-declined").textContent=s.declined;$("s-errors").textContent=s.errors;}
 
-async function ask(){const q=$("query").value.trim();if(!q)return;$("ask").disabled=true;$("err").textContent="";s.total++;const started=performance.now();
+async function ask(){const q=$("query").value.trim();if(!q)return;$("ask").disabled=true;$("result").style.display="none";$("err").textContent="";s.total++;const started=performance.now();
   try{const payload={prompt:q};const devOpen=!$("dev-overrides").hidden&&$("dev-overrides").open;if(devOpen&&$("scope").value!=="auto"){payload.cache_scope=$("scope").value;if(payload.cache_scope==="workspace")payload.workspace=$("workspace").value.trim();}const streamMode=devOpen&&$("stream-response").checked;const r=await fetch(streamMode?"/v1/chat/stream":"/v1/chat",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":$("apikey").value},body:JSON.stringify(payload)});
     if(r.status===429){s.errors++;$("err").textContent="Rate limited (429).";return;}
     if(r.status===401){s.errors++;$("err").textContent="Invalid API key (401).";return;}
@@ -433,12 +457,12 @@ async function ask(){const q=$("query").value.trim();if(!q)return;$("ask").disab
     }else d=await r.json();
     const browserMs=(performance.now()-started).toFixed(2);const trace=d.candidate_trace||[];
     const selected=trace.find(c=>c.rank===d.selected_rank);
-    const decision=selected?selected.action:trace.length&&d.cache!=="HIT"?trace[0].action:"";
+    const decision=selected?selected.action:"";
     const declined=d.cache!=="HIT"&&trace.some(c=>c.action==="VERIFY"||c.action==="REJECT");
     const b=$("rbadge");b.textContent=(decision?decision+" · ":declined?"DECLINED · ":"")+d.cache;b.className="rbadge b-"+(declined?"REJECT":d.cache);
     $("ranswer").textContent=d.answer;$("rprov").textContent=d.provider;
-    $("rsource").textContent=d.provider==="cache"?(DEMO_ANSWERS.has(d.answer)?"matches seeded fixture":"cached answer"):(d.provider.startsWith("mock")?"mock placeholder":"generated answer");
-    $("rupstream").textContent=d.provider==="cache"?"no":d.provider_invoked?"yes":"shared call";
+    $("rsource").textContent=d.provider==="cache"?(String(d.answer||"").startsWith("[mock:")?"cached text marked mock":DEMO_ANSWERS.has(d.answer)?"matches known demo answer text":"cached answer"):(String(d.provider||"").startsWith("mock")?"mock placeholder":"generated answer");
+    $("rupstream").textContent=d.provider==="cache"?"no":d.provider_invoked===true?"yes":d.provider_invoked===false?"no separate invocation":"not reported";
     $("rintended").textContent=d.intended_provider||"—";$("rfallback").textContent=d.fallback_used?"yes":"no";$("rlat-label").textContent=streamMode?"stream gateway time (after handler entry)":"gateway time (after admission)";$("rlat").textContent=d.latency_ms!=null?d.latency_ms+" ms":"not reported";$("rhttp").textContent=browserMs+" ms";
     $("rtopsim").textContent=d.top_retrieved_similarity!=null?d.top_retrieved_similarity.toFixed(3):"—";
     $("rsim").textContent=d.similarity!=null?d.similarity.toFixed(3):"—";$("rthr").textContent=d.threshold!=null?d.threshold.toFixed(3):"—";
@@ -449,7 +473,7 @@ async function ask(){const q=$("query").value.trim();if(!q)return;$("ask").disab
     $("rnli").textContent=d.nli_score!=null?d.nli_score.toFixed(3)+" (model evidence)":d.verifier_invoked?"invoked; score unavailable":"not invoked";
     $("rstorage").textContent=d.storage_outcome||"—";$("rstoragewhy").textContent=(d.storage_scope||"not stored")+" · "+(d.storage_reason||d.scope_reason||"no explanation supplied");$("rttl").textContent=configuredTtl!=null?configuredTtl+" s configured (not remaining TTL)":"—";
     $("rstages").textContent=Object.entries(d.stage_latency_ms||{}).map(([name,ms])=>name+" "+ms+" ms").join(" · ")||"—";
-    $("rreason").textContent=d.note||"—";$("result").style.display="block";
+    renderEvidence(d,trace);$("rreason").textContent=d.note||"—";$("result").style.display="block";
     if(d.cache==="HIT")s.hits++;else if(d.cache==="BYPASS")s.bypass++;else s.miss++;if(declined)s.declined++;setS();
     const col=declined?"var(--block)":d.cache==="HIT"?"var(--hit)":d.cache==="BYPASS"?"var(--bypass)":"var(--miss)";
     const tr=document.createElement("tr");
