@@ -32,10 +32,11 @@ DISTINCT_ENTRIES = 50
 
 async def _run() -> dict:
     config = snapshot(
-        Settings(
-            _env_file=None,
-            private_cache_entry_limit=ENTRY_LIMIT,
-            organization_cache_entry_limit=10_000,
+        Settings().model_copy(
+            update={
+                "private_cache_entry_limit": ENTRY_LIMIT,
+                "organization_cache_entry_limit": 10_000,
+            }
         )
     )
     token = _runtime.set(config)

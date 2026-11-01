@@ -376,9 +376,9 @@ class NliVerifier:
             for key in tuple(self.cache):
                 if key[0] == scope:
                     del self.cache[key]
-            for key in tuple(self._too_long):
-                if key[0] == scope:
-                    del self._too_long[key]
+            for digest_key in tuple(self._too_long):
+                if digest_key[0] == scope:
+                    del self._too_long[digest_key]
 
     def assess(self, premise: str, hypothesis: str) -> NliAssessment:
         """Score only when the complete paired input fits the model window."""
