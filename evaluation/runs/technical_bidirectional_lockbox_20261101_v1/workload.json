@@ -1,0 +1,82 @@
+[
+  {
+    "family": "helm_release", "domain": "Helm", "stored_query": "How do I roll back the Helm release orion to revision 2 in namespace qa?", "stored_answer": "Run `helm rollback orion 2 --namespace qa`, then inspect the release status in qa. This operation returns that release to revision 2; it does not install a new chart or affect another namespace.",
+    "cases": [
+      {"incoming_query": "What command reverts Helm release orion to revision 2 in qa?", "label": "valid", "contract": "same rollback, release, revision and namespace"},
+      {"incoming_query": "How do I upgrade Helm release orion to revision 2 in qa?", "label": "invalid", "contract": "upgrade is a different operation"},
+      {"incoming_query": "How do I change Helm release orion?", "label": "abstain", "contract": "operation, revision and namespace are missing"}
+    ]
+  },
+  {
+    "family": "kafka_offset", "domain": "Kafka", "stored_query": "How do I reset Kafka consumer group aurora to the earliest offset for topic invoices?", "stored_answer": "Stop the aurora consumers, run `kafka-consumer-groups --group aurora --topic invoices --reset-offsets --to-earliest --execute`, and restart them. The command changes the aurora group's committed position for invoices; it does not delete the topic.",
+    "cases": [
+      {"incoming_query": "How can I move aurora's Kafka invoices consumer offset back to the start?", "label": "valid", "contract": "same group, topic and earliest offset"},
+      {"incoming_query": "How do I delete Kafka topic invoices for group aurora?", "label": "invalid", "contract": "topic deletion is not offset reset"},
+      {"incoming_query": "How do I alter Kafka consumer group aurora?", "label": "abstain", "contract": "topic and intended operation are missing"}
+    ]
+  },
+  {
+    "family": "sqlite_journal", "domain": "SQLite", "stored_query": "How do I enable WAL journal mode for the SQLite connection?", "stored_answer": "Execute `PRAGMA journal_mode=WAL;` on the SQLite connection and check the returned journal mode. WAL changes the journal strategy; it does not disable journaling or erase existing rows.",
+    "cases": [
+      {"incoming_query": "How can I switch my SQLite connection to write-ahead logging?", "label": "valid", "contract": "WAL and write-ahead logging name the same mode"},
+      {"incoming_query": "How do I turn SQLite journaling off?", "label": "invalid", "contract": "OFF is not WAL"},
+      {"incoming_query": "How should I configure SQLite journaling?", "label": "abstain", "contract": "requested journal mode is missing"}
+    ]
+  },
+  {
+    "family": "actions_permission", "domain": "GitHub Actions", "stored_query": "How do I grant a GitHub Actions workflow read-only contents permission?", "stored_answer": "In the workflow YAML set `permissions: contents: read` for the job that needs repository contents. This grants read access to contents; it does not allow pushing commits or writing releases.",
+    "cases": [
+      {"incoming_query": "What YAML gives a GitHub Actions job contents read access?", "label": "valid", "contract": "same read-only contents permission"},
+      {"incoming_query": "How do I give a GitHub Actions job contents write access?", "label": "invalid", "contract": "write permission differs from read permission"},
+      {"incoming_query": "How do I set permissions for a GitHub Actions job?", "label": "abstain", "contract": "permission resource and level are missing"}
+    ]
+  },
+  {
+    "family": "graphql_operation", "domain": "GraphQL", "stored_query": "How do I create an order with the GraphQL createOrder mutation?", "stored_answer": "Send a GraphQL `mutation { createOrder(input: ...) { id } }` request with the required input and handle the returned order ID. This mutation creates an order; a query only reads data.",
+    "cases": [
+      {"incoming_query": "How can I submit the GraphQL createOrder mutation to add an order?", "label": "valid", "contract": "same mutation and create action"},
+      {"incoming_query": "How do I fetch an order with a GraphQL query?", "label": "invalid", "contract": "read query differs from create mutation"},
+      {"incoming_query": "How do I use GraphQL for orders?", "label": "abstain", "contract": "read versus create action is missing"}
+    ]
+  },
+  {
+    "family": "grpc_deadline", "domain": "gRPC", "stored_query": "How do I set a 5 second deadline on a gRPC client call to Inventory?", "stored_answer": "Set the Inventory client call deadline to five seconds from now and propagate that deadline to the request. The call should return a deadline-exceeded status if the server does not finish by then; this is a client time bound, not a server retry policy.",
+    "cases": [
+      {"incoming_query": "How can I limit an Inventory gRPC client request to 5 seconds?", "label": "valid", "contract": "same client, service and five-second deadline"},
+      {"incoming_query": "How do I allow 50 seconds for the Inventory gRPC client call?", "label": "invalid", "contract": "fifty-second deadline differs from five seconds"},
+      {"incoming_query": "How do I configure time for an Inventory gRPC request?", "label": "abstain", "contract": "duration and deadline versus retry are missing"}
+    ]
+  },
+  {
+    "family": "tls_version", "domain": "TLS", "stored_query": "How do I require TLS 1.3 for the edge listener?", "stored_answer": "Configure the edge listener's minimum accepted protocol to TLS 1.3 and verify a TLS 1.2 handshake is refused. This setting affects the listener's accepted protocol versions; it does not rotate certificates or alter outbound clients.",
+    "cases": [
+      {"incoming_query": "How can the edge listener reject TLS 1.2 and accept only TLS 1.3 or newer?", "label": "valid", "contract": "same minimum protocol on same listener"},
+      {"incoming_query": "How do I permit TLS 1.2 on the edge listener?", "label": "invalid", "contract": "allowing TLS 1.2 contradicts the stored setting"},
+      {"incoming_query": "How do I secure the edge listener?", "label": "abstain", "contract": "protocol requirement is missing"}
+    ]
+  },
+  {
+    "family": "celery_queue", "domain": "Celery", "stored_query": "How do I route the Celery send_receipt task to the receipts queue?", "stored_answer": "Set the route for `send_receipt` to the `receipts` queue and start a worker consuming that queue. Check that a submitted receipt task arrives there. Routing changes the task destination; it does not revoke a task or purge another queue.",
+    "cases": [
+      {"incoming_query": "How can I send Celery task send_receipt to the receipts worker queue?", "label": "valid", "contract": "same task and destination queue"},
+      {"incoming_query": "How do I revoke Celery task send_receipt from the receipts queue?", "label": "invalid", "contract": "revocation differs from routing"},
+      {"incoming_query": "How should I handle Celery task send_receipt?", "label": "abstain", "contract": "operation and destination are missing"}
+    ]
+  },
+  {
+    "family": "bash_file_mode", "domain": "Unix file permissions", "stored_query": "How do I set private key file id_ed25519 to owner read-only mode 400?", "stored_answer": "Run `chmod 400 id_ed25519` and verify the file is readable by its owner but not writable or accessible to group and others. Do not change ownership or broaden the mode to 644.",
+    "cases": [
+      {"incoming_query": "What chmod command makes id_ed25519 readable only by its owner, mode 400?", "label": "valid", "contract": "same file and mode 400"},
+      {"incoming_query": "How do I make id_ed25519 mode 644?", "label": "invalid", "contract": "mode 644 grants broader access"},
+      {"incoming_query": "How do I change permissions on id_ed25519?", "label": "abstain", "contract": "target mode and desired access are missing"}
+    ]
+  },
+  {
+    "family": "long_config_answer", "domain": "Controlled configuration", "stored_query": "How do I enable audit delivery for service meridian in the test environment?", "stored_answer": "For service meridian in the test environment, first identify the test-only configuration bundle and confirm that it is not the production bundle. Open the service settings and enable audit delivery only for the test tenant. Set the audit destination to the test collector, not the production collector. Confirm that the destination is reachable and that the service account has write permission for that destination. Apply the configuration during a maintenance window and retain the previous configuration for rollback. Send one synthetic audit event and verify it appears in the test collector with the expected tenant tag and timestamp. Confirm that no event appears in the production collector. Record the configuration revision and the operator who approved the change. If any check fails, restore the previous bundle and investigate before retrying. This procedure is specific to meridian in the test environment. It does not authorize production changes, does not grant access to another tenant, does not change retention, does not disable audit logging, and does not prove that unrelated services are configured correctly. Review the emitted event carefully, because a successful settings response alone does not establish delivery. Keep the test collector address in server-side configuration, and never paste a credential into a request or a log. Recheck the destination after service restart. Repeat the synthetic event check after configuration deployment so that a stale process cannot silently use its earlier destination. Document the result and preserve the old revision until the rollback window closes.",
+    "cases": [
+      {"incoming_query": "How can I turn on audit delivery for meridian in test and verify it reaches the test collector?", "label": "valid", "contract": "same service, environment and audit-delivery goal"},
+      {"incoming_query": "How do I enable audit delivery for meridian in production?", "label": "invalid", "contract": "production is outside the test-only procedure"},
+      {"incoming_query": "How do I change meridian logging?", "label": "abstain", "contract": "audit delivery and environment are missing"}
+    ]
+  }
+]

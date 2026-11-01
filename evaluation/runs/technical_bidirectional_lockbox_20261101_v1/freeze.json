@@ -1,0 +1,12 @@
+{
+  "schema_version": "technical-answer-reuse-lockbox-v1",
+  "workload_sha256": "9c14929b3e92697c70c1a08d26cce997ee96e1f05244a8eeb6511afc65e8ffe5",
+  "policy_artifact_sha256": "f9d2365021192fe7a78c54a0d250e1c384f416ad3c1818b084c5b89cd276b6a2",
+  "families": 10,
+  "cases": 30,
+  "labels": {"valid": 10, "invalid": 10, "abstain": 10},
+  "retrieval": "one isolated stored candidate per family; pinned MiniLM similarity; no candidate substitution",
+  "variants": ["current answer assertion", "bidirectional answer assertion"],
+  "acceptance_rule": "The experimental variant checks the reverse answer assertion only after current ACCEPT. A reverse score below the unchanged accept_at threshold downgrades ACCEPT to VERIFY; a reverse error or overlong input also VERIFY.",
+  "decision_rule": "Keep the default only if valid reuse is retained and incorrect/ambiguous acceptance improves without an unacceptable latency or memory increase. No test-set retuning."
+}
