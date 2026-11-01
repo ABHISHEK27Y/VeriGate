@@ -77,6 +77,7 @@ def _config(tmp_path: Path) -> Settings:
         cache_match_mode="exact",
         embedding_backend="hash",
         vector_backend="inproc",
+        redis_url="",  # isolated fakeredis even when a CI job exports a shared REDIS_URL
     )
 
 
